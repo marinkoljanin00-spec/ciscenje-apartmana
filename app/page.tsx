@@ -9,6 +9,8 @@ import { OwnerDashboard } from "@/components/owner-dashboard"
 import { CleanerDashboard } from "@/components/cleaner-dashboard"
 import { HistoryView } from "@/components/history-view"
 import { MyJobsView } from "@/components/my-jobs-view"
+import { TermsOfService } from "@/components/terms-of-service"
+import { PrivacyPolicy } from "@/components/privacy-policy"
 import { AdminPanel } from "@/components/admin-panel"
 import { DeviceSelector } from "@/components/device-selector"
 import { ADMIN_EMAIL } from "@/lib/store"
@@ -42,6 +44,14 @@ export default function Home() {
   }
 
   const MainContent = () => {
+    if (activeView === "terms") {
+      return <TermsOfService onBack={() => setActiveView("home")} />
+    }
+
+    if (activeView === "privacy") {
+      return <PrivacyPolicy onBack={() => setActiveView("home")} />
+    }
+
     if (activeView === "history") {
       return <HistoryView />
     }

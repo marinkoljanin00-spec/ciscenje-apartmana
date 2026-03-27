@@ -16,12 +16,15 @@ import {
   ShieldCheck,
   Monitor,
   Smartphone,
+  FileText,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/user-avatar"
 import { BugReportDialog } from "@/components/bug-report-dialog"
+import { useState } from "react"
 
-export type ViewType = "home" | "history" | "my-jobs" | "admin"
+export type ViewType = "home" | "history" | "my-jobs" | "admin" | "terms" | "privacy"
 
 interface AppSidebarProps {
   activeView: ViewType
@@ -37,6 +40,7 @@ export function AppSidebar({
   onToggleCollapse,
 }: AppSidebarProps) {
   const { user, logout, devicePreference, setDevicePreference } = useAppStore()
+  const [showLegalMenu, setShowLegalMenu] = useState(false)
 
   const baseNavItems = [
     { id: "home" as const, label: "Početna", icon: Home },
@@ -187,6 +191,50 @@ export function AppSidebar({
             {!collapsed && <span className="ml-2">Prijavi problem</span>}
           </Button>
         </BugReportDialog>
+
+        {/* Legal & Compliance */}
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLegalMenu(!showLegalMenu)}
+            className={cn(
+              "w-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50",
+              collapsed ? "justify-center" : "justify-start"
+            )}
+            title="Pravni dokumenti"
+          >
+            <FileText className="w-4 h-4" />
+            {!collapsed && <span className="ml-2">Pravni dokumenti</span>}
+          </Button>
+          
+          {showLegalMenu && !collapsed && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-sidebar border border-sidebar-border rounded-lg shadow-lg overflow-hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onViewChange("terms")
+                  setShowLegalMenu(false)
+                }}
+                className="w-full justify-start text-muted-foreground hover:text-foreground"
+              >
+                Uvjeti korištenja
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onViewChange("privacy")
+                  setShowLegalMenu(false)
+                }}
+                className="w-full justify-start text-muted-foreground hover:text-foreground border-t border-sidebar-border"
+              >
+                Politika privatnosti
+              </Button>
+            </div>
+          )}
+        </div>
 
         <Button
           variant="ghost"
