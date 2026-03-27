@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity, PROPERTY_TYPES, type PropertyType, CITY_COORDINATES, PREMIUM_MULTIPLIER, getFinalPrice } from "@/lib/store"
+import { useState, useRef } from "react"
+import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity, PROPERTY_TYPES, type PropertyType, CITY_COORDINATES, PREMIUM_MULTIPLIER, getFinalPrice, type UserSpol } from "@/lib/store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,12 +21,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { JobCard } from "@/components/job-card"
-import { Euro, FileText, Plus, Briefcase, Clock, Star, MapPin, Home, Zap, AlertTriangle } from "lucide-react"
+import { Euro, FileText, Plus, Briefcase, Clock, Star, MapPin, Home, Zap, AlertTriangle, Camera, Upload, BadgeCheck } from "lucide-react"
 import { LocationPicker } from "@/components/location-picker"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
 import { format } from "date-fns"
 import { CleanerProfileDialog } from "@/components/cleaner-profile-dialog"
+import { UserAvatar } from "@/components/user-avatar"
+import { ProfilePhotoReminder } from "@/components/profile-photo-reminder"
 import type { User } from "@/lib/store"
 import {
   Dialog,
@@ -36,15 +38,38 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-
 export function OwnerDashboard() {
-  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview } = useAppStore()
+  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview, updateProfileImage, updateUserSpol } = useAppStore()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [reviewJob, setReviewJob] = useState<Job | null>(null)
   const [rating, setRating] = useState(5)
   const [comment, setComment] = useState("")
   const [selectedCleaner, setSelectedCleaner] = useState<User | null>(null)
   const [selectedCleanerJob, setSelectedCleanerJob] = useState<Job | null>(null)
+  const [showImageDialog, setShowImageDialog] = useState(false)
+  const [imageUrl, setImageUrl] = useState("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const base64 = reader.result as string
+        updateProfileImage(user?.email || "", base64)
+        setShowImageDialog(false)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleImageUrlSubmit = () => {
+    if (imageUrl) {
+      updateProfileImage(user?.email || "", imageUrl)
+      setImageUrl("")
+      setShowImageDialog(false)
+    }
+  }
 
   // Form state
   const [adresa, setAdresa] = useState("")
@@ -130,13 +155,27 @@ export function OwnerDashboard() {
   return (
     <div className="p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          Bok, {user?.ime}!
-        </h1>
-        <p className="text-muted-foreground">
-          Upravljajte svojim oglasima za čišćenje
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Bok, {user?.ime}!
+          </h1>
+          <p className="text-muted-foreground">
+            Upravljajte svojim oglasima za čišćenje
+          </p>
+        </div>
+        {/* Profile Image */}
+        <button
+          type="button"
+          onClick={() => setShowImageDialog(true)}
+          className="relative group"
+          aria-label="Uredi profilnu sliku"
+        >
+          <UserAvatar user={user ?? {}} size="lg" showBadge={true} className="ring-2 ring-border group-hover:ring-primary transition-all rounded-full" />
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+            <Camera className="w-5 h-5 text-foreground" />
+          </div>
+        </button>
       </div>
 
       {/* Stats */}
@@ -583,6 +622,100 @@ export function OwnerDashboard() {
         }}
         currentJob={selectedCleanerJob}
       />
+
+      {/* Owner Profile Image Dialog */}
+      <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Profilna slika</DialogTitle>
+            <DialogDescription>
+              Dodajte svoju fotografiju i dobijte badge verifikacije
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            {!user?.slikaVerificiran && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" />
+                <p className="text-xs text-foreground leading-relaxed">
+                  Nakon uploada profilne slike dobit cete{" "}
+                  <span className="font-semibold text-primary">badge verifikacije</span>{" "}
+                  koji povecava povjerenje cistaca.
+                </p>
+              </div>
+            )}
+            {user?.slikaVerificiran && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-chart-2/10 border border-chart-2/20">
+                <BadgeCheck className="w-5 h-5 text-chart-2 flex-shrink-0" />
+                <p className="text-xs text-foreground font-medium">
+                  Profil je verificiran! Badge je prikazan na vasem profilu.
+                </p>
+              </div>
+            )}
+            <div className="flex justify-center">
+              <UserAvatar user={user ?? {}} size="xl" showBadge={true} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="owner-spol">Spol (za bolji avatar ako nemate sliku)</Label>
+              <Select
+                value={user?.spol ?? "neodređeno"}
+                onValueChange={(v) => updateUserSpol(user?.email ?? "", v as UserSpol)}
+              >
+                <SelectTrigger id="owner-spol">
+                  <SelectValue placeholder="Odaberi spol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="muški">Muški</SelectItem>
+                  <SelectItem value="ženski">Ženski</SelectItem>
+                  <SelectItem value="neodređeno">Neodređeno</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="w-4 h-4" />
+                Učitaj sliku s uređaja
+              </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">ili</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ownerImageUrl">URL slike</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="ownerImageUrl"
+                    placeholder="https://..."
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                  />
+                  <Button onClick={handleImageUrlSubmit} disabled={!imageUrl}>
+                    Spremi
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 10-minute profile photo reminder */}
+      <ProfilePhotoReminder onOpenUpload={() => setShowImageDialog(true)} />
     </div>
   )
 }

@@ -16,7 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/user-avatar"
 import { BugReportDialog } from "@/components/bug-report-dialog"
 
 export type ViewType = "home" | "history" | "my-jobs" | "admin"
@@ -86,19 +86,7 @@ export function AppSidebar({
       {/* User Profile */}
       <div className="p-4 border-b border-sidebar-border">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <Avatar className="h-10 w-10 flex-shrink-0">
-            {user?.slika ? (
-              <AvatarImage src={user.slika} alt={user.ime} />
-            ) : (
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-                alt={user?.ime}
-              />
-            )}
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {user?.ime?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar user={user ?? {}} size="md" showBadge={true} />
           {!collapsed && (
             <div className="min-w-0">
               <p className="font-medium text-sidebar-foreground truncate">

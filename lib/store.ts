@@ -164,6 +164,8 @@ export function getLevelProgress(completedJobs: number, averageRating: number): 
   return { currentLevel, nextLevel, jobsProgress, ratingProgress }
 }
 
+export type UserSpol = "muški" | "ženski" | "neodređeno"
+
 export interface User {
   email: string
   ime: string
@@ -171,6 +173,8 @@ export interface User {
   tip: UserType
   opis: string
   slika?: string // URL slike profila
+  spol?: UserSpol
+  slikaVerificiran?: boolean // badge verifikacije za profilnu sliku
   emailVerificiran?: boolean
   verifikacijskiKod?: string
 }
@@ -247,9 +251,10 @@ interface AppState {
 
   // Auth actions
   login: (email: string, password: string) => boolean
-  register: (user: User & { lozinka: string }) => boolean
+  register: (user: User & { lozinka: string; spol?: UserSpol }) => boolean
   logout: () => void
   updateProfileImage: (email: string, imageUrl: string) => void
+  updateUserSpol: (email: string, spol: UserSpol) => void
   verifyEmail: (kod: string) => boolean
   resendVerificationCode: () => string
 
@@ -563,10 +568,21 @@ jobs: [...initialJobs, ...demoCompletedJobs],
       updateProfileImage: (email, imageUrl) => {
         set({
           users: get().users.map((u) =>
-            u.email === email ? { ...u, slika: imageUrl } : u
+            u.email === email ? { ...u, slika: imageUrl, slikaVerificiran: true } : u
           ),
           user: get().user?.email === email 
-            ? { ...get().user!, slika: imageUrl }
+            ? { ...get().user!, slika: imageUrl, slikaVerificiran: true }
+            : get().user,
+        })
+      },
+
+      updateUserSpol: (email, spol) => {
+        set({
+          users: get().users.map((u) =>
+            u.email === email ? { ...u, spol } : u
+          ),
+          user: get().user?.email === email
+            ? { ...get().user!, spol }
             : get().user,
         })
       },

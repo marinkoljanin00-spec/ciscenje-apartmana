@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useAppStore, type UserType } from "@/lib/store"
+import { useAppStore, type UserType, type UserSpol } from "@/lib/store"
 import { 
   Sparkles, 
   Lock, 
@@ -52,6 +52,7 @@ export function AuthScreen() {
   const [regIme, setRegIme] = useState("")
   const [regMobitel, setRegMobitel] = useState("")
   const [regTip, setRegTip] = useState<UserType>("vlasnik")
+  const [regSpol, setRegSpol] = useState<UserSpol>("neodređeno")
   const [regOpis, setRegOpis] = useState("")
   const [regError, setRegError] = useState("")
   const [regSuccess, setRegSuccess] = useState("")
@@ -81,6 +82,7 @@ export function AuthScreen() {
       ime: regIme,
       mobitel: regMobitel,
       tip: regTip,
+      spol: regSpol,
       opis: regOpis,
     })
 
@@ -404,6 +406,22 @@ export function AuthScreen() {
                               Čistač/ica
                             </div>
                           </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-spol">Spol</Label>
+                      <Select
+                        value={regSpol}
+                        onValueChange={(v) => setRegSpol(v as UserSpol)}
+                      >
+                        <SelectTrigger id="reg-spol">
+                          <SelectValue placeholder="Odaberi spol" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="muški">Muški</SelectItem>
+                          <SelectItem value="ženski">Ženski</SelectItem>
+                          <SelectItem value="neodređeno">Neodređeno</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

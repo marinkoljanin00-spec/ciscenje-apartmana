@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useRef } from "react"
-import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity } from "@/lib/store"
+import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity, type UserSpol } from "@/lib/store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { JobCard } from "@/components/job-card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/user-avatar"
+import { ProfilePhotoReminder } from "@/components/profile-photo-reminder"
 import {
   Euro,
   CheckCircle2,
@@ -38,6 +39,7 @@ import {
   Camera,
   Upload,
   X,
+  BadgeCheck,
 } from "lucide-react"
 import {
   Dialog,
@@ -50,7 +52,7 @@ import {
 type SortOption = "date_asc" | "date_desc" | "price_asc" | "price_desc"
 
 export function CleanerDashboard() {
-  const { user, jobs, requestJob, startJob, completeJob, getAverageRating, getCleanerReviews, updateProfileImage } = useAppStore()
+  const { user, jobs, requestJob, startJob, completeJob, getAverageRating, getCleanerReviews, updateProfileImage, updateUserSpol } = useAppStore()
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showImageDialog, setShowImageDialog] = useState(false)
   const [imageUrl, setImageUrl] = useState("")
@@ -180,18 +182,9 @@ export function CleanerDashboard() {
           type="button"
           onClick={() => setShowImageDialog(true)}
           className="relative group"
+          aria-label="Uredi profilnu sliku"
         >
-          <Avatar className="h-16 w-16 ring-2 ring-border group-hover:ring-primary transition-all">
-            {user?.slika ? (
-              <AvatarImage src={user.slika} alt={user.ime} />
-            ) : (
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-                alt={user?.ime}
-              />
-            )}
-            <AvatarFallback>{user?.ime?.charAt(0)}</AvatarFallback>
-          </Avatar>
+          <UserAvatar user={user ?? {}} size="lg" showBadge={true} className="ring-2 ring-border group-hover:ring-primary transition-all rounded-full" />
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
             <Camera className="w-5 h-5 text-foreground" />
           </div>
@@ -650,28 +643,56 @@ export function CleanerDashboard() {
 
       {/* Profile Image Dialog */}
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Profilna slika</DialogTitle>
             <DialogDescription>
-              Dodajte svoju fotografiju kako bi vlasnici imali više povjerenja
+              Dodajte svoju fotografiju i dobijte badge verifikacije
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6 pt-4">
+          <div className="space-y-5 pt-2">
+            {/* Badge info banner */}
+            {!user?.slikaVerificiran && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" />
+                <p className="text-xs text-foreground leading-relaxed">
+                  Nakon uploada profilne slike dobit cete{" "}
+                  <span className="font-semibold text-primary">badge verifikacije</span>{" "}
+                  koji povecava povjerenje vlasnika.
+                </p>
+              </div>
+            )}
+            {user?.slikaVerificiran && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-chart-2/10 border border-chart-2/20">
+                <BadgeCheck className="w-5 h-5 text-chart-2 flex-shrink-0" />
+                <p className="text-xs text-foreground font-medium">
+                  Profil je verificiran! Badge je prikazan na vasem profilu.
+                </p>
+              </div>
+            )}
+
             {/* Current image preview */}
             <div className="flex justify-center">
-              <Avatar className="h-24 w-24 ring-2 ring-border">
-                {user?.slika ? (
-                  <AvatarImage src={user.slika} alt={user.ime} />
-                ) : (
-                  <AvatarImage
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-                    alt={user?.ime}
-                  />
-                )}
-                <AvatarFallback className="text-2xl">{user?.ime?.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <UserAvatar user={user ?? {}} size="xl" showBadge={true} />
+            </div>
+
+            {/* Gender selector for better default avatar */}
+            <div className="space-y-2">
+              <Label htmlFor="spol">Spol (za bolji avatar ako nemate sliku)</Label>
+              <Select
+                value={user?.spol ?? "neodređeno"}
+                onValueChange={(v) => updateUserSpol(user?.email ?? "", v as UserSpol)}
+              >
+                <SelectTrigger id="spol">
+                  <SelectValue placeholder="Odaberi spol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="muški">Muški</SelectItem>
+                  <SelectItem value="ženski">Ženski</SelectItem>
+                  <SelectItem value="neodređeno">Neodređeno</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Upload button */}
@@ -720,6 +741,9 @@ export function CleanerDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 10-minute profile photo reminder */}
+      <ProfilePhotoReminder onOpenUpload={() => setShowImageDialog(true)} />
     </div>
   )
 }
