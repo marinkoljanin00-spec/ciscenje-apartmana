@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Card,
   CardContent,
@@ -20,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useAppStore, type UserType } from "@/lib/store"
+import { useAppStore, type UserType, type UserSpol } from "@/lib/store"
 import { 
   Sparkles, 
   Lock, 
@@ -34,9 +35,13 @@ import {
   Shield,
   Clock,
   Gift,
-  BadgeCheck
+  BadgeCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import Image from "next/image"
+
+const SAVED_CREDENTIALS_KEY = "cleanup_saved_credentials"
 
 export function AuthScreen() {
   const { login, register } = useAppStore()
@@ -45,24 +50,59 @@ export function AuthScreen() {
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
   const [loginError, setLoginError] = useState("")
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
+  const [hasSavedCredentials, setHasSavedCredentials] = useState(false)
 
   // Register state
   const [regEmail, setRegEmail] = useState("")
   const [regPassword, setRegPassword] = useState("")
+  const [showRegPassword, setShowRegPassword] = useState(false)
   const [regIme, setRegIme] = useState("")
   const [regMobitel, setRegMobitel] = useState("")
   const [regTip, setRegTip] = useState<UserType>("vlasnik")
+  const [regSpol, setRegSpol] = useState<UserSpol>("neodređeno")
   const [regOpis, setRegOpis] = useState("")
   const [regError, setRegError] = useState("")
   const [regSuccess, setRegSuccess] = useState("")
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_CREDENTIALS_KEY)
+      if (saved) {
+        const { email, password } = JSON.parse(saved)
+        setLoginEmail(email)
+        setLoginPassword(password)
+        setRememberMe(true)
+        setHasSavedCredentials(true)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     setLoginError("")
     const success = login(loginEmail, loginPassword)
-    if (!success) {
+    if (success) {
+      if (rememberMe) {
+        localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }))
+      } else {
+        localStorage.removeItem(SAVED_CREDENTIALS_KEY)
+      }
+    } else {
       setLoginError("Pogrešni podaci za prijavu.")
     }
+  }
+
+  const handleForgetCredentials = () => {
+    localStorage.removeItem(SAVED_CREDENTIALS_KEY)
+    setLoginEmail("")
+    setLoginPassword("")
+    setRememberMe(false)
+    setHasSavedCredentials(false)
   }
 
   const handleRegister = (e: React.FormEvent) => {
@@ -81,6 +121,7 @@ export function AuthScreen() {
       ime: regIme,
       mobitel: regMobitel,
       tip: regTip,
+      spol: regSpol,
       opis: regOpis,
     })
 
@@ -253,14 +294,46 @@ export function AuthScreen() {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="login-password"
-                          type="password"
+                          type={showLoginPassword ? "text" : "password"}
                           placeholder="********"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-10"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={showLoginPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
+                        >
+                          {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
+
+                    {/* Remember me + forget saved */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="remember-me"
+                          checked={rememberMe}
+                          onCheckedChange={(checked) => setRememberMe(checked === true)}
+                        />
+                        <Label htmlFor="remember-me" className="text-sm font-normal cursor-pointer">
+                          Zapamti me
+                        </Label>
+                      </div>
+                      {hasSavedCredentials && (
+                        <button
+                          type="button"
+                          onClick={handleForgetCredentials}
+                          className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          Zaboravi podatke
+                        </button>
+                      )}
+                    </div>
+
                     {loginError && (
                       <p className="text-sm text-destructive">{loginError}</p>
                     )}
@@ -374,12 +447,20 @@ export function AuthScreen() {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="reg-password"
-                          type="password"
+                          type={showRegPassword ? "text" : "password"}
                           placeholder="********"
                           value={regPassword}
                           onChange={(e) => setRegPassword(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-10"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegPassword((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={showRegPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
+                        >
+                          {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -404,6 +485,22 @@ export function AuthScreen() {
                               Čistač/ica
                             </div>
                           </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-spol">Spol</Label>
+                      <Select
+                        value={regSpol}
+                        onValueChange={(v) => setRegSpol(v as UserSpol)}
+                      >
+                        <SelectTrigger id="reg-spol">
+                          <SelectValue placeholder="Odaberi spol" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="muški">Muški</SelectItem>
+                          <SelectItem value="ženski">Ženski</SelectItem>
+                          <SelectItem value="neodređeno">Neodređeno</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

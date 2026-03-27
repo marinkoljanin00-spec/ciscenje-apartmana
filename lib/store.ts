@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 export type UserType = "vlasnik" | "cistacica"
+export type DevicePreference = "desktop" | "mobile" | null
 
 export const CROATIAN_CITIES = [
   "Zagreb",
@@ -164,6 +165,8 @@ export function getLevelProgress(completedJobs: number, averageRating: number): 
   return { currentLevel, nextLevel, jobsProgress, ratingProgress }
 }
 
+export type UserSpol = "muški" | "ženski" | "neodređeno"
+
 export interface User {
   email: string
   ime: string
@@ -171,6 +174,8 @@ export interface User {
   tip: UserType
   opis: string
   slika?: string // URL slike profila
+  spol?: UserSpol
+  slikaVerificiran?: boolean // badge verifikacije za profilnu sliku
   emailVerificiran?: boolean
   verifikacijskiKod?: string
 }
@@ -245,11 +250,16 @@ interface AppState {
   // Bug reports
   bugReports: BugReport[]
 
+  // Device preference
+  devicePreference: DevicePreference
+  setDevicePreference: (preference: DevicePreference) => void
+
   // Auth actions
   login: (email: string, password: string) => boolean
-  register: (user: User & { lozinka: string }) => boolean
+  register: (user: User & { lozinka: string; spol?: UserSpol }) => boolean
   logout: () => void
   updateProfileImage: (email: string, imageUrl: string) => void
+  updateUserSpol: (email: string, spol: UserSpol) => void
   verifyEmail: (kod: string) => boolean
   resendVerificationCode: () => string
 
@@ -521,6 +531,11 @@ export const useAppStore = create<AppState>()(
 jobs: [...initialJobs, ...demoCompletedJobs],
   reviews: initialReviews,
   bugReports: [],
+  devicePreference: null,
+
+      setDevicePreference: (preference) => {
+        set({ devicePreference: preference })
+      },
 
       login: (email, password) => {
         const users = get().users as (User & { lozinka: string })[]
@@ -563,10 +578,21 @@ jobs: [...initialJobs, ...demoCompletedJobs],
       updateProfileImage: (email, imageUrl) => {
         set({
           users: get().users.map((u) =>
-            u.email === email ? { ...u, slika: imageUrl } : u
+            u.email === email ? { ...u, slika: imageUrl, slikaVerificiran: true } : u
           ),
           user: get().user?.email === email 
-            ? { ...get().user!, slika: imageUrl }
+            ? { ...get().user!, slika: imageUrl, slikaVerificiran: true }
+            : get().user,
+        })
+      },
+
+      updateUserSpol: (email, spol) => {
+        set({
+          users: get().users.map((u) =>
+            u.email === email ? { ...u, spol } : u
+          ),
+          user: get().user?.email === email
+            ? { ...get().user!, spol }
             : get().user,
         })
       },

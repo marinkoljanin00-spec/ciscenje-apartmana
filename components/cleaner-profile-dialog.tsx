@@ -4,10 +4,11 @@ import { useAppStore, type User, type Job, getCleanerLevel, getLevelProgress } f
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Star, Phone, Mail, Briefcase, MessageSquare, Award, Lock, ShieldCheck, Trophy, TrendingUp } from "lucide-react"
@@ -60,15 +61,6 @@ export function CleanerProfileDialog({
     }
   }
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2)
-  }
-
   const renderStars = (rating: number) => {
     return (
       <div className="flex items-center gap-0.5">
@@ -90,20 +82,11 @@ export function CleanerProfileDialog({
         {/* Header with avatar */}
         <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-6 pb-8">
           <DialogHeader className="items-center text-center">
-            <Avatar className="w-24 h-24 border-4 border-background shadow-xl mb-4">
-              {cleaner.slika ? (
-                <AvatarImage src={cleaner.slika} alt={cleaner.ime} />
-              ) : (
-                <AvatarImage 
-                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${cleaner.email}`}
-                  alt={cleaner.ime}
-                />
-              )}
-              <AvatarFallback className="text-2xl font-bold bg-primary text-primary-foreground">
-                {getInitials(cleaner.ime)}
-              </AvatarFallback>
-            </Avatar>
+            <div className="mb-4 border-4 border-background shadow-xl rounded-full">
+              <UserAvatar user={cleaner} size="xl" showBadge={true} />
+            </div>
             <DialogTitle className="text-2xl">{cleaner.ime}</DialogTitle>
+            <DialogDescription className="sr-only">Profil cistaca {cleaner.ime} s ocjenama i recenzijama</DialogDescription>
             
             {/* Level and Verified Badge */}
             <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">

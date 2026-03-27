@@ -14,12 +14,17 @@ import {
   CalendarCheck,
   Bug,
   ShieldCheck,
+  Monitor,
+  Smartphone,
+  FileText,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/user-avatar"
 import { BugReportDialog } from "@/components/bug-report-dialog"
+import { useState } from "react"
 
-export type ViewType = "home" | "history" | "my-jobs" | "admin"
+export type ViewType = "home" | "history" | "my-jobs" | "admin" | "terms" | "privacy"
 
 interface AppSidebarProps {
   activeView: ViewType
@@ -34,7 +39,8 @@ export function AppSidebar({
   collapsed,
   onToggleCollapse,
 }: AppSidebarProps) {
-  const { user, logout } = useAppStore()
+  const { user, logout, devicePreference, setDevicePreference } = useAppStore()
+  const [showLegalMenu, setShowLegalMenu] = useState(false)
 
   const baseNavItems = [
     { id: "home" as const, label: "Početna", icon: Home },
@@ -86,26 +92,26 @@ export function AppSidebar({
       {/* User Profile */}
       <div className="p-4 border-b border-sidebar-border">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <Avatar className="h-10 w-10 flex-shrink-0">
-            {user?.slika ? (
-              <AvatarImage src={user.slika} alt={user.ime} />
-            ) : (
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-                alt={user?.ime}
-              />
+          <div className="relative">
+            <UserAvatar user={user ?? {}} size="md" showBadge={true} />
+            {user?.email === ADMIN_EMAIL && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center ring-2 ring-sidebar">
+                <ShieldCheck className="w-3 h-3 text-primary-foreground" />
+              </div>
             )}
-            <AvatarFallback className="bg-primary/10 text-primary">
-              {user?.ime?.charAt(0).toUpperCase() || "U"}
-            </AvatarFallback>
-          </Avatar>
+          </div>
           {!collapsed && (
             <div className="min-w-0">
               <p className="font-medium text-sidebar-foreground truncate">
                 {user?.ime}
               </p>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                {user?.tip === "vlasnik" ? (
+                {user?.email === ADMIN_EMAIL ? (
+                  <>
+                    <ShieldCheck className="w-3 h-3 text-primary" />
+                    <span className="text-primary font-medium">Administrator</span>
+                  </>
+                ) : user?.tip === "vlasnik" ? (
                   <>
                     <Briefcase className="w-3 h-3" />
                     Vlasnik
@@ -113,7 +119,7 @@ export function AppSidebar({
                 ) : (
                   <>
                     <User className="w-3 h-3" />
-                    Čistač/ica
+                    Cistac/ica
                   </>
                 )}
               </p>
@@ -147,6 +153,30 @@ export function AppSidebar({
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border space-y-2">
+        {/* Device Toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setDevicePreference(devicePreference === "mobile" ? "desktop" : "mobile")}
+          className={cn(
+            "w-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50",
+            collapsed ? "justify-center" : "justify-start"
+          )}
+          title={devicePreference === "mobile" ? "Prebaci na desktop prikaz" : "Prebaci na mobilni prikaz"}
+        >
+          {devicePreference === "mobile" ? (
+            <>
+              <Smartphone className="w-4 h-4" />
+              {!collapsed && <span className="ml-2">Mobilni prikaz</span>}
+            </>
+          ) : (
+            <>
+              <Monitor className="w-4 h-4" />
+              {!collapsed && <span className="ml-2">Desktop prikaz</span>}
+            </>
+          )}
+        </Button>
+
         {/* Bug Report Button */}
         <BugReportDialog>
           <Button
@@ -161,6 +191,50 @@ export function AppSidebar({
             {!collapsed && <span className="ml-2">Prijavi problem</span>}
           </Button>
         </BugReportDialog>
+
+        {/* Legal & Compliance */}
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowLegalMenu(!showLegalMenu)}
+            className={cn(
+              "w-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50",
+              collapsed ? "justify-center" : "justify-start"
+            )}
+            title="Pravni dokumenti"
+          >
+            <FileText className="w-4 h-4" />
+            {!collapsed && <span className="ml-2">Pravni dokumenti</span>}
+          </Button>
+          
+          {showLegalMenu && !collapsed && (
+            <div className="absolute bottom-full left-0 right-0 mb-2 bg-sidebar border border-sidebar-border rounded-lg shadow-lg overflow-hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onViewChange("terms")
+                  setShowLegalMenu(false)
+                }}
+                className="w-full justify-start text-muted-foreground hover:text-foreground"
+              >
+                Uvjeti korištenja
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onViewChange("privacy")
+                  setShowLegalMenu(false)
+                }}
+                className="w-full justify-start text-muted-foreground hover:text-foreground border-t border-sidebar-border"
+              >
+                Politika privatnosti
+              </Button>
+            </div>
+          )}
+        </div>
 
         <Button
           variant="ghost"
