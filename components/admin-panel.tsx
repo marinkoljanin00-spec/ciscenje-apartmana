@@ -44,7 +44,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer,
 } from "recharts"
 import {
   Bug,
@@ -552,51 +551,49 @@ export function AdminPanel() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={visitsChartConfig} className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={statsPeriod === "dnevno" ? chartData.dailyData : 
-                            statsPeriod === "tjedno" ? chartData.weeklyData :
-                            chartData.visitsData}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient id="colorPosjeti" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="colorUnikatni" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                      <XAxis 
-                        dataKey={statsPeriod === "dnevno" ? "dan" : statsPeriod === "tjedno" ? "tjedan" : "month"} 
-                        className="text-xs"
-                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                      />
-                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
+                  <AreaChart
+                    data={statsPeriod === "dnevno" ? chartData.dailyData : 
+                          statsPeriod === "tjedno" ? chartData.weeklyData :
+                          chartData.visitsData}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorPosjeti" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorUnikatni" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis 
+                      dataKey={statsPeriod === "dnevno" ? "dan" : statsPeriod === "tjedno" ? "tjedan" : "month"} 
+                      className="text-xs"
+                      tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area
+                      type="monotone"
+                      dataKey="posjeti"
+                      stroke="#3b82f6"
+                      fillOpacity={1}
+                      fill="url(#colorPosjeti)"
+                      name="Posjeti"
+                    />
+                    {statsPeriod === "mjesecno" && (
                       <Area
                         type="monotone"
-                        dataKey="posjeti"
-                        stroke="#3b82f6"
+                        dataKey="unikatni"
+                        stroke="#22c55e"
                         fillOpacity={1}
-                        fill="url(#colorPosjeti)"
-                        name="Posjeti"
+                        fill="url(#colorUnikatni)"
+                        name="Unikatni korisnici"
                       />
-                      {statsPeriod === "mjesecno" && (
-                        <Area
-                          type="monotone"
-                          dataKey="unikatni"
-                          stroke="#22c55e"
-                          fillOpacity={1}
-                          fill="url(#colorUnikatni)"
-                          name="Unikatni korisnici"
-                        />
-                      )}
-                    </AreaChart>
-                  </ResponsiveContainer>
+                    )}
+                  </AreaChart>
                 </ChartContainer>
               </CardContent>
             </Card>
@@ -612,19 +609,17 @@ export function AdminPanel() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={jobsChartConfig} className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData.jobsData}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                      <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="objavljeni" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Objavljeni" />
-                      <Bar dataKey="obavljeni" fill="#22c55e" radius={[4, 4, 0, 0]} name="Obavljeni" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <BarChart
+                    data={chartData.jobsData}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="objavljeni" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Objavljeni" />
+                    <Bar dataKey="obavljeni" fill="#22c55e" radius={[4, 4, 0, 0]} name="Obavljeni" />
+                  </BarChart>
                 </ChartContainer>
               </CardContent>
             </Card>
@@ -640,33 +635,31 @@ export function AdminPanel() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={revenueChartConfig} className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={chartData.revenueData}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                      <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Line 
-                        type="monotone" 
-                        dataKey="prihod" 
-                        stroke="#22c55e" 
-                        strokeWidth={2}
-                        dot={{ fill: '#22c55e', strokeWidth: 2 }}
-                        name="Prihod"
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="provizija" 
-                        stroke="#3b82f6" 
-                        strokeWidth={2}
-                        dot={{ fill: '#3b82f6', strokeWidth: 2 }}
-                        name="Provizija"
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <LineChart
+                    data={chartData.revenueData}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="prihod" 
+                      stroke="#22c55e" 
+                      strokeWidth={2}
+                      dot={{ fill: '#22c55e', strokeWidth: 2 }}
+                      name="Prihod"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="provizija" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      dot={{ fill: '#3b82f6', strokeWidth: 2 }}
+                      name="Provizija"
+                    />
+                  </LineChart>
                 </ChartContainer>
               </CardContent>
             </Card>
@@ -682,20 +675,18 @@ export function AdminPanel() {
               </CardHeader>
               <CardContent>
                 <ChartContainer config={yearlyChartConfig} className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={chartData.yearlyData}
-                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                      <XAxis dataKey="godina" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="korisnici" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Korisnici" />
-                      <Bar dataKey="poslovi" fill="#22c55e" radius={[4, 4, 0, 0]} name="Poslovi" />
-                      <Bar dataKey="prihod" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Prihod (EUR)" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <BarChart
+                    data={chartData.yearlyData}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis dataKey="godina" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="korisnici" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Korisnici" />
+                    <Bar dataKey="poslovi" fill="#22c55e" radius={[4, 4, 0, 0]} name="Poslovi" />
+                    <Bar dataKey="prihod" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Prihod (EUR)" />
+                  </BarChart>
                 </ChartContainer>
               </CardContent>
             </Card>
@@ -712,27 +703,25 @@ export function AdminPanel() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData.userDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {chartData.userDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                <ChartContainer config={{ value: { label: "Korisnici" } }} className="h-[200px]">
+                  <PieChart>
+                    <Pie
+                      data={chartData.userDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {chartData.userDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip />
+                  </PieChart>
+                </ChartContainer>
                 <div className="flex justify-center gap-4 mt-4">
                   {chartData.userDistribution.map((item) => (
                     <div key={item.name} className="flex items-center gap-2">
@@ -753,26 +742,24 @@ export function AdminPanel() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={chartData.jobStatusDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {chartData.jobStatusDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
+                <ChartContainer config={{ value: { label: "Poslovi" } }} className="h-[200px]">
+                  <PieChart>
+                    <Pie
+                      data={chartData.jobStatusDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {chartData.jobStatusDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip />
+                  </PieChart>
+                </ChartContainer>
                 <div className="grid grid-cols-2 gap-2 mt-4">
                   {chartData.jobStatusDistribution.map((item) => (
                     <div key={item.name} className="flex items-center gap-2">
@@ -832,42 +819,40 @@ export function AdminPanel() {
             </CardHeader>
             <CardContent>
               <ChartContainer config={weeklyChartConfig} className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={chartData.weeklyData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
-                    <XAxis dataKey="tjedan" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <ChartLegend content={<ChartLegendContent />} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="posjeti" 
-                      stroke="#3b82f6" 
-                      strokeWidth={2}
-                      dot={{ fill: '#3b82f6', r: 4 }}
-                      name="Posjeti"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="registracije" 
-                      stroke="#22c55e" 
-                      strokeWidth={2}
-                      dot={{ fill: '#22c55e', r: 4 }}
-                      name="Registracije"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="poslovi" 
-                      stroke="#f59e0b" 
-                      strokeWidth={2}
-                      dot={{ fill: '#f59e0b', r: 4 }}
-                      name="Poslovi"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <LineChart
+                  data={chartData.weeklyData}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                  <XAxis dataKey="tjedan" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="posjeti" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={{ fill: '#3b82f6', r: 4 }}
+                    name="Posjeti"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="registracije" 
+                    stroke="#22c55e" 
+                    strokeWidth={2}
+                    dot={{ fill: '#22c55e', r: 4 }}
+                    name="Registracije"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="poslovi" 
+                    stroke="#f59e0b" 
+                    strokeWidth={2}
+                    dot={{ fill: '#f59e0b', r: 4 }}
+                    name="Poslovi"
+                  />
+                </LineChart>
               </ChartContainer>
             </CardContent>
           </Card>
