@@ -88,14 +88,26 @@ export function AppSidebar({
       {/* User Profile */}
       <div className="p-4 border-b border-sidebar-border">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <UserAvatar user={user ?? {}} size="md" showBadge={true} />
+          <div className="relative">
+            <UserAvatar user={user ?? {}} size="md" showBadge={true} />
+            {user?.email === ADMIN_EMAIL && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center ring-2 ring-sidebar">
+                <ShieldCheck className="w-3 h-3 text-primary-foreground" />
+              </div>
+            )}
+          </div>
           {!collapsed && (
             <div className="min-w-0">
               <p className="font-medium text-sidebar-foreground truncate">
                 {user?.ime}
               </p>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                {user?.tip === "vlasnik" ? (
+                {user?.email === ADMIN_EMAIL ? (
+                  <>
+                    <ShieldCheck className="w-3 h-3 text-primary" />
+                    <span className="text-primary font-medium">Administrator</span>
+                  </>
+                ) : user?.tip === "vlasnik" ? (
                   <>
                     <Briefcase className="w-3 h-3" />
                     Vlasnik
@@ -103,7 +115,7 @@ export function AppSidebar({
                 ) : (
                   <>
                     <User className="w-3 h-3" />
-                    Čistač/ica
+                    Cistac/ica
                   </>
                 )}
               </p>
