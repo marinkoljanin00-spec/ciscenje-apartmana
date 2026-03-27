@@ -14,6 +14,8 @@ import {
   CalendarCheck,
   Bug,
   ShieldCheck,
+  Monitor,
+  Smartphone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/user-avatar"
@@ -34,7 +36,7 @@ export function AppSidebar({
   collapsed,
   onToggleCollapse,
 }: AppSidebarProps) {
-  const { user, logout } = useAppStore()
+  const { user, logout, devicePreference, setDevicePreference } = useAppStore()
 
   const baseNavItems = [
     { id: "home" as const, label: "Početna", icon: Home },
@@ -135,6 +137,30 @@ export function AppSidebar({
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border space-y-2">
+        {/* Device Toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setDevicePreference(devicePreference === "mobile" ? "desktop" : "mobile")}
+          className={cn(
+            "w-full text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50",
+            collapsed ? "justify-center" : "justify-start"
+          )}
+          title={devicePreference === "mobile" ? "Prebaci na desktop prikaz" : "Prebaci na mobilni prikaz"}
+        >
+          {devicePreference === "mobile" ? (
+            <>
+              <Smartphone className="w-4 h-4" />
+              {!collapsed && <span className="ml-2">Mobilni prikaz</span>}
+            </>
+          ) : (
+            <>
+              <Monitor className="w-4 h-4" />
+              {!collapsed && <span className="ml-2">Desktop prikaz</span>}
+            </>
+          )}
+        </Button>
+
         {/* Bug Report Button */}
         <BugReportDialog>
           <Button

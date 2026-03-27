@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 export type UserType = "vlasnik" | "cistacica"
+export type DevicePreference = "desktop" | "mobile" | null
 
 export const CROATIAN_CITIES = [
   "Zagreb",
@@ -248,6 +249,10 @@ interface AppState {
 
   // Bug reports
   bugReports: BugReport[]
+
+  // Device preference
+  devicePreference: DevicePreference
+  setDevicePreference: (preference: DevicePreference) => void
 
   // Auth actions
   login: (email: string, password: string) => boolean
@@ -526,6 +531,11 @@ export const useAppStore = create<AppState>()(
 jobs: [...initialJobs, ...demoCompletedJobs],
   reviews: initialReviews,
   bugReports: [],
+  devicePreference: null,
+
+      setDevicePreference: (preference) => {
+        set({ devicePreference: preference })
+      },
 
       login: (email, password) => {
         const users = get().users as (User & { lozinka: string })[]

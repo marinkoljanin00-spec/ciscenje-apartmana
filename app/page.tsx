@@ -10,21 +10,30 @@ import { CleanerDashboard } from "@/components/cleaner-dashboard"
 import { HistoryView } from "@/components/history-view"
 import { MyJobsView } from "@/components/my-jobs-view"
 import { AdminPanel } from "@/components/admin-panel"
+import { DeviceSelector } from "@/components/device-selector"
 import { ADMIN_EMAIL } from "@/lib/store"
 import { Button } from "@/components/ui/button"
-import { Menu } from "lucide-react"
+import { Menu, Monitor } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function Home() {
-  const { isAuthenticated, user } = useAppStore()
+  const { isAuthenticated, user, devicePreference, setDevicePreference } = useAppStore()
   const [activeView, setActiveView] = useState<ViewType>("home")
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const isMobile = useIsMobile()
+  const screenIsMobile = useIsMobile()
+  
+  // Use device preference if set, otherwise fall back to screen detection
+  const isMobile = devicePreference === "mobile" || (devicePreference === null && screenIsMobile)
 
   if (!isAuthenticated) {
-    return <AuthScreen />
+    return (
+      <>
+        <DeviceSelector />
+        <AuthScreen />
+      </>
+    )
   }
 
   // Check if email is verified
@@ -78,7 +87,15 @@ export default function Home() {
             </SheetContent>
           </Sheet>
           <span className="font-bold text-lg">CLEANUP</span>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setDevicePreference("desktop")}
+            title="Prebaci na desktop prikaz"
+          >
+            <Monitor className="h-5 w-5" />
+            <span className="sr-only">Desktop prikaz</span>
+          </Button>
         </header>
 
         {/* Main Content */}

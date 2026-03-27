@@ -165,11 +165,11 @@ export function CleanerDashboard() {
   const hasActiveFilters = filterCity !== "all" || minPrice || maxPrice || sortBy !== "date_asc"
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+      <div className="mb-6 sm:mb-8 flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1 sm:mb-2 truncate">
             Bok, {user?.ime}!
           </h1>
           <p className="text-muted-foreground">
@@ -192,7 +192,7 @@ export function CleanerDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <Card className="border-border/50 bg-primary/5 border-primary/20">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">

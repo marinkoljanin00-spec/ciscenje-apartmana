@@ -129,3 +129,69 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile optimizations */
+@media (max-width: 767px) {
+  /* Larger touch targets */
+  button, 
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+  
+  /* Better text readability on mobile */
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Smoother scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix input zoom on iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe area padding for notched devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Mobile-friendly cards */
+@media (max-width: 767px) {
+  .mobile-card {
+    @apply rounded-xl shadow-sm;
+  }
+  
+  /* Larger spacing for touch */
+  .mobile-spacing {
+    @apply p-4 gap-4;
+  }
+  
+  /* Full-width buttons on mobile */
+  .mobile-full-btn {
+    @apply w-full;
+  }
+}
