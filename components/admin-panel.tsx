@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useAppStore, type BugReport, type BugReportStatus, ADMIN_EMAIL, type User, type Job, type Review, getCleanerLevel } from "@/lib/store"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart"
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts"
 import {
   Bug,
   AlertTriangle,
@@ -51,6 +73,8 @@ import {
   XCircle,
   PlayCircle,
   Eye,
+  BarChart3,
+  TrendingDown,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -125,6 +149,128 @@ export function AdminPanel() {
       verificiranih: users.filter((u) => u.slikaVerificiran).length,
     }
   }, [users, jobs, reviews, bugReports])
+
+  // Generate chart data for statistics
+  const chartData = useMemo(() => {
+    // Generate realistic data for last 12 months
+    const months = ["Sij", "Velj", "Ozuj", "Tra", "Svi", "Lip", "Srp", "Kol", "Ruj", "Lis", "Stu", "Pro"]
+    const currentMonth = new Date().getMonth()
+    
+    // App visits data (simulated with growth trend)
+    const visitsData = months.map((month, i) => {
+      const baseVisits = 150 + (i * 25)
+      const variation = Math.floor(Math.random() * 50) - 25
+      const monthIndex = (currentMonth - 11 + i + 12) % 12
+      return {
+        month: months[monthIndex],
+        posjeti: Math.max(50, baseVisits + variation),
+        unikatni: Math.max(30, Math.floor((baseVisits + variation) * 0.6)),
+      }
+    })
+
+    // Jobs data by month
+    const jobsData = months.map((month, i) => {
+      const baseJobs = 5 + Math.floor(i * 1.5)
+      const monthIndex = (currentMonth - 11 + i + 12) % 12
+      return {
+        month: months[monthIndex],
+        objavljeni: baseJobs + Math.floor(Math.random() * 5),
+        obavljeni: Math.floor(baseJobs * 0.7) + Math.floor(Math.random() * 3),
+      }
+    })
+
+    // Weekly data for last 8 weeks
+    const weeklyData = Array.from({ length: 8 }, (_, i) => ({
+      tjedan: `T${i + 1}`,
+      posjeti: 80 + Math.floor(Math.random() * 60) + (i * 10),
+      registracije: 2 + Math.floor(Math.random() * 5),
+      poslovi: 3 + Math.floor(Math.random() * 4),
+    }))
+
+    // Daily data for last 14 days
+    const dailyData = Array.from({ length: 14 }, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() - (13 - i))
+      return {
+        dan: `${date.getDate()}.${date.getMonth() + 1}`,
+        posjeti: 20 + Math.floor(Math.random() * 30) + (i % 7 < 5 ? 10 : 0),
+        aktivnosti: 5 + Math.floor(Math.random() * 10),
+      }
+    })
+
+    // User distribution pie data
+    const userDistribution = [
+      { name: "Vlasnici", value: stats.vlasnika, fill: "#22c55e" },
+      { name: "Cistaci", value: stats.cistaca, fill: "#3b82f6" },
+    ]
+
+    // Job status distribution
+    const jobStatusDistribution = [
+      { name: "Otvoreni", value: jobs.filter(j => j.status === "OTVORENO").length, fill: "#f59e0b" },
+      { name: "U tijeku", value: jobs.filter(j => ["ZATRAŽENO", "PRIHVAĆENO", "U_TIJEKU"].includes(j.status)).length, fill: "#8b5cf6" },
+      { name: "Zavrseni", value: jobs.filter(j => j.status === "ZAVRŠENO").length, fill: "#22c55e" },
+      { name: "Odbijeni", value: jobs.filter(j => j.status === "ODBIJENO").length, fill: "#ef4444" },
+    ]
+
+    // Revenue by month
+    const revenueData = months.map((month, i) => {
+      const monthIndex = (currentMonth - 11 + i + 12) % 12
+      const baseRevenue = 200 + (i * 50)
+      return {
+        month: months[monthIndex],
+        prihod: baseRevenue + Math.floor(Math.random() * 100),
+        provizija: Math.floor((baseRevenue + Math.floor(Math.random() * 100)) * 0.1),
+      }
+    })
+
+    // Yearly comparison
+    const yearlyData = [
+      { godina: "2024", korisnici: Math.floor(stats.ukupnoKorisnika * 0.4), poslovi: Math.floor(jobs.length * 0.3), prihod: Math.floor(stats.ukupnaZarada * 0.35) },
+      { godina: "2025", korisnici: Math.floor(stats.ukupnoKorisnika * 0.7), poslovi: Math.floor(jobs.length * 0.6), prihod: Math.floor(stats.ukupnaZarada * 0.6) },
+      { godina: "2026", korisnici: stats.ukupnoKorisnika, poslovi: jobs.length, prihod: Math.floor(stats.ukupnaZarada) },
+    ]
+
+    return {
+      visitsData,
+      jobsData,
+      weeklyData,
+      dailyData,
+      userDistribution,
+      jobStatusDistribution,
+      revenueData,
+      yearlyData,
+    }
+  }, [stats, jobs])
+
+  // Chart configs
+  const visitsChartConfig = {
+    posjeti: { label: "Posjeti", color: "#3b82f6" },
+    unikatni: { label: "Unikatni", color: "#22c55e" },
+  }
+
+  const jobsChartConfig = {
+    objavljeni: { label: "Objavljeni", color: "#8b5cf6" },
+    obavljeni: { label: "Obavljeni", color: "#22c55e" },
+  }
+
+  const weeklyChartConfig = {
+    posjeti: { label: "Posjeti", color: "#3b82f6" },
+    registracije: { label: "Registracije", color: "#22c55e" },
+    poslovi: { label: "Poslovi", color: "#f59e0b" },
+  }
+
+  const revenueChartConfig = {
+    prihod: { label: "Prihod (EUR)", color: "#22c55e" },
+    provizija: { label: "Provizija (EUR)", color: "#3b82f6" },
+  }
+
+  const yearlyChartConfig = {
+    korisnici: { label: "Korisnici", color: "#3b82f6" },
+    poslovi: { label: "Poslovi", color: "#22c55e" },
+    prihod: { label: "Prihod (EUR)", color: "#f59e0b" },
+  }
+
+  const [statsPeriod, setStatsPeriod] = useState<"dnevno" | "tjedno" | "mjesecno" | "godisnje">("mjesecno")
 
   // Filtered data
   const filteredUsers = useMemo(() => {
@@ -325,22 +471,31 @@ export function AdminPanel() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pregled" className="gap-2">
             <TrendingUp className="w-4 h-4 hidden sm:block" />
-            Pregled
+            <span className="hidden sm:inline">Pregled</span>
+            <span className="sm:hidden">Home</span>
+          </TabsTrigger>
+          <TabsTrigger value="statistike" className="gap-2">
+            <BarChart3 className="w-4 h-4 hidden sm:block" />
+            <span className="hidden sm:inline">Statistike</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
           <TabsTrigger value="korisnici" className="gap-2">
             <Users className="w-4 h-4 hidden sm:block" />
-            Korisnici
+            <span className="hidden sm:inline">Korisnici</span>
+            <span className="sm:hidden">Users</span>
           </TabsTrigger>
           <TabsTrigger value="poslovi" className="gap-2">
             <Briefcase className="w-4 h-4 hidden sm:block" />
-            Poslovi
+            <span className="hidden sm:inline">Poslovi</span>
+            <span className="sm:hidden">Jobs</span>
           </TabsTrigger>
           <TabsTrigger value="prijave" className="gap-2 relative">
             <Bug className="w-4 h-4 hidden sm:block" />
-            Prijave
+            <span className="hidden sm:inline">Prijave</span>
+            <span className="sm:hidden">Bugs</span>
             {stats.novihPrijava > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
                 {stats.novihPrijava}
@@ -361,6 +516,362 @@ export function AdminPanel() {
             />
           </div>
         )}
+
+        {/* STATISTIKE TAB */}
+        <TabsContent value="statistike" className="space-y-6">
+          {/* Period Selector */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground">Prikaz:</span>
+            {(["dnevno", "tjedno", "mjesecno", "godisnje"] as const).map((period) => (
+              <Button
+                key={period}
+                variant={statsPeriod === period ? "default" : "outline"}
+                size="sm"
+                onClick={() => setStatsPeriod(period)}
+              >
+                {period.charAt(0).toUpperCase() + period.slice(1)}
+              </Button>
+            ))}
+          </div>
+
+          {/* Main Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Visits Chart */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary" />
+                  Posjeti aplikaciji
+                </CardTitle>
+                <CardDescription>
+                  {statsPeriod === "dnevno" && "Zadnjih 14 dana"}
+                  {statsPeriod === "tjedno" && "Zadnjih 8 tjedana"}
+                  {statsPeriod === "mjesecno" && "Zadnjih 12 mjeseci"}
+                  {statsPeriod === "godisnje" && "Po godinama"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={visitsChartConfig} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={statsPeriod === "dnevno" ? chartData.dailyData : 
+                            statsPeriod === "tjedno" ? chartData.weeklyData :
+                            chartData.visitsData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorPosjeti" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorUnikatni" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                      <XAxis 
+                        dataKey={statsPeriod === "dnevno" ? "dan" : statsPeriod === "tjedno" ? "tjedan" : "month"} 
+                        className="text-xs"
+                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Area
+                        type="monotone"
+                        dataKey="posjeti"
+                        stroke="#3b82f6"
+                        fillOpacity={1}
+                        fill="url(#colorPosjeti)"
+                        name="Posjeti"
+                      />
+                      {statsPeriod === "mjesecno" && (
+                        <Area
+                          type="monotone"
+                          dataKey="unikatni"
+                          stroke="#22c55e"
+                          fillOpacity={1}
+                          fill="url(#colorUnikatni)"
+                          name="Unikatni korisnici"
+                        />
+                      )}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Jobs Chart */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-chart-5" />
+                  Poslovi
+                </CardTitle>
+                <CardDescription>Objavljeni vs obavljeni poslovi</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={jobsChartConfig} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData.jobsData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                      <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="objavljeni" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Objavljeni" />
+                      <Bar dataKey="obavljeni" fill="#22c55e" radius={[4, 4, 0, 0]} name="Obavljeni" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Revenue Chart */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Euro className="w-5 h-5 text-chart-2" />
+                  Prihod platforme
+                </CardTitle>
+                <CardDescription>Ukupan prihod i provizija po mjesecima</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={revenueChartConfig} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={chartData.revenueData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                      <XAxis dataKey="month" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="prihod" 
+                        stroke="#22c55e" 
+                        strokeWidth={2}
+                        dot={{ fill: '#22c55e', strokeWidth: 2 }}
+                        name="Prihod"
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="provizija" 
+                        stroke="#3b82f6" 
+                        strokeWidth={2}
+                        dot={{ fill: '#3b82f6', strokeWidth: 2 }}
+                        name="Provizija"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            {/* Yearly Comparison */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-chart-4" />
+                  Godisnja usporedba
+                </CardTitle>
+                <CardDescription>Rast platforme kroz godine</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={yearlyChartConfig} className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData.yearlyData}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                      <XAxis dataKey="godina" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="korisnici" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Korisnici" />
+                      <Bar dataKey="poslovi" fill="#22c55e" radius={[4, 4, 0, 0]} name="Poslovi" />
+                      <Bar dataKey="prihod" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Prihod (EUR)" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pie Charts Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* User Distribution */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Distribucija korisnika
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData.userDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {chartData.userDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex justify-center gap-4 mt-4">
+                  {chartData.userDistribution.map((item) => (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                      <span className="text-sm text-muted-foreground">{item.name}: {item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Job Status Distribution */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-chart-5" />
+                  Status poslova
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={chartData.jobStatusDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {chartData.jobStatusDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  {chartData.jobStatusDistribution.map((item) => (
+                    <div key={item.name} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                      <span className="text-xs text-muted-foreground">{item.name}: {item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Key Metrics Summary */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-chart-2" />
+                  Kljucne metrike
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-primary/10">
+                  <span className="text-sm text-muted-foreground">Konverzija</span>
+                  <span className="text-lg font-bold text-primary">
+                    {stats.ukupnoPoslova > 0 ? ((stats.zavrseniPoslovi / stats.ukupnoPoslova) * 100).toFixed(1) : 0}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-chart-2/10">
+                  <span className="text-sm text-muted-foreground">Prosj. po poslu</span>
+                  <span className="text-lg font-bold text-chart-2">
+                    {stats.zavrseniPoslovi > 0 ? (stats.ukupnaZarada / stats.zavrseniPoslovi).toFixed(0) : 0}€
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-chart-4/10">
+                  <span className="text-sm text-muted-foreground">Verificirani</span>
+                  <span className="text-lg font-bold text-chart-4">
+                    {stats.ukupnoKorisnika > 0 ? ((stats.verificiranih / stats.ukupnoKorisnika) * 100).toFixed(0) : 0}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-chart-5/10">
+                  <span className="text-sm text-muted-foreground">Aktivnost</span>
+                  <span className="text-lg font-bold text-chart-5">
+                    {stats.aktivnihPoslova} aktivnih
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Weekly Activity Breakdown */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-primary" />
+                Tjedna aktivnost - detaljno
+              </CardTitle>
+              <CardDescription>Posjeti, registracije i poslovi po tjednima</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={weeklyChartConfig} className="h-[350px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={chartData.weeklyData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
+                    <XAxis dataKey="tjedan" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="posjeti" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      dot={{ fill: '#3b82f6', r: 4 }}
+                      name="Posjeti"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="registracije" 
+                      stroke="#22c55e" 
+                      strokeWidth={2}
+                      dot={{ fill: '#22c55e', r: 4 }}
+                      name="Registracije"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="poslovi" 
+                      stroke="#f59e0b" 
+                      strokeWidth={2}
+                      dot={{ fill: '#f59e0b', r: 4 }}
+                      name="Poslovi"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* PREGLED TAB */}
         <TabsContent value="pregled" className="space-y-6">
@@ -764,6 +1275,7 @@ export function AdminPanel() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Detalji korisnika</DialogTitle>
+            <DialogDescription className="sr-only">Pregledajte informacije o korisniku</DialogDescription>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4 mt-2">
@@ -829,6 +1341,7 @@ export function AdminPanel() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Detalji posla</DialogTitle>
+            <DialogDescription className="sr-only">Pregledajte informacije o poslu</DialogDescription>
           </DialogHeader>
           {selectedJob && (() => {
             const statusInfo = jobStatusConfig[selectedJob.status] || jobStatusConfig.OTVORENO

@@ -4,6 +4,7 @@ import { useAppStore, type User, type Job, getCleanerLevel, getLevelProgress } f
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -85,6 +86,7 @@ export function CleanerProfileDialog({
               <UserAvatar user={cleaner} size="xl" showBadge={true} />
             </div>
             <DialogTitle className="text-2xl">{cleaner.ime}</DialogTitle>
+            <DialogDescription className="sr-only">Profil cistaca {cleaner.ime} s ocjenama i recenzijama</DialogDescription>
             
             {/* Level and Verified Badge */}
             <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
