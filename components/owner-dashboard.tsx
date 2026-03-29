@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity, PROPERTY_TYPES, type PropertyType, CITY_COORDINATES, PREMIUM_MULTIPLIER, getFinalPrice, type UserSpol } from "@/lib/store"
+import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity, PROPERTY_TYPES, type PropertyType, CITY_COORDINATES, PREMIUM_MULTIPLIER, getFinalPrice, type UserSpol, type SavedProperty } from "@/lib/store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { JobCard } from "@/components/job-card"
-import { Euro, FileText, Plus, Briefcase, Clock, Star, MapPin, Home, Zap, AlertTriangle, Camera, Upload, BadgeCheck } from "lucide-react"
+import { Euro, FileText, Plus, Briefcase, Clock, Star, MapPin, Home, Zap, AlertTriangle, Camera, Upload, BadgeCheck, Building2, Trash2, Save } from "lucide-react"
 import { LocationPicker } from "@/components/location-picker"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
@@ -39,7 +39,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 export function OwnerDashboard() {
-  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview, updateProfileImage, updateUserSpol } = useAppStore()
+  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview, updateProfileImage, updateUserSpol, saveProperty, deleteProperty, getSavedProperties } = useAppStore()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [reviewJob, setReviewJob] = useState<Job | null>(null)
   const [rating, setRating] = useState(5)
@@ -82,6 +82,54 @@ export function OwnerDashboard() {
   const [opis, setOpis] = useState("")
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [hitno, setHitno] = useState(false)
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("")
+  const [savePropertyName, setSavePropertyName] = useState("")
+  const [showSavePropertyDialog, setShowSavePropertyDialog] = useState(false)
+
+  // Get saved properties
+  const savedProperties = getSavedProperties()
+
+  // Handle selecting a saved property
+  const handleSelectProperty = (propertyId: string) => {
+    setSelectedPropertyId(propertyId)
+    if (propertyId) {
+      const property = savedProperties.find(p => p.id === propertyId)
+      if (property) {
+        setAdresa(property.adresa)
+        setGrad(property.grad)
+        setVrstaNekrtnine(property.vrstaNekrtnine)
+        setLocation({ lat: property.lat, lon: property.lon })
+      }
+    } else {
+      // Reset if "new" is selected
+      setAdresa("")
+      setGrad("Split")
+      setVrstaNekrtnine("Apartman")
+      setLocation(null)
+    }
+  }
+
+  // Handle saving current property
+  const handleSaveProperty = () => {
+    if (!savePropertyName || !adresa || !location) return
+    
+    saveProperty({
+      naziv: savePropertyName,
+      adresa,
+      grad,
+      vrstaNekrtnine,
+      lat: location.lat,
+      lon: location.lon,
+    })
+    
+    setSavePropertyName("")
+    setShowSavePropertyDialog(false)
+  }
+
+  // Handle address change from reverse geocoding
+  const handleAddressChange = (newAddress: string) => {
+    setAdresa(newAddress)
+  }
 
   const myOpenJobs = jobs.filter(
     (j) => j.vlasnik === user?.email && j.status === "OTVORENO"
@@ -127,6 +175,9 @@ export function OwnerDashboard() {
     setLocation(null)
     setVrstaNekrtnine("Apartman")
     setHitno(false)
+    setSelectedPropertyId("")
+    setSavePropertyName("")
+    setShowSavePropertyDialog(false)
     setIsDialogOpen(false)
   }
 
@@ -245,6 +296,53 @@ export function OwnerDashboard() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateJob} className="space-y-4 mt-4">
+                  {/* Saved Properties Selector */}
+                  {savedProperties.length > 0 && (
+                    <div className="p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-primary" />
+                        <Label className="text-primary font-medium">Odaberite spremljenu nekretninu</Label>
+                      </div>
+                      <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Nova nekretnina" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">
+                            <div className="flex items-center gap-2">
+                              <Plus className="w-4 h-4" />
+                              Nova nekretnina
+                            </div>
+                          </SelectItem>
+                          {savedProperties.map((property) => (
+                            <SelectItem key={property.id} value={property.id}>
+                              <div className="flex items-center gap-2">
+                                <Home className="w-4 h-4" />
+                                <span className="font-medium">{property.naziv}</span>
+                                <span className="text-muted-foreground text-xs">- {property.adresa}, {property.grad}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedPropertyId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            deleteProperty(selectedPropertyId)
+                            setSelectedPropertyId("")
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Obrisi spremljenu nekretninu
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                       <Label htmlFor="vrstaNekrtnine">Vrsta nekretnine</Label>
                       <Select value={vrstaNekrtnine} onValueChange={(v) => setVrstaNekrtnine(v as PropertyType)}>
@@ -287,7 +385,7 @@ export function OwnerDashboard() {
                       <Label htmlFor="adresa">Adresa</Label>
                       <Input
                         id="adresa"
-                        placeholder="npr. Vukovarska 45"
+                        placeholder="Kliknite na mapu za auto-popunjavanje"
                         value={adresa}
                         onChange={(e) => setAdresa(e.target.value)}
                         required
@@ -297,12 +395,63 @@ export function OwnerDashboard() {
 
                   <div className="space-y-2">
                     <Label>Lokacija na mapi</Label>
-<LocationPicker
-                    value={location}
-                    onChange={setLocation}
-                    cityCenter={CITY_COORDINATES[grad]}
-                  />
+                    <p className="text-xs text-muted-foreground">Kliknite na mapu - adresa ce se automatski popuniti</p>
+                    <LocationPicker
+                      value={location}
+                      onChange={setLocation}
+                      onAddressChange={handleAddressChange}
+                      cityCenter={CITY_COORDINATES[grad]}
+                    />
                   </div>
+                  
+                  {/* Save Property Button */}
+                  {!selectedPropertyId && location && adresa && (
+                    <div className="p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20">
+                      {!showSavePropertyDialog ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setShowSavePropertyDialog(true)}
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Spremi ovu nekretninu za brzo koristenje
+                        </Button>
+                      ) : (
+                        <div className="space-y-3">
+                          <Label htmlFor="propertyName">Naziv nekretnine</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="propertyName"
+                              placeholder="npr. Apartman More, Stan Centar..."
+                              value={savePropertyName}
+                              onChange={(e) => setSavePropertyName(e.target.value)}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={handleSaveProperty}
+                              disabled={!savePropertyName}
+                            >
+                              Spremi
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowSavePropertyDialog(false)
+                                setSavePropertyName("")
+                              }}
+                            >
+                              Odustani
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label>Datum čišćenja</Label>

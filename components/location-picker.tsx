@@ -7,16 +7,59 @@ import { Button } from "@/components/ui/button"
 interface LocationPickerProps {
   value: { lat: number; lon: number } | null
   onChange: (location: { lat: number; lon: number }) => void
+  onAddressChange?: (address: string) => void
   className?: string
   cityCenter?: { lat: number; lon: number }
 }
 
-export function LocationPicker({ value, onChange, className, cityCenter }: LocationPickerProps) {
+export function LocationPicker({ value, onChange, onAddressChange, className, cityCenter }: LocationPickerProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [L, setL] = useState<typeof import("leaflet") | null>(null)
+  const [isGeocodingLoading, setIsGeocodingLoading] = useState(false)
+  const [geocodedAddress, setGeocodedAddress] = useState<string | null>(null)
+
+  // Reverse geocoding function
+  const reverseGeocode = async (lat: number, lon: number) => {
+    setIsGeocodingLoading(true)
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&accept-language=hr`,
+        {
+          headers: {
+            'User-Agent': 'CleanupApp/1.0'
+          }
+        }
+      )
+      const data = await response.json()
+      
+      if (data.address) {
+        // Build address from components
+        const parts: string[] = []
+        
+        if (data.address.road) {
+          parts.push(data.address.road)
+          if (data.address.house_number) {
+            parts[parts.length - 1] += ` ${data.address.house_number}`
+          }
+        } else if (data.address.pedestrian) {
+          parts.push(data.address.pedestrian)
+        } else if (data.address.neighbourhood) {
+          parts.push(data.address.neighbourhood)
+        }
+        
+        const address = parts.join(', ') || data.display_name.split(',')[0]
+        setGeocodedAddress(address)
+        onAddressChange?.(address)
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error)
+    } finally {
+      setIsGeocodingLoading(false)
+    }
+  }
 
   // Default to Split, Croatia
   const defaultCenter = { lat: 43.508, lon: 16.44 }
@@ -73,6 +116,8 @@ export function LocationPicker({ value, onChange, className, cityCenter }: Locat
       }
       
       onChange({ lat, lon: lng })
+      // Trigger reverse geocoding
+      reverseGeocode(lat, lng)
     })
 
     mapInstanceRef.current = map
@@ -93,6 +138,11 @@ export function LocationPicker({ value, onChange, className, cityCenter }: Locat
     if (value && markerRef.current) {
       markerRef.current.setLatLng([value.lat, value.lon])
       mapInstanceRef.current.setView([value.lat, value.lon], 14)
+    }
+    
+    // Reset geocoded address when value is cleared
+    if (!value) {
+      setGeocodedAddress(null)
     }
   }, [value, isLoaded, L])
 
@@ -128,6 +178,8 @@ export function LocationPicker({ value, onChange, className, cityCenter }: Locat
         
         mapInstanceRef.current!.setView([latitude, longitude], 16)
         onChange({ lat: latitude, lon: longitude })
+        // Trigger reverse geocoding
+        reverseGeocode(latitude, longitude)
       },
       (error) => {
         console.error("Geolocation error:", error)
@@ -161,9 +213,22 @@ export function LocationPicker({ value, onChange, className, cityCenter }: Locat
       />
       
       {value && (
-        <p className="text-xs text-muted-foreground mt-2">
-          Odabrano: {value.lat.toFixed(5)}, {value.lon.toFixed(5)}
-        </p>
+        <div className="mt-2 space-y-1">
+          {isGeocodingLoading ? (
+            <p className="text-xs text-muted-foreground flex items-center gap-2">
+              <span className="inline-block w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              Dohvacam adresu...
+            </p>
+          ) : geocodedAddress ? (
+            <p className="text-sm text-foreground font-medium flex items-center gap-2">
+              <MapPin className="w-3 h-3 text-primary" />
+              {geocodedAddress}
+            </p>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            Koordinate: {value.lat.toFixed(5)}, {value.lon.toFixed(5)}
+          </p>
+        </div>
       )}
 
       {/* Leaflet CSS */}

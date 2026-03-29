@@ -167,6 +167,16 @@ export function getLevelProgress(completedJobs: number, averageRating: number): 
 
 export type UserSpol = "muški" | "ženski" | "neodređeno"
 
+export interface SavedProperty {
+  id: string
+  naziv: string // npr. "Apartman More", "Stan Centar"
+  adresa: string
+  grad: CroatianCity
+  vrstaNekrtnine: PropertyType
+  lat: number
+  lon: number
+}
+
 export interface User {
   email: string
   ime: string
@@ -178,6 +188,7 @@ export interface User {
   slikaVerificiran?: boolean // badge verifikacije za profilnu sliku
   emailVerificiran?: boolean
   verifikacijskiKod?: string
+  savedProperties?: SavedProperty[] // spremljene nekretnine vlasnika
 }
 
 export type JobStatus = "OTVORENO" | "ČEKA_ODOBRENJE" | "ODOBRENO" | "U_TIJEKU" | "ČEKA_RECENZIJU" | "ZAVRŠENO"
@@ -283,6 +294,11 @@ interface AppState {
   // Bug report actions
   submitBugReport: (report: Omit<BugReport, "id" | "datum" | "status">) => void
   updateBugReportStatus: (id: string, status: BugReportStatus, odgovor?: string) => void
+
+  // Saved properties actions
+  saveProperty: (property: Omit<SavedProperty, "id">) => void
+  deleteProperty: (id: string) => void
+  getSavedProperties: () => SavedProperty[]
 }
 
 // Initial demo data
@@ -751,6 +767,45 @@ getAverageRating: (email) => {
         r.id === id ? { ...r, status, odgovor: odgovor || r.odgovor } : r
       ),
     })
+  },
+
+  // Saved properties actions
+  saveProperty: (property) => {
+    const user = get().user
+    if (!user) return
+    
+    const newProperty: SavedProperty = {
+      ...property,
+      id: Date.now().toString(),
+    }
+    
+    const updatedProperties = [...(user.savedProperties || []), newProperty]
+    
+    set({
+      users: get().users.map((u) =>
+        u.email === user.email ? { ...u, savedProperties: updatedProperties } : u
+      ),
+      user: { ...user, savedProperties: updatedProperties },
+    })
+  },
+
+  deleteProperty: (id) => {
+    const user = get().user
+    if (!user) return
+    
+    const updatedProperties = (user.savedProperties || []).filter((p) => p.id !== id)
+    
+    set({
+      users: get().users.map((u) =>
+        u.email === user.email ? { ...u, savedProperties: updatedProperties } : u
+      ),
+      user: { ...user, savedProperties: updatedProperties },
+    })
+  },
+
+  getSavedProperties: () => {
+    const user = get().user
+    return user?.savedProperties || []
   },
   }),
     {
