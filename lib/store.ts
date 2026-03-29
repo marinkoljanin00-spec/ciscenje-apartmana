@@ -167,6 +167,16 @@ export function getLevelProgress(completedJobs: number, averageRating: number): 
 
 export type UserSpol = "muški" | "ženski" | "neodređeno"
 
+export interface SavedProperty {
+  id: string
+  naziv: string // npr. "Apartman More", "Stan Centar"
+  adresa: string
+  grad: CroatianCity
+  vrstaNekrtnine: PropertyType
+  lat: number
+  lon: number
+}
+
 export interface User {
   email: string
   ime: string
@@ -178,6 +188,7 @@ export interface User {
   slikaVerificiran?: boolean // badge verifikacije za profilnu sliku
   emailVerificiran?: boolean
   verifikacijskiKod?: string
+  savedProperties?: SavedProperty[] // spremljene nekretnine vlasnika
 }
 
 export type JobStatus = "OTVORENO" | "ČEKA_ODOBRENJE" | "ODOBRENO" | "U_TIJEKU" | "ČEKA_RECENZIJU" | "ZAVRŠENO"
@@ -198,6 +209,42 @@ export interface Job {
   cistacica?: string
   lat: number
   lon: number
+  keywords?: string[] // For search optimization
+}
+
+// Helper to generate search keywords for job
+export function generateJobKeywords(grad: CroatianCity, vrstaNekrtnine: PropertyType, opis: string): string[] {
+  const keywords: string[] = []
+  
+  // Add city-specific keywords
+  const cityLower = grad.toLowerCase()
+  keywords.push(`čišćenje ${cityLower}`)
+  keywords.push(`pranje ${cityLower}`)
+  keywords.push(`uređivanje ${cityLower}`)
+  
+  // Add property type keywords
+  const propertyLower = vrstaNekrtnine.toLowerCase()
+  keywords.push(`${propertyLower}`)
+  keywords.push(`${propertyLower} čišćenje`)
+  keywords.push(`čišćenje ${propertyLower}`)
+  
+  // Add city + property keywords
+  keywords.push(`${propertyLower} ${cityLower}`)
+  keywords.push(`${cityLower} ${propertyLower}`)
+  
+  // Add general keywords
+  keywords.push("čišćenje")
+  keywords.push("pranje")
+  keywords.push("uređivanje")
+  keywords.push("apartman")
+  
+  // Add keywords from description
+  const descWords = opis.toLowerCase().split(/\s+/)
+  const relevantWords = descWords.filter(w => w.length > 4)
+  keywords.push(...relevantWords.slice(0, 3))
+  
+  // Remove duplicates and return unique keywords
+  return [...new Set(keywords)].sort()
 }
 
 // Premium price multiplier
@@ -258,6 +305,7 @@ interface AppState {
   login: (email: string, password: string) => boolean
   register: (user: User & { lozinka: string; spol?: UserSpol }) => boolean
   logout: () => void
+  deleteAccount: (email: string) => void
   updateProfileImage: (email: string, imageUrl: string) => void
   updateUserSpol: (email: string, spol: UserSpol) => void
   verifyEmail: (kod: string) => boolean
@@ -283,6 +331,11 @@ interface AppState {
   // Bug report actions
   submitBugReport: (report: Omit<BugReport, "id" | "datum" | "status">) => void
   updateBugReportStatus: (id: string, status: BugReportStatus, odgovor?: string) => void
+
+  // Saved properties actions
+  saveProperty: (property: Omit<SavedProperty, "id">) => void
+  deleteProperty: (id: string) => void
+  getSavedProperties: () => SavedProperty[]
 }
 
 // Initial demo data
@@ -575,6 +628,22 @@ jobs: [...initialJobs, ...demoCompletedJobs],
         set({ user: null, isAuthenticated: false })
       },
 
+      deleteAccount: (email) => {
+        const currentUser = get().user
+        // Delete all user data
+        set({
+          // Remove user from users list
+          users: get().users.filter(u => u.email !== email),
+          // Remove all jobs created by this user
+          jobs: get().jobs.filter(j => j.vlasnik !== email && j.cistacica !== email),
+          // Remove all reviews related to this user
+          reviews: get().reviews.filter(r => r.cistacica !== email && r.vlasnik !== email),
+          // If this is the currently logged-in user, log them out
+          user: currentUser?.email === email ? null : currentUser,
+          isAuthenticated: currentUser?.email === email ? false : get().isAuthenticated,
+        })
+      },
+
       updateProfileImage: (email, imageUrl) => {
         set({
           users: get().users.map((u) =>
@@ -641,6 +710,7 @@ jobs: [...initialJobs, ...demoCompletedJobs],
           ...jobData,
           id: Date.now().toString(),
           status: "OTVORENO",
+          keywords: generateJobKeywords(jobData.grad, jobData.vrstaNekrtnine, jobData.opis),
         }
         set({ jobs: [...get().jobs, newJob] })
       },
@@ -751,6 +821,45 @@ getAverageRating: (email) => {
         r.id === id ? { ...r, status, odgovor: odgovor || r.odgovor } : r
       ),
     })
+  },
+
+  // Saved properties actions
+  saveProperty: (property) => {
+    const user = get().user
+    if (!user) return
+    
+    const newProperty: SavedProperty = {
+      ...property,
+      id: Date.now().toString(),
+    }
+    
+    const updatedProperties = [...(user.savedProperties || []), newProperty]
+    
+    set({
+      users: get().users.map((u) =>
+        u.email === user.email ? { ...u, savedProperties: updatedProperties } : u
+      ),
+      user: { ...user, savedProperties: updatedProperties },
+    })
+  },
+
+  deleteProperty: (id) => {
+    const user = get().user
+    if (!user) return
+    
+    const updatedProperties = (user.savedProperties || []).filter((p) => p.id !== id)
+    
+    set({
+      users: get().users.map((u) =>
+        u.email === user.email ? { ...u, savedProperties: updatedProperties } : u
+      ),
+      user: { ...user, savedProperties: updatedProperties },
+    })
+  },
+
+  getSavedProperties: () => {
+    const user = get().user
+    return user?.savedProperties || []
   },
   }),
     {

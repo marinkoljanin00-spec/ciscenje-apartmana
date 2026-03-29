@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity, PROPERTY_TYPES, type PropertyType, CITY_COORDINATES, PREMIUM_MULTIPLIER, getFinalPrice, type UserSpol } from "@/lib/store"
+import { useAppStore, type Job, CROATIAN_CITIES, type CroatianCity, PROPERTY_TYPES, type PropertyType, CITY_COORDINATES, PREMIUM_MULTIPLIER, getFinalPrice, type UserSpol, type SavedProperty } from "@/lib/store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { JobCard } from "@/components/job-card"
-import { Euro, FileText, Plus, Briefcase, Clock, Star, MapPin, Home, Zap, AlertTriangle, Camera, Upload, BadgeCheck } from "lucide-react"
+import { Euro, FileText, Plus, Briefcase, Clock, Star, MapPin, Home, Zap, AlertTriangle, Camera, Upload, BadgeCheck, Building2, Trash2, Save } from "lucide-react"
 import { LocationPicker } from "@/components/location-picker"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
@@ -37,9 +37,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 export function OwnerDashboard() {
-  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview, updateProfileImage, updateUserSpol } = useAppStore()
+  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview, updateProfileImage, updateUserSpol, saveProperty, deleteProperty, getSavedProperties, logout, deleteAccount } = useAppStore()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [reviewJob, setReviewJob] = useState<Job | null>(null)
   const [rating, setRating] = useState(5)
@@ -49,6 +50,8 @@ export function OwnerDashboard() {
   const [showImageDialog, setShowImageDialog] = useState(false)
   const [imageUrl, setImageUrl] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -82,6 +85,54 @@ export function OwnerDashboard() {
   const [opis, setOpis] = useState("")
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [hitno, setHitno] = useState(false)
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("new")
+  const [savePropertyName, setSavePropertyName] = useState("")
+  const [showSavePropertyDialog, setShowSavePropertyDialog] = useState(false)
+
+  // Get saved properties
+  const savedProperties = getSavedProperties()
+
+  // Handle selecting a saved property
+  const handleSelectProperty = (propertyId: string) => {
+    setSelectedPropertyId(propertyId)
+    if (propertyId && propertyId !== "new") {
+      const property = savedProperties.find(p => p.id === propertyId)
+      if (property) {
+        setAdresa(property.adresa)
+        setGrad(property.grad)
+        setVrstaNekrtnine(property.vrstaNekrtnine)
+        setLocation({ lat: property.lat, lon: property.lon })
+      }
+    } else {
+      // Reset if "new" is selected
+      setAdresa("")
+      setGrad("Split")
+      setVrstaNekrtnine("Apartman")
+      setLocation(null)
+    }
+  }
+
+  // Handle saving current property
+  const handleSaveProperty = () => {
+    if (!savePropertyName || !adresa || !location) return
+    
+    saveProperty({
+      naziv: savePropertyName,
+      adresa,
+      grad,
+      vrstaNekrtnine,
+      lat: location.lat,
+      lon: location.lon,
+    })
+    
+    setSavePropertyName("")
+    setShowSavePropertyDialog(false)
+  }
+
+  // Handle address change from reverse geocoding
+  const handleAddressChange = (newAddress: string) => {
+    setAdresa(newAddress)
+  }
 
   const myOpenJobs = jobs.filter(
     (j) => j.vlasnik === user?.email && j.status === "OTVORENO"
@@ -127,6 +178,9 @@ export function OwnerDashboard() {
     setLocation(null)
     setVrstaNekrtnine("Apartman")
     setHitno(false)
+    setSelectedPropertyId("new")
+    setSavePropertyName("")
+    setShowSavePropertyDialog(false)
     setIsDialogOpen(false)
   }
 
@@ -245,6 +299,60 @@ export function OwnerDashboard() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateJob} className="space-y-4 mt-4">
+                  {/* Saved Properties Selector */}
+                  {savedProperties.length > 0 && (
+                    <div className="p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-primary" />
+                        <Label className="text-primary font-medium">Odaberite spremljenu nekretninu</Label>
+                      </div>
+                      <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Nova nekretnina" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">
+                            <div className="flex items-center gap-2">
+                              <Plus className="w-4 h-4" />
+                              Nova nekretnina
+                            </div>
+                          </SelectItem>
+                          {savedProperties
+                            .filter(p => {
+                              // Ensure property.id is a non-empty string
+                              if (!p.id || typeof p.id !== 'string') return false
+                              const trimmed = p.id.trim()
+                              return trimmed.length > 0
+                            })
+                            .map((property) => (
+                              <SelectItem key={property.id} value={property.id}>
+                                <div className="flex items-center gap-2">
+                                  <Home className="w-4 h-4" />
+                                  <span className="font-medium">{property.naziv}</span>
+                                  <span className="text-muted-foreground text-xs">- {property.adresa}, {property.grad}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedPropertyId && selectedPropertyId !== "new" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            deleteProperty(selectedPropertyId)
+                            setSelectedPropertyId("new")
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Obrisi spremljenu nekretninu
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                       <Label htmlFor="vrstaNekrtnine">Vrsta nekretnine</Label>
                       <Select value={vrstaNekrtnine} onValueChange={(v) => setVrstaNekrtnine(v as PropertyType)}>
@@ -287,7 +395,7 @@ export function OwnerDashboard() {
                       <Label htmlFor="adresa">Adresa</Label>
                       <Input
                         id="adresa"
-                        placeholder="npr. Vukovarska 45"
+                        placeholder="Kliknite na mapu za auto-popunjavanje"
                         value={adresa}
                         onChange={(e) => setAdresa(e.target.value)}
                         required
@@ -297,12 +405,63 @@ export function OwnerDashboard() {
 
                   <div className="space-y-2">
                     <Label>Lokacija na mapi</Label>
-<LocationPicker
-                    value={location}
-                    onChange={setLocation}
-                    cityCenter={CITY_COORDINATES[grad]}
-                  />
+                    <p className="text-xs text-muted-foreground">Kliknite na mapu - adresa ce se automatski popuniti</p>
+                    <LocationPicker
+                      value={location}
+                      onChange={setLocation}
+                      onAddressChange={handleAddressChange}
+                      cityCenter={CITY_COORDINATES[grad]}
+                    />
                   </div>
+                  
+                  {/* Save Property Button */}
+                  {selectedPropertyId === "new" && location && adresa && (
+                    <div className="p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20">
+                      {!showSavePropertyDialog ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="w-full"
+                          onClick={() => setShowSavePropertyDialog(true)}
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Spremi ovu nekretninu za brzo koristenje
+                        </Button>
+                      ) : (
+                        <div className="space-y-3">
+                          <Label htmlFor="propertyName">Naziv nekretnine</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="propertyName"
+                              placeholder="npr. Apartman More, Stan Centar..."
+                              value={savePropertyName}
+                              onChange={(e) => setSavePropertyName(e.target.value)}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={handleSaveProperty}
+                              disabled={!savePropertyName}
+                            >
+                              Spremi
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowSavePropertyDialog(false)
+                                setSavePropertyName("")
+                              }}
+                            >
+                              Odustani
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label>Datum čišćenja</Label>
@@ -713,6 +872,93 @@ export function OwnerDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive text-xl">Izbriši račun</DialogTitle>
+            <DialogDescription>
+              Ovo će trajno obrisati vaš račun i sve povezane podatke
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm font-medium text-destructive mb-2">Upozorenje:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Svi vaši oglasi će biti obrisani</li>
+                <li>• Sve recenzije će biti obrisane</li>
+                <li>• Vaša profilna slika će biti obrisana</li>
+                <li>• Ova akcija se ne može opozvati</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm">
+                Upišite &quot;IZBRISI MOJ RACUN&quot; da potvrdite:
+              </Label>
+              <Input
+                id="confirm"
+                placeholder="IZBRISI MOJ RACUN"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false)
+                setDeleteConfirmation("")
+              }}
+            >
+              Odustani
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirmation !== "IZBRISI MOJ RACUN"}
+              onClick={() => {
+                if (user?.email && deleteConfirmation === "IZBRISI MOJ RACUN") {
+                  deleteAccount(user.email)
+                  logout()
+                  setShowDeleteDialog(false)
+                  setDeleteConfirmation("")
+                }
+              }}
+            >
+              Trajno izbriši
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings/Account section with Delete option */}
+      <Card className="border-border/50 border-destructive/30 bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="text-destructive text-lg">Opasna zona</CardTitle>
+          <CardDescription>Ove akcije se ne mogu opozvati</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium text-foreground mb-2">Izbriši račun</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Brisanje računa će trajno obrisati sve vaše podatke uključujući oglase, recenzije i profilnu sliku. Ova akcija se ne može opozvati.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                Izbriši moj račun
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 10-minute profile photo reminder */}
       <ProfilePhotoReminder onOpenUpload={() => setShowImageDialog(true)} />
