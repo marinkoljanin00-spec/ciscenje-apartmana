@@ -315,9 +315,9 @@ export function OwnerDashboard() {
                             </div>
                           </SelectItem>
                           {savedProperties
-                            .filter(p => p.id && p.id.trim())
+                            .filter(p => p.id && typeof p.id === 'string' && p.id.trim().length > 0)
                             .map((property) => (
-                              <SelectItem key={property.id} value={property.id || "new"}>
+                              <SelectItem key={property.id} value={property.id}>
                                 <div className="flex items-center gap-2">
                                   <Home className="w-4 h-4" />
                                   <span className="font-medium">{property.naziv}</span>

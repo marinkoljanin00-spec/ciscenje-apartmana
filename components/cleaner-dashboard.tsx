@@ -40,6 +40,9 @@ import {
   Upload,
   X,
   BadgeCheck,
+  User,
+  Briefcase,
+  ChevronRight,
 } from "lucide-react"
 import {
   Dialog,
@@ -51,12 +54,15 @@ import {
 
 type SortOption = "date_asc" | "date_desc" | "price_asc" | "price_desc"
 
+type ViewMode = "jobs" | "profile"
+
 export function CleanerDashboard() {
   const { user, jobs, requestJob, startJob, completeJob, getAverageRating, getCleanerReviews, updateProfileImage, updateUserSpol } = useAppStore()
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showImageDialog, setShowImageDialog] = useState(false)
   const [imageUrl, setImageUrl] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>("jobs")
 
   // Filter state
   const [filterCity, setFilterCity] = useState<CroatianCity | "all">("all")
@@ -189,100 +195,131 @@ export function CleanerDashboard() {
   const hasActiveFilters = filterCity !== "all" || minPrice || maxPrice || sortBy !== "date_asc" || searchQuery
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-6 sm:mb-8 flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1 sm:mb-2 truncate">
-            Bok, {user?.ime}!
-          </h1>
-          <p className="text-muted-foreground">
-            Pronađite poslove i zaradite danas
-          </p>
-        </div>
-        
-        {/* Profile Image */}
-        <button
-          type="button"
-          onClick={() => setShowImageDialog(true)}
-          className="relative group"
-          aria-label="Uredi profilnu sliku"
-        >
-          <UserAvatar user={user ?? {}} size="lg" showBadge={true} className="ring-2 ring-border group-hover:ring-primary transition-all rounded-full" />
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-            <Camera className="w-5 h-5 text-foreground" />
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-64 bg-card border-r border-border p-4 hidden lg:block">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <button
+              type="button"
+              onClick={() => setShowImageDialog(true)}
+              className="relative group"
+              aria-label="Uredi profilnu sliku"
+            >
+              <UserAvatar user={user ?? {}} size="lg" showBadge={true} className="ring-2 ring-border group-hover:ring-primary transition-all rounded-full" />
+              <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-4 h-4 text-foreground" />
+              </div>
+            </button>
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground truncate">{user?.ime}</p>
+              <p className="text-xs text-muted-foreground">Cistac/ica</p>
+            </div>
           </div>
-        </button>
+        </div>
+
+        <nav className="space-y-1">
+          <button
+            onClick={() => setViewMode("jobs")}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === "jobs"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <Briefcase className="w-4 h-4" />
+            Poslovi
+            {(pendingApprovalJobs.length + approvedJobs.length + inProgressJobs.length) > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {pendingApprovalJobs.length + approvedJobs.length + inProgressJobs.length}
+              </Badge>
+            )}
+          </button>
+          <button
+            onClick={() => setViewMode("profile")}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              viewMode === "profile"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+          >
+            <User className="w-4 h-4" />
+            Moj profil
+            {myReviews.length > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {myReviews.length}
+              </Badge>
+            )}
+          </button>
+        </nav>
+
+        {/* Quick Stats in Sidebar */}
+        <div className="mt-8 space-y-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Statistika</p>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Zarada</span>
+              <span className="font-semibold text-primary">{totalEarnings.toFixed(2)} EUR</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Ocjena</span>
+              <span className="font-semibold flex items-center gap-1">
+                <Star className="w-3 h-3 text-chart-4 fill-chart-4" />
+                {avgRating > 0 ? avgRating.toFixed(1) : "-"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Zavrseno</span>
+              <span className="font-semibold">{completedJobs.length}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-background border-b border-border p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowImageDialog(true)}
+              className="relative"
+            >
+              <UserAvatar user={user ?? {}} size="sm" showBadge={true} />
+            </button>
+            <span className="font-semibold">{user?.ime}</span>
+          </div>
+          <div className="flex gap-1">
+            <Button
+              variant={viewMode === "jobs" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("jobs")}
+            >
+              <Briefcase className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === "profile" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("profile")}
+            >
+              <User className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        <Card className="border-border/50 bg-primary/5 border-primary/20">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Euro className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Moja zarada</p>
-                <p className="text-2xl font-bold text-primary">
-                  {totalEarnings.toFixed(2)} EUR
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Main Content */}
+      <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:pt-8 pt-20">
 
-        <Card className="border-border/50">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-chart-4/10 flex items-center justify-center">
-                <Star className="w-6 h-6 text-chart-4" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Prosječna ocjena</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {avgRating > 0 ? avgRating.toFixed(1) : "-"} / 5
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {viewMode === "jobs" && (
+        <>
+          {/* Header for Jobs View */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground mb-1">Poslovi</h1>
+            <p className="text-muted-foreground">Pronadite poslove i zaradite danas</p>
+          </div>
 
-        <Card className="border-border/50">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-chart-5/10 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-chart-5" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Aktivni poslovi</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {pendingApprovalJobs.length + approvedJobs.length + inProgressJobs.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Završeni poslovi</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {completedJobs.length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Pending Approval Jobs */}
+          {/* Pending Approval Jobs */}
       {pendingApprovalJobs.length > 0 && (
         <Card className="border-border/50 mb-8 border-chart-4/30 bg-chart-4/5">
           <CardHeader>
@@ -374,41 +411,6 @@ export function CleanerDashboard() {
                   job={job}
                   variant="cleaner"
                 />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* My Reviews */}
-      {myReviews.length > 0 && (
-        <Card className="border-border/50 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-chart-4" />
-              Moje recenzije
-            </CardTitle>
-            <CardDescription>Recenzije od vlasnika</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {myReviews.map((review) => (
-                <div key={review.id} className="p-4 rounded-xl bg-secondary/50 border border-border/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-4 h-4 ${
-                          star <= review.ocjena
-                            ? "text-chart-4 fill-chart-4"
-                            : "text-muted-foreground/30"
-                        }`}
-                      />
-                    ))}
-                    <span className="text-sm text-muted-foreground ml-2">{review.datum}</span>
-                  </div>
-                  <p className="text-sm text-foreground">{review.komentar}</p>
-                </div>
               ))}
             </div>
           </CardContent>
@@ -594,6 +596,153 @@ export function CleanerDashboard() {
           )}
         </CardContent>
       </Card>
+        </>
+      )}
+
+      {/* Profile View */}
+      {viewMode === "profile" && (
+        <>
+          {/* Header for Profile View */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground mb-1">Moj profil</h1>
+            <p className="text-muted-foreground">Pregledajte svoje recenzije i statistiku</p>
+          </div>
+
+          {/* Profile Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <Card className="border-border/50 bg-primary/5 border-primary/20">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Euro className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Ukupna zarada</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {totalEarnings.toFixed(2)} EUR
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-chart-4/10 flex items-center justify-center">
+                    <Star className="w-6 h-6 text-chart-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Prosjecna ocjena</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {avgRating > 0 ? avgRating.toFixed(1) : "-"} / 5
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Zavrseni poslovi</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {completedJobs.length}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Profile Image Section */}
+          <Card className="border-border/50 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-primary" />
+                Profilna slika
+              </CardTitle>
+              <CardDescription>Dodajte svoju fotografiju za vece povjerenje vlasnika</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                <button
+                  type="button"
+                  onClick={() => setShowImageDialog(true)}
+                  className="relative group"
+                >
+                  <UserAvatar user={user ?? {}} size="xl" showBadge={true} className="ring-2 ring-border group-hover:ring-primary transition-all rounded-full" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-6 h-6 text-foreground" />
+                  </div>
+                </button>
+                <div>
+                  {user?.slikaVerificiran ? (
+                    <div className="flex items-center gap-2 text-chart-2">
+                      <BadgeCheck className="w-5 h-5" />
+                      <span className="font-medium">Profil verificiran</span>
+                    </div>
+                  ) : (
+                    <Button onClick={() => setShowImageDialog(true)} variant="outline" size="sm">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Dodaj sliku
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* My Reviews */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-chart-4" />
+                Moje recenzije
+              </CardTitle>
+              <CardDescription>Recenzije od vlasnika ({myReviews.length})</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {myReviews.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                    <Star className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-medium text-foreground mb-1">Nemate recenzija</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Zavrsavajte poslove da dobijete recenzije od vlasnika
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {myReviews.map((review) => (
+                    <div key={review.id} className="p-4 rounded-xl bg-secondary/50 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= review.ocjena
+                                ? "text-chart-4 fill-chart-4"
+                                : "text-muted-foreground/30"
+                            }`}
+                          />
+                        ))}
+                        <span className="text-sm text-muted-foreground ml-2">{review.datum}</span>
+                      </div>
+                      <p className="text-sm text-foreground">{review.komentar}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Job Detail Dialog */}
       <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
@@ -781,6 +930,7 @@ export function CleanerDashboard() {
 
       {/* 10-minute profile photo reminder */}
       <ProfilePhotoReminder onOpenUpload={() => setShowImageDialog(true)} />
+      </main>
     </div>
   )
 }
