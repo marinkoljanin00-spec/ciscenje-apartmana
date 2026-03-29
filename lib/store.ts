@@ -305,6 +305,7 @@ interface AppState {
   login: (email: string, password: string) => boolean
   register: (user: User & { lozinka: string; spol?: UserSpol }) => boolean
   logout: () => void
+  deleteAccount: (email: string) => void
   updateProfileImage: (email: string, imageUrl: string) => void
   updateUserSpol: (email: string, spol: UserSpol) => void
   verifyEmail: (kod: string) => boolean
@@ -625,6 +626,22 @@ jobs: [...initialJobs, ...demoCompletedJobs],
 
       logout: () => {
         set({ user: null, isAuthenticated: false })
+      },
+
+      deleteAccount: (email) => {
+        const currentUser = get().user
+        // Delete all user data
+        set({
+          // Remove user from users list
+          users: get().users.filter(u => u.email !== email),
+          // Remove all jobs created by this user
+          jobs: get().jobs.filter(j => j.vlasnik !== email && j.cistacica !== email),
+          // Remove all reviews related to this user
+          reviews: get().reviews.filter(r => r.cistacica !== email && r.vlasnik !== email),
+          // If this is the currently logged-in user, log them out
+          user: currentUser?.email === email ? null : currentUser,
+          isAuthenticated: currentUser?.email === email ? false : get().isAuthenticated,
+        })
       },
 
       updateProfileImage: (email, imageUrl) => {

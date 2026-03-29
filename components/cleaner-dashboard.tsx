@@ -50,6 +50,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
 
 type SortOption = "date_asc" | "date_desc" | "price_asc" | "price_desc"
@@ -57,12 +58,14 @@ type SortOption = "date_asc" | "date_desc" | "price_asc" | "price_desc"
 type ViewMode = "jobs" | "profile"
 
 export function CleanerDashboard() {
-  const { user, jobs, requestJob, startJob, completeJob, getAverageRating, getCleanerReviews, updateProfileImage, updateUserSpol } = useAppStore()
+  const { user, jobs, requestJob, startJob, completeJob, getAverageRating, getCleanerReviews, updateProfileImage, updateUserSpol, logout, deleteAccount } = useAppStore()
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [showImageDialog, setShowImageDialog] = useState(false)
   const [imageUrl, setImageUrl] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("jobs")
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
 
   // Filter state
   const [filterCity, setFilterCity] = useState<CroatianCity | "all">("all")
@@ -741,10 +744,95 @@ export function CleanerDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Delete Account Section */}
+          <Card className="border-border/50 border-destructive/30 bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="text-destructive text-lg">Opasna zona</CardTitle>
+              <CardDescription>Ove akcije se ne mogu opozvati</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-foreground mb-2">Izbriši račun</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Brisanje računa će trajno obrisati sve vaše podatke uključujući poslove, recenzije i profilnu sliku. Ova akcija se ne može opozvati.
+                  </p>
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    Izbriši moj račun
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
 
-      {/* Job Detail Dialog */}
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive text-xl">Izbriši račun</DialogTitle>
+            <DialogDescription>
+              Ovo će trajno obrisati vaš račun i sve povezane podatke
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm font-medium text-destructive mb-2">Upozorenje:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Svi vaši poslovi će biti obrisani</li>
+                <li>• Sve recenzije će biti obrisane</li>
+                <li>• Vaša profilna slika će biti obrisana</li>
+                <li>• Ova akcija se ne može opozvati</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm">
+                Upišite &quot;IZBRISI MOJ RACUN&quot; da potvrdite:
+              </Label>
+              <Input
+                id="confirm"
+                placeholder="IZBRISI MOJ RACUN"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false)
+                setDeleteConfirmation("")
+              }}
+            >
+              Odustani
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirmation !== "IZBRISI MOJ RACUN"}
+              onClick={() => {
+                if (user?.email && deleteConfirmation === "IZBRISI MOJ RACUN") {
+                  deleteAccount(user.email)
+                  logout()
+                  setShowDeleteDialog(false)
+                  setDeleteConfirmation("")
+                }
+              }}
+            >
+              Trajno izbriši
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
         <DialogContent className="sm:max-w-[500px]">
           {selectedJob && (

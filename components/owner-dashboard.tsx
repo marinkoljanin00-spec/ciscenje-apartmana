@@ -37,9 +37,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog"
 export function OwnerDashboard() {
-  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview, updateProfileImage, updateUserSpol, saveProperty, deleteProperty, getSavedProperties } = useAppStore()
+  const { user, jobs, users, createJob, deleteJob, approveJob, rejectJob, submitReview, updateProfileImage, updateUserSpol, saveProperty, deleteProperty, getSavedProperties, logout, deleteAccount } = useAppStore()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [reviewJob, setReviewJob] = useState<Job | null>(null)
   const [rating, setRating] = useState(5)
@@ -49,6 +50,8 @@ export function OwnerDashboard() {
   const [showImageDialog, setShowImageDialog] = useState(false)
   const [imageUrl, setImageUrl] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteConfirmation, setDeleteConfirmation] = useState("")
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -315,7 +318,12 @@ export function OwnerDashboard() {
                             </div>
                           </SelectItem>
                           {savedProperties
-                            .filter(p => p.id && typeof p.id === 'string' && p.id.trim().length > 0)
+                            .filter(p => {
+                              // Ensure property.id is a non-empty string
+                              if (!p.id || typeof p.id !== 'string') return false
+                              const trimmed = p.id.trim()
+                              return trimmed.length > 0
+                            })
                             .map((property) => (
                               <SelectItem key={property.id} value={property.id}>
                                 <div className="flex items-center gap-2">
@@ -864,6 +872,93 @@ export function OwnerDashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="text-destructive text-xl">Izbriši račun</DialogTitle>
+            <DialogDescription>
+              Ovo će trajno obrisati vaš račun i sve povezane podatke
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm font-medium text-destructive mb-2">Upozorenje:</p>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Svi vaši oglasi će biti obrisani</li>
+                <li>• Sve recenzije će biti obrisane</li>
+                <li>• Vaša profilna slika će biti obrisana</li>
+                <li>• Ova akcija se ne može opozvati</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirm">
+                Upišite &quot;IZBRISI MOJ RACUN&quot; da potvrdite:
+              </Label>
+              <Input
+                id="confirm"
+                placeholder="IZBRISI MOJ RACUN"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="font-mono"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false)
+                setDeleteConfirmation("")
+              }}
+            >
+              Odustani
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteConfirmation !== "IZBRISI MOJ RACUN"}
+              onClick={() => {
+                if (user?.email && deleteConfirmation === "IZBRISI MOJ RACUN") {
+                  deleteAccount(user.email)
+                  logout()
+                  setShowDeleteDialog(false)
+                  setDeleteConfirmation("")
+                }
+              }}
+            >
+              Trajno izbriši
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings/Account section with Delete option */}
+      <Card className="border-border/50 border-destructive/30 bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="text-destructive text-lg">Opasna zona</CardTitle>
+          <CardDescription>Ove akcije se ne mogu opozvati</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-medium text-foreground mb-2">Izbriši račun</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                Brisanje računa će trajno obrisati sve vaše podatke uključujući oglase, recenzije i profilnu sliku. Ova akcija se ne može opozvati.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                Izbriši moj račun
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 10-minute profile photo reminder */}
       <ProfilePhotoReminder onOpenUpload={() => setShowImageDialog(true)} />
