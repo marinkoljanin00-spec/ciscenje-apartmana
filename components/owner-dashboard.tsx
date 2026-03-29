@@ -314,15 +314,17 @@ export function OwnerDashboard() {
                               Nova nekretnina
                             </div>
                           </SelectItem>
-                          {savedProperties.filter(p => p.id).map((property) => (
-                            <SelectItem key={property.id} value={property.id}>
-                              <div className="flex items-center gap-2">
-                                <Home className="w-4 h-4" />
-                                <span className="font-medium">{property.naziv}</span>
-                                <span className="text-muted-foreground text-xs">- {property.adresa}, {property.grad}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {savedProperties
+                            .filter(p => p.id && p.id.trim())
+                            .map((property) => (
+                              <SelectItem key={property.id} value={property.id || "new"}>
+                                <div className="flex items-center gap-2">
+                                  <Home className="w-4 h-4" />
+                                  <span className="font-medium">{property.naziv}</span>
+                                  <span className="text-muted-foreground text-xs">- {property.adresa}, {property.grad}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       {selectedPropertyId && selectedPropertyId !== "new" && (

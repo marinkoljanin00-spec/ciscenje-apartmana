@@ -302,6 +302,21 @@ export function JobCard({
               </p>
             )}
 
+            {/* Keywords */}
+            {job.keywords && job.keywords.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {job.keywords.slice(0, 5).map((keyword, idx) => (
+                  <Badge 
+                    key={idx} 
+                    variant="secondary" 
+                    className="text-xs bg-muted text-muted-foreground hover:bg-muted/80"
+                  >
+                    {keyword}
+                  </Badge>
+                ))}
+              </div>
+            )}
+
             {/* Map toggle and display */}
             <div className="mb-3">
               <Button

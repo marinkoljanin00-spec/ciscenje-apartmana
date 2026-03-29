@@ -64,12 +64,25 @@ export function CleanerDashboard() {
   const [maxPrice, setMaxPrice] = useState("")
   const [sortBy, setSortBy] = useState<SortOption>("date_asc")
   const [showFilters, setShowFilters] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const availableJobs = jobs.filter((j) => j.status === "OTVORENO")
   
   // Apply filters and sorting
   const filteredJobs = useMemo(() => {
     let filtered = [...availableJobs]
+    
+    // Filter by search query (keywords)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(j => {
+        const keywordsMatch = (j.keywords || []).some(k => k.includes(query))
+        const addressMatch = j.adresa.toLowerCase().includes(query)
+        const descMatch = j.opis.toLowerCase().includes(query)
+        const cityMatch = j.grad.toLowerCase().includes(query)
+        return keywordsMatch || addressMatch || descMatch || cityMatch
+      })
+    }
     
     // Filter by city
     if (filterCity !== "all") {
@@ -84,8 +97,18 @@ export function CleanerDashboard() {
       filtered = filtered.filter(j => j.cijena <= parseFloat(maxPrice))
     }
     
-    // Sort
+    // Sort - prioritize keyword matches at the top
     filtered.sort((a, b) => {
+      // First check if items match the search query exactly in keywords
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase()
+        const aHasExactKeyword = (a.keywords || []).some(k => k === query)
+        const bHasExactKeyword = (b.keywords || []).some(k => k === query)
+        if (aHasExactKeyword && !bHasExactKeyword) return -1
+        if (!aHasExactKeyword && bHasExactKeyword) return 1
+      }
+      
+      // Then apply sorting preference
       switch (sortBy) {
         case "date_asc":
           return new Date(a.datum.split(".").reverse().join("-")).getTime() - 
@@ -103,7 +126,7 @@ export function CleanerDashboard() {
     })
     
     return filtered
-  }, [availableJobs, filterCity, minPrice, maxPrice, sortBy])
+  }, [availableJobs, filterCity, minPrice, maxPrice, sortBy, searchQuery])
   
   const pendingApprovalJobs = jobs.filter(
     (j) => j.cistacica === user?.email && j.status === "ČEKA_ODOBRENJE"
@@ -160,9 +183,10 @@ export function CleanerDashboard() {
     setMinPrice("")
     setMaxPrice("")
     setSortBy("date_asc")
+    setSearchQuery("")
   }
 
-  const hasActiveFilters = filterCity !== "all" || minPrice || maxPrice || sortBy !== "date_asc"
+  const hasActiveFilters = filterCity !== "all" || minPrice || maxPrice || sortBy !== "date_asc" || searchQuery
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -418,6 +442,19 @@ export function CleanerDashboard() {
                 </Badge>
               )}
             </Button>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mt-4">
+            <Input
+              placeholder="Pretraži: čišćenje split, apartman, pranje..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 Primjeri pretraga: "čišćenje split", "apartman", "pranje", "studio", "zadar" - rezultati se sortiraju po relevanciji
+            </p>
           </div>
 
           {/* Filters */}

@@ -209,6 +209,42 @@ export interface Job {
   cistacica?: string
   lat: number
   lon: number
+  keywords?: string[] // For search optimization
+}
+
+// Helper to generate search keywords for job
+export function generateJobKeywords(grad: CroatianCity, vrstaNekrtnine: PropertyType, opis: string): string[] {
+  const keywords: string[] = []
+  
+  // Add city-specific keywords
+  const cityLower = grad.toLowerCase()
+  keywords.push(`čišćenje ${cityLower}`)
+  keywords.push(`pranje ${cityLower}`)
+  keywords.push(`uređivanje ${cityLower}`)
+  
+  // Add property type keywords
+  const propertyLower = vrstaNekrtnine.toLowerCase()
+  keywords.push(`${propertyLower}`)
+  keywords.push(`${propertyLower} čišćenje`)
+  keywords.push(`čišćenje ${propertyLower}`)
+  
+  // Add city + property keywords
+  keywords.push(`${propertyLower} ${cityLower}`)
+  keywords.push(`${cityLower} ${propertyLower}`)
+  
+  // Add general keywords
+  keywords.push("čišćenje")
+  keywords.push("pranje")
+  keywords.push("uređivanje")
+  keywords.push("apartman")
+  
+  // Add keywords from description
+  const descWords = opis.toLowerCase().split(/\s+/)
+  const relevantWords = descWords.filter(w => w.length > 4)
+  keywords.push(...relevantWords.slice(0, 3))
+  
+  // Remove duplicates and return unique keywords
+  return [...new Set(keywords)].sort()
 }
 
 // Premium price multiplier
@@ -657,6 +693,7 @@ jobs: [...initialJobs, ...demoCompletedJobs],
           ...jobData,
           id: Date.now().toString(),
           status: "OTVORENO",
+          keywords: generateJobKeywords(jobData.grad, jobData.vrstaNekrtnine, jobData.opis),
         }
         set({ jobs: [...get().jobs, newJob] })
       },
