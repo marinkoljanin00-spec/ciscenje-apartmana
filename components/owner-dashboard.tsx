@@ -82,7 +82,7 @@ export function OwnerDashboard() {
   const [opis, setOpis] = useState("")
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [hitno, setHitno] = useState(false)
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("")
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("new")
   const [savePropertyName, setSavePropertyName] = useState("")
   const [showSavePropertyDialog, setShowSavePropertyDialog] = useState(false)
 
@@ -92,7 +92,7 @@ export function OwnerDashboard() {
   // Handle selecting a saved property
   const handleSelectProperty = (propertyId: string) => {
     setSelectedPropertyId(propertyId)
-    if (propertyId) {
+    if (propertyId && propertyId !== "new") {
       const property = savedProperties.find(p => p.id === propertyId)
       if (property) {
         setAdresa(property.adresa)
@@ -175,7 +175,7 @@ export function OwnerDashboard() {
     setLocation(null)
     setVrstaNekrtnine("Apartman")
     setHitno(false)
-    setSelectedPropertyId("")
+    setSelectedPropertyId("new")
     setSavePropertyName("")
     setShowSavePropertyDialog(false)
     setIsDialogOpen(false)
@@ -308,13 +308,13 @@ export function OwnerDashboard() {
                           <SelectValue placeholder="Nova nekretnina" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">
+                          <SelectItem value="new">
                             <div className="flex items-center gap-2">
                               <Plus className="w-4 h-4" />
                               Nova nekretnina
                             </div>
                           </SelectItem>
-                          {savedProperties.map((property) => (
+                          {savedProperties.filter(p => p.id).map((property) => (
                             <SelectItem key={property.id} value={property.id}>
                               <div className="flex items-center gap-2">
                                 <Home className="w-4 h-4" />
@@ -325,7 +325,7 @@ export function OwnerDashboard() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {selectedPropertyId && (
+                      {selectedPropertyId && selectedPropertyId !== "new" && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -333,7 +333,7 @@ export function OwnerDashboard() {
                           className="text-destructive hover:text-destructive"
                           onClick={() => {
                             deleteProperty(selectedPropertyId)
-                            setSelectedPropertyId("")
+                            setSelectedPropertyId("new")
                           }}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
@@ -405,7 +405,7 @@ export function OwnerDashboard() {
                   </div>
                   
                   {/* Save Property Button */}
-                  {!selectedPropertyId && location && adresa && (
+                  {selectedPropertyId === "new" && location && adresa && (
                     <div className="p-3 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20">
                       {!showSavePropertyDialog ? (
                         <Button
