@@ -92,7 +92,7 @@ export function EmailVerification() {
             />
           </div>
           <h2 className="text-3xl font-bold text-foreground tracking-tight">
-            sjaj.hr ✨
+            sjaj.hr
           </h2>
           <p className="text-muted-foreground mt-1">
             Verifikacija email adrese

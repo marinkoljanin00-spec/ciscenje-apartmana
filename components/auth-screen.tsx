@@ -181,7 +181,7 @@ export function AuthScreen() {
                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">sjaj.hr ✨</h2>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">sjaj.hr</h2>
                 <p className="text-sm text-muted-foreground">Vaš apartman zaslužuje sjaj</p>
               </div>
             </div>
@@ -192,10 +192,9 @@ export function AuthScreen() {
                 <Gift className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="font-bold text-foreground text-lg">Prvih 60 dana BESPLATNO</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <BadgeCheck className="w-4 h-4 text-primary" />
-                  100% sigurno, bez skrivenih troškova
+                <p className="font-bold text-foreground text-lg">Prvih 30 dana BESPLATNO</p>
+                <p className="text-sm text-muted-foreground">
+                  Uzivaj u svim funkcijama potpuno besplatno. Nakon probnog perioda, o svim buducim promjenama bit ces unaprijed obavijesten.
                 </p>
               </div>
             </div>
@@ -245,7 +244,7 @@ export function AuthScreen() {
               />
             </div>
             <h2 className="text-3xl font-bold text-foreground tracking-tight">
-              sjaj.hr ✨
+              sjaj.hr
             </h2>
             <p className="text-muted-foreground mt-1">
               Rezerviraj čišćenje u 30 sekundi
