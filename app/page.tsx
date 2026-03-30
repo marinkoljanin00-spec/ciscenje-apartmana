@@ -96,7 +96,7 @@ export default function Home() {
               />
             </SheetContent>
           </Sheet>
-          <span className="font-bold text-lg">CLEANUP</span>
+          <span className="font-bold text-lg">sjaj.hr</span>
           <Button 
             variant="ghost" 
             size="icon"

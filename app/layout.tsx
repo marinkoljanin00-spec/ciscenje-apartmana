@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'CLEANUP - Platforma za profesionalno čišćenje',
-  description: 'Pronađite ili ponudite usluge čišćenja. Povezujemo vlasnike nekretnina s profesionalnim čistačima.',
+  title: 'sjaj.hr - Rezerviraj čišćenje u 30 sekundi',
+  description: 'Rezerviraj profesionalno čišćenje apartmana i kuća. Brzo, pouzdano i transparentno. Sjaj.hr - gdje čistoća postaje sjaj.',
   generator: 'v0.app',
   icons: {
     icon: [

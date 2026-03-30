@@ -175,14 +175,14 @@ export function AuthScreen() {
               <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-primary/30">
                 <Image
                   src="/images/cleanup-logo.jpg"
-                  alt="CLEANUP Logo"
+                  alt="sjaj.hr Logo"
                   fill
                   className="object-cover"
                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">CLEANUP</h2>
-                <p className="text-sm text-muted-foreground">Profesionalno čišćenje</p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">sjaj.hr</h2>
+                <p className="text-sm text-muted-foreground">Vaš apartman zaslužuje sjaj</p>
               </div>
             </div>
 
@@ -192,10 +192,9 @@ export function AuthScreen() {
                 <Gift className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="font-bold text-foreground text-lg">Prvih 60 dana BESPLATNO</p>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <BadgeCheck className="w-4 h-4 text-primary" />
-                  100% sigurno, bez skrivenih troškova
+                <p className="font-bold text-foreground text-lg">Prvih 30 dana BESPLATNO</p>
+                <p className="text-sm text-muted-foreground">
+                  Uzivaj u svim funkcijama potpuno besplatno. Nakon probnog perioda, o svim buducim promjenama bit ces unaprijed obavijesten.
                 </p>
               </div>
             </div>
@@ -239,16 +238,16 @@ export function AuthScreen() {
             <div className="relative inline-flex w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary/30 mb-4">
               <Image
                 src="/images/cleanup-logo.jpg"
-                alt="CLEANUP Logo"
+                alt="sjaj.hr Logo"
                 fill
                 className="object-cover"
               />
             </div>
             <h2 className="text-3xl font-bold text-foreground tracking-tight">
-              CLEANUP
+              sjaj.hr
             </h2>
             <p className="text-muted-foreground mt-1">
-              Platforma za profesionalno čišćenje
+              Rezerviraj čišćenje u 30 sekundi
             </p>
           </div>
 
@@ -269,7 +268,7 @@ export function AuthScreen() {
                 <CardHeader>
                   <CardTitle>Dobrodošli natrag</CardTitle>
                   <CardDescription>
-                    Prijavite se u svoj CLEANUP račun
+                    Prijavite se u svoj sjaj.hr račun
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -357,7 +356,7 @@ export function AuthScreen() {
                         size="sm"
                         className="text-xs"
                         onClick={() => {
-                          setLoginEmail("demo@cleanup.hr")
+                          setLoginEmail("demo@sjaj.hr")
                           setLoginPassword("demo123")
                         }}
                       >
@@ -370,7 +369,7 @@ export function AuthScreen() {
                         size="sm"
                         className="text-xs"
                         onClick={() => {
-                          setLoginEmail("cistac@cleanup.hr")
+                          setLoginEmail("cistac@sjaj.hr")
                           setLoginPassword("demo123")
                         }}
                       >
@@ -388,7 +387,7 @@ export function AuthScreen() {
                 <CardHeader>
                   <CardTitle>Kreiraj račun</CardTitle>
                   <CardDescription>
-                    Pridružite se CLEANUP zajednici
+                    Pridružite se sjaj.hr zajednici
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -527,7 +526,7 @@ export function AuthScreen() {
                       </p>
                     )}
                     <Button type="submit" className="w-full">
-                      Kreiraj račun
+                      Rezerviraj Sjaj
                     </Button>
                   </form>
                 </CardContent>

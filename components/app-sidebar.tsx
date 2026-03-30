@@ -83,7 +83,7 @@ export function AppSidebar({
           </div>
           {!collapsed && (
             <span className="font-bold text-xl text-sidebar-foreground">
-              CLEANUP
+              sjaj.hr
             </span>
           )}
         </div>
