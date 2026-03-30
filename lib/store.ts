@@ -280,7 +280,7 @@ export interface BugReport {
 }
 
 // Admin email - samo ovaj korisnik vidi prijave
-export const ADMIN_EMAIL = "admin@cleanup.hr"
+export const ADMIN_EMAIL = "admin@sjaj.hr"
 
 interface AppState {
   // Auth
@@ -342,7 +342,7 @@ interface AppState {
 const initialJobs: Job[] = [
   {
     id: "1",
-    vlasnik: "demo@cleanup.hr",
+    vlasnik: "demo@sjaj.hr",
     adresa: "Vukovarska 45",
     grad: "Split",
     vrstaNekrtnine: "Stan",
@@ -357,7 +357,7 @@ const initialJobs: Job[] = [
   },
   {
     id: "2",
-    vlasnik: "demo@cleanup.hr",
+    vlasnik: "demo@sjaj.hr",
     adresa: "Marjanska 12",
     grad: "Split",
     vrstaNekrtnine: "Kuća",
@@ -372,7 +372,7 @@ const initialJobs: Job[] = [
   },
   {
     id: "3",
-    vlasnik: "ivan@cleanup.hr",
+    vlasnik: "ivan@sjaj.hr",
     adresa: "Ilica 200",
     grad: "Zagreb",
     vrstaNekrtnine: "Stan",
@@ -387,7 +387,7 @@ const initialJobs: Job[] = [
   },
   {
     id: "4",
-    vlasnik: "demo@cleanup.hr",
+    vlasnik: "demo@sjaj.hr",
     adresa: "Stradun 5",
     grad: "Dubrovnik",
     vrstaNekrtnine: "Apartman",
@@ -402,7 +402,7 @@ const initialJobs: Job[] = [
   },
   {
     id: "5",
-    vlasnik: "ivan@cleanup.hr",
+    vlasnik: "ivan@sjaj.hr",
     adresa: "Korzo 15",
     grad: "Rijeka",
     vrstaNekrtnine: "Garsonijera",
@@ -421,7 +421,7 @@ const initialJobs: Job[] = [
 const demoCompletedJobs: Job[] = [
   {
     id: "completed1",
-    vlasnik: "ivan@cleanup.hr",
+    vlasnik: "ivan@sjaj.hr",
     adresa: "Gundulićeva 10",
     grad: "Split",
     vrstaNekrtnine: "Apartman",
@@ -431,13 +431,13 @@ const demoCompletedJobs: Job[] = [
     vrijemeDo: "12:00",
     opis: "Apartman čišćenje",
     status: "ZAVRŠENO",
-    cistacica: "cistac@cleanup.hr",
+    cistacica: "cistac@sjaj.hr",
     lat: 43.508,
     lon: 16.44,
   },
   {
     id: "completed2",
-    vlasnik: "marija@cleanup.hr",
+    vlasnik: "marija@sjaj.hr",
     adresa: "Obala 5",
     grad: "Split",
     vrstaNekrtnine: "Stan",
@@ -447,13 +447,13 @@ const demoCompletedJobs: Job[] = [
     vrijemeDo: "16:00",
     opis: "Stan čišćenje",
     status: "ZAVRŠENO",
-    cistacica: "cistac@cleanup.hr",
+    cistacica: "cistac@sjaj.hr",
     lat: 43.51,
     lon: 16.438,
   },
   {
     id: "completed3",
-    vlasnik: "demo@cleanup.hr",
+    vlasnik: "demo@sjaj.hr",
     adresa: "Diocletian 2",
     grad: "Split",
     vrstaNekrtnine: "Apartman",
@@ -463,13 +463,13 @@ const demoCompletedJobs: Job[] = [
     vrijemeDo: "11:00",
     opis: "Apartman detaljno čišćenje",
     status: "ZAVRŠENO",
-    cistacica: "cistac@cleanup.hr",
+    cistacica: "cistac@sjaj.hr",
     lat: 43.507,
     lon: 16.439,
   },
   {
     id: "completed4",
-    vlasnik: "petar@cleanup.hr",
+    vlasnik: "petar@sjaj.hr",
     adresa: "Marmontova 8",
     grad: "Split",
     vrstaNekrtnine: "Kuća",
@@ -479,13 +479,13 @@ const demoCompletedJobs: Job[] = [
     vrijemeDo: "12:00",
     opis: "Kuća generalno čišćenje",
     status: "ZAVRŠENO",
-    cistacica: "cistac@cleanup.hr",
+    cistacica: "cistac@sjaj.hr",
     lat: 43.509,
     lon: 16.441,
   },
   {
     id: "completed5",
-    vlasnik: "ana@cleanup.hr",
+    vlasnik: "ana@sjaj.hr",
     adresa: "Riva 15",
     grad: "Split",
     vrstaNekrtnine: "Apartman",
@@ -495,7 +495,7 @@ const demoCompletedJobs: Job[] = [
     vrijemeDo: "13:00",
     opis: "Apartman brzo čišćenje",
     status: "ZAVRŠENO",
-    cistacica: "cistac@cleanup.hr",
+    cistacica: "cistac@sjaj.hr",
     lat: 43.506,
     lon: 16.437,
   },
@@ -505,7 +505,7 @@ const initialReviews: Review[] = [
   {
     id: "r1",
     oglas_id: "completed1",
-    ocjenjeni: "cistac@cleanup.hr",
+    ocjenjeni: "cistac@sjaj.hr",
     ocjena: 5,
     komentar: "Odličan posao! Stan je blistao nakon čišćenja. Vrlo temeljita i profesionalna.",
     datum: "01.03.2026",
@@ -513,7 +513,7 @@ const initialReviews: Review[] = [
   {
     id: "r2",
     oglas_id: "completed2",
-    ocjenjeni: "cistac@cleanup.hr",
+    ocjenjeni: "cistac@sjaj.hr",
     ocjena: 4,
     komentar: "Vrlo zadovoljna, sve je bilo čisto i uredno. Preporučujem!",
     datum: "05.03.2026",
@@ -521,7 +521,7 @@ const initialReviews: Review[] = [
   {
     id: "r3",
     oglas_id: "completed3",
-    ocjenjeni: "cistac@cleanup.hr",
+    ocjenjeni: "cistac@sjaj.hr",
     ocjena: 5,
     komentar: "Brza i efikasna. Apartman je spreman za goste već nakon sat vremena.",
     datum: "10.03.2026",
@@ -529,7 +529,7 @@ const initialReviews: Review[] = [
   {
     id: "r4",
     oglas_id: "completed4",
-    ocjenjeni: "cistac@cleanup.hr",
+    ocjenjeni: "cistac@sjaj.hr",
     ocjena: 4,
     komentar: "Kuća je bila besprijekorna. Hvala puno!",
     datum: "15.03.2026",
@@ -537,7 +537,7 @@ const initialReviews: Review[] = [
   {
     id: "r5",
     oglas_id: "completed5",
-    ocjenjeni: "cistac@cleanup.hr",
+    ocjenjeni: "cistac@sjaj.hr",
     ocjena: 5,
     komentar: "Savršeno! Već treći put angažiram Anu i uvijek je bez prigovora.",
     datum: "20.03.2026",
@@ -546,7 +546,7 @@ const initialReviews: Review[] = [
 
 const initialUsers: (User & { lozinka: string })[] = [
   {
-    email: "demo@cleanup.hr",
+    email: "demo@sjaj.hr",
     lozinka: "demo123",
     ime: "Marko Horvat",
     mobitel: "091 234 5678",
@@ -555,7 +555,7 @@ const initialUsers: (User & { lozinka: string })[] = [
     emailVerificiran: true,
   },
 {
-  email: "cistac@cleanup.hr",
+  email: "cistac@sjaj.hr",
   lozinka: "demo123",
   ime: "Ana Kovačić",
   mobitel: "098 765 4321",
@@ -565,12 +565,12 @@ const initialUsers: (User & { lozinka: string })[] = [
   emailVerificiran: true,
   },
   {
-  email: "admin@cleanup.hr",
+  email: "admin@sjaj.hr",
   lozinka: "admin123",
   ime: "Administrator",
   mobitel: "099 000 0000",
   tip: "vlasnik",
-  opis: "Administrator sustava CLEANUP",
+  opis: "Administrator sustava sjaj.hr",
   emailVerificiran: true,
   },
   ]

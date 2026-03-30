@@ -34,7 +34,7 @@ export function DeviceSelector() {
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
-          <DialogTitle className="text-xl">Dobrodosli u CLEANUP!</DialogTitle>
+          <DialogTitle className="text-xl">Dobrodosli u sjaj.hr!</DialogTitle>
           <DialogDescription className="text-base">
             Kako bismo vam pruzili najbolje iskustvo, recite nam koji uredaj koristite.
           </DialogDescription>
