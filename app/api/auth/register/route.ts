@@ -22,10 +22,8 @@ function generateSessionToken(): string {
 export async function POST(request: Request) {
   try {
     const { email, password, fullName, role } = await request.json()
-    console.log("[v0] Register attempt:", email, fullName, role)
 
     if (!email || !password || !fullName || !role) {
-      console.log("[v0] Missing required fields")
       return NextResponse.json({ success: false, error: "Sva polja su obavezna." }, { status: 400 })
     }
 
@@ -38,25 +36,21 @@ export async function POST(request: Request) {
     }
 
     const sql = getSQL()
-    console.log("[v0] Database connection established")
 
     // Check if email exists
     const existing = await sql`SELECT id FROM users WHERE email = ${email}`
     if (existing.length > 0) {
-      console.log("[v0] Email already exists")
       return NextResponse.json({ success: false, error: "Email je već registriran." }, { status: 400 })
     }
 
     // Hash password and create user
     const passwordHash = await bcrypt.hash(password, 10)
-    console.log("[v0] Password hashed")
     
     const result = await sql`
       INSERT INTO users (email, password_hash, full_name, role, created_at)
       VALUES (${email}, ${passwordHash}, ${fullName}, ${role}, NOW())
       RETURNING id
     `
-    console.log("[v0] User created with ID:", result[0]?.id)
 
     if (result.length === 0) {
       return NextResponse.json({ success: false, error: "Greška pri registraciji." }, { status: 500 })
@@ -69,7 +63,6 @@ export async function POST(request: Request) {
       INSERT INTO accounts (user_id, balance, currency)
       VALUES (${userId}, 0, 'EUR')
     `
-    console.log("[v0] Account created for user:", userId)
 
     // Set session cookie
     const sessionToken = generateSessionToken()
@@ -81,7 +74,6 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
-    console.log("[v0] Session cookie set for user:", userId)
 
     return NextResponse.json({ success: true })
   } catch (error) {
