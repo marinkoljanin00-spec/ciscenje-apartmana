@@ -2,6 +2,8 @@ import { neon } from "@neondatabase/serverless"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
 const SESSION_COOKIE = "marketplace_session"
 
 function getSQL() {

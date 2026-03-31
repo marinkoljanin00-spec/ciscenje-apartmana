@@ -1,7 +1,8 @@
 import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+
+export const dynamic = "force-dynamic"
 
 const SESSION_COOKIE = "marketplace_session"
 
@@ -54,17 +55,20 @@ export async function POST(request: Request) {
     }
 
     const sessionToken = generateSessionToken()
-    const cookieStore = await cookies()
-    cookieStore.set(SESSION_COOKIE, `${user.id}:${sessionToken}`, {
+    const sessionValue = `${user.id}:${sessionToken}`
+    
+    // Create response and set cookie on it
+    const response = NextResponse.json({ success: true })
+    response.cookies.set(SESSION_COOKIE, sessionValue, {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
-    console.log("[v0] LOGIN: Cookie postavljen, prijava uspjesna!")
+    console.log("[v0] LOGIN: Cookie postavljen:", SESSION_COOKIE, "=", sessionValue.substring(0, 20) + "...")
 
-    return NextResponse.json({ success: true })
+    return response
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepoznata greška"
     return NextResponse.json({ success: false, error: message }, { status: 500 })
