@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,7 +21,6 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  CheckCircle2,
   Home,
   Star,
   Shield,
@@ -46,7 +46,6 @@ export default function AuthPage() {
   const [regConfirmPassword, setRegConfirmPassword] = useState("")
   const [showRegPassword, setShowRegPassword] = useState(false)
   const [regError, setRegError] = useState("")
-  const [regSuccess, setRegSuccess] = useState("")
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,12 +86,9 @@ export default function AuthPage() {
     startTransition(async () => {
       try {
         const result = await registerUser(regEmail, regPassword)
-        
-        if (result.success) {
-          setRegSuccess("Registracija uspješna! Preusmjeravanje...")
-          router.push("/success")
-        } else {
-          setRegError(result.error || "Greška pri registraciji.")
+        // If we get here (no redirect), it means an error occurred
+        if (result?.error) {
+          setRegError(result.error)
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Nepoznata greška"
@@ -371,13 +367,6 @@ export default function AuthPage() {
 
                     {regError && (
                       <p className="text-sm text-destructive">{regError}</p>
-                    )}
-                    
-                    {regSuccess && (
-                      <div className="flex items-center gap-2 text-sm text-primary">
-                        <CheckCircle2 className="w-4 h-4" />
-                        {regSuccess}
-                      </div>
                     )}
                     
                     <Button type="submit" className="w-full" disabled={isPending}>

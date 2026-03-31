@@ -3,6 +3,7 @@
 import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
 // Create SQL client inside functions to ensure DATABASE_URL is available
 function getSQL() {
@@ -102,20 +103,16 @@ export async function registerUser(email: string, password: string): Promise<Aut
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
     })
-    console.log("[v0] Session cookie set for user:", newUser.id)
+    console.log("[v0] Session cookie set, redirecting to /success")
 
-    return {
-      success: true,
-      user: {
-        id: newUser.id as number,
-        email: newUser.email as string,
-      },
-    }
   } catch (error) {
     console.error("[v0] Registration error:", error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     return { success: false, error: `Greška: ${errorMessage}` }
   }
+
+  // redirect() must be called outside try/catch
+  redirect("/success")
 }
 
 /**
