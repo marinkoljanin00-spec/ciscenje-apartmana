@@ -66,7 +66,11 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
-    console.log("[v0] LOGIN: Cookie postavljen:", SESSION_COOKIE, "=", sessionValue.substring(0, 20) + "...")
+    
+    // Log the actual Set-Cookie header
+    const setCookie = response.headers.get("set-cookie")
+    console.log("[v0] LOGIN: Set-Cookie header:", setCookie)
+    console.log("[v0] LOGIN: Cookie postavljen, prijava uspjesna!")
 
     return response
   } catch (error) {

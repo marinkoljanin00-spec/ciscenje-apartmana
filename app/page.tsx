@@ -32,32 +32,60 @@ export default function Home() {
   useEffect(() => {
     if (!mounted) return
     
-    // Small delay to ensure router is initialized
-    const timer = setTimeout(async () => {
+    console.log("[v0] PAGE: Provjera sesije pokrenuta...")
+    
+    // Create abort controller for timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => {
+      console.log("[v0] PAGE: Timeout - API nije odgovorio u 3 sekunde")
+      controller.abort()
+      setLoading(false)
+    }, 3000)
+    
+    async function checkSession() {
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" })
+        console.log("[v0] PAGE: Pozivam /api/auth/me...")
+        const res = await fetch("/api/auth/me", { 
+          credentials: "include",
+          signal: controller.signal 
+        })
+        console.log("[v0] PAGE: /api/auth/me status:", res.status)
         const data = await res.json()
+        console.log("[v0] PAGE: Odgovor:", JSON.stringify(data))
+        
+        clearTimeout(timeoutId)
         
         if (data.user) {
+          console.log("[v0] PAGE: Korisnik pronaden, ucitavam dashboard...")
           setUser(data.user)
           const jobsRes = await fetch(`/api/jobs?role=${data.user.role}`, { credentials: "include" })
           const jobsData = await jobsRes.json()
           setJobs(jobsData.jobs || [])
           setLoading(false)
         } else {
-          // Use location.replace instead of href to avoid history issues
+          console.log("[v0] PAGE: Nema korisnika, idem na /auth")
+          setLoading(false)
           if (typeof window !== "undefined") {
             window.location.replace("/auth")
           }
         }
-      } catch {
+      } catch (err) {
+        clearTimeout(timeoutId)
+        console.error("[v0] PAGE: Greska:", err)
+        setLoading(false)
         if (typeof window !== "undefined") {
           window.location.replace("/auth")
         }
       }
-    }, 100)
+    }
     
-    return () => clearTimeout(timer)
+    // Start immediately, no delay
+    checkSession()
+    
+    return () => {
+      clearTimeout(timeoutId)
+      controller.abort()
+    }
   }, [mounted])
 
   if (loading) {
