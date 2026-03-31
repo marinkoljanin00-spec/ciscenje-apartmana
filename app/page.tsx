@@ -1,9 +1,8 @@
 'use client'
-// v4 - toFixed fix applied
+// v5 - tabs, profile, booking flow
 
 import React, { useState, useEffect } from 'react'
 import AuthPage from './auth/page'
-import { CookieBanner } from '@/components/CookieBanner'
 
 type User = {
   id: number
@@ -18,6 +17,8 @@ type Job = {
   price: number
   status: string
   created_at: string
+  cleaner_id?: number
+  cleaner_name?: string
 }
 
 export default function Home() {
@@ -28,11 +29,7 @@ export default function Home() {
   const [userId, setUserId] = useState<string>('')
   const [jobs, setJobs] = useState<Job[]>([])
 
-  // Mounted check to avoid hydration errors
   useEffect(() => {
-    setMounted(true)
-    
-    // Check localStorage after mount - PERSISTENT STATE
     const storedRole = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
     const storedName = localStorage.getItem('user_email') || ''
     const storedId = localStorage.getItem('user_id') || ''
@@ -43,6 +40,8 @@ export default function Home() {
       setUserId(storedId)
       setView('dashboard')
     }
+    
+    setMounted(true)
   }, [])
 
   const handleLoginSuccess = (user: User) => {
@@ -62,31 +61,20 @@ export default function Home() {
     setUserRole(null)
     setUserName('')
     setUserId('')
+    setJobs([])
     setView('auth')
   }
 
-  // Don't render until mounted - prevents hydration errors
   if (!mounted) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f1f5f9', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}>
-        <div style={{ color: '#000000', fontSize: '1.25rem', fontWeight: '600' }}>Ucitavanje sucelja...</div>
+      <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#64748b', fontSize: '1rem' }}>Učitavanje...</p>
       </div>
     )
   }
 
   if (view === 'auth') {
-    return (
-      <>
-        <CookieBanner onConsent={() => {}} />
-        <AuthPage onLoginSuccess={handleLoginSuccess} />
-      </>
-    )
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />
   }
 
   if (view === 'dashboard' && userRole === 'client') {
@@ -97,15 +85,29 @@ export default function Home() {
     return <CleanerDashboard onLogout={handleLogout} userName={userName} userId={userId} />
   }
 
-  return null
+  return <AuthPage onLoginSuccess={handleLoginSuccess} />
 }
 
-function ClientDashboard({ onLogout, jobs, setJobs, userName, userId }: { onLogout: () => void; jobs: Job[]; setJobs: (jobs: Job[]) => void; userName: string; userId: string }) {
+// ============ CLIENT DASHBOARD ============
+function ClientDashboard({ onLogout, jobs, setJobs, userName, userId }: { 
+  onLogout: () => void
+  jobs: Job[]
+  setJobs: (jobs: Job[]) => void
+  userName: string
+  userId: string 
+}) {
+  const [activeTab, setActiveTab] = useState<'jobs' | 'profile'>('jobs')
   const [title, setTitle] = useState('')
   const [location, setLocation] = useState('')
   const [price, setPrice] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const [phone, setPhone] = useState('')
+  const [gender, setGender] = useState('')
+  const [description, setDescription] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMessage, setProfileMessage] = useState('')
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -113,12 +115,25 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName, userId }: { onLogo
         const res = await fetch(`/api/jobs?role=client&userId=${userId}`)
         const data = await res.json()
         setJobs(data.jobs || [])
-      } catch {
-        // ignore
-      }
+      } catch { /* ignore */ }
     }
     if (userId) loadJobs()
   }, [setJobs, userId])
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await fetch(`/api/profile?userId=${userId}`)
+        const data = await res.json()
+        if (data.user) {
+          setPhone(data.user.phone || '')
+          setGender(data.user.gender || '')
+          setDescription(data.user.description || '')
+        }
+      } catch { /* ignore */ }
+    }
+    if (userId) loadProfile()
+  }, [userId])
 
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -132,6 +147,7 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName, userId }: { onLogo
         body: JSON.stringify({ title, location, price: parseFloat(price), userId }),
       })
       const data = await res.json()
+
       if (data.success) {
         const newJob: Job = {
           id: data.job?.id || Date.now(),
@@ -146,270 +162,232 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName, userId }: { onLogo
         setLocation('')
         setPrice('')
       } else {
-        setError(data.error || 'Greska pri objavi')
+        setError(data.error || 'Greška pri objavi posla.')
       }
     } catch {
-      setError('Mrezna greska')
+      setError('Mrežna greška.')
     }
     setSubmitting(false)
   }
 
+  const handleConfirmJob = async (jobId: number) => {
+    try {
+      const res = await fetch('/api/jobs/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, userId }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setJobs(jobs.map(j => j.id === jobId ? { ...j, status: 'confirmed' } : j))
+      }
+    } catch { /* ignore */ }
+  }
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProfileSaving(true)
+    setProfileMessage('')
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, phone, gender, description }),
+      })
+      const data = await res.json()
+      setProfileMessage(data.success ? 'Profil spremljen!' : 'Greška pri spremanju.')
+    } catch {
+      setProfileMessage('Mrežna greška.')
+    }
+    setProfileSaving(false)
+  }
+
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: '#ffffff',
+    border: '2px solid #000000',
+    padding: '1.5rem',
+    boxShadow: '4px 4px 0 #000000',
+  }
+
+  const buttonStyle: React.CSSProperties = {
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#000000',
+    color: '#ffffff',
+    border: 'none',
+    fontWeight: '600',
+    cursor: 'pointer',
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.75rem',
+    border: '2px solid #000000',
+    fontSize: '1rem',
+    boxSizing: 'border-box',
+  }
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    padding: '0.75rem 1.5rem',
+    backgroundColor: active ? '#000000' : '#ffffff',
+    color: active ? '#ffffff' : '#000000',
+    border: '2px solid #000000',
+    fontWeight: '600',
+    cursor: 'pointer',
+    marginRight: '-2px',
+  })
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
-      {/* Header */}
-      <header style={{ 
-        backgroundColor: '#ffffff', 
-        border: '2px solid #000000',
-        borderTop: 'none',
-        borderLeft: 'none',
-        borderRight: 'none',
-        padding: '1rem 2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
-            backgroundColor: '#000000', 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.25rem',
-            color: '#ffffff',
-            fontWeight: 'bold'
-          }}>
-            S
-          </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#000000' }}>SJAJ</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: '#525252', fontWeight: '500' }}>{userName}</span>
-          <button
-            onClick={onLogout}
-            style={{
-              backgroundColor: '#ffffff',
-              color: '#000000',
-              border: '2px solid #000000',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
-          >
-            Odjava
-          </button>
-        </div>
+      <header style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #000000', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Klijent: {userName}</h1>
+        <button onClick={onLogout} style={{ ...buttonStyle, backgroundColor: '#dc2626' }}>Odjava</button>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-        <h1 style={{ 
-          fontSize: '2rem', 
-          fontWeight: '700', 
-          color: '#000000', 
-          marginBottom: '2rem' 
-        }}>
-          Dashboard Klijenta
-        </h1>
+      <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex' }}>
+          <button style={tabStyle(activeTab === 'jobs')} onClick={() => setActiveTab('jobs')}>Moji Poslovi</button>
+          <button style={tabStyle(activeTab === 'profile')} onClick={() => setActiveTab('profile')}>Moj Profil</button>
+        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          {/* Form */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '1.5rem',
-            border: '2px solid #000000',
-            boxShadow: '4px 4px 0 #000000'
-          }}>
-            <h2 style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: '700', 
-              color: '#000000', 
-              marginTop: 0, 
-              marginBottom: '1.5rem' 
-            }}>
-              Objavi novi posao
-            </h2>
-            <form onSubmit={handleCreateJob}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#000000', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  NASLOV
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  placeholder="npr. Ciscenje stana"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#ffffff',
-                    border: '2px solid #000000',
-                    fontSize: '1rem',
-                    color: '#000000',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#000000', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  LOKACIJA
-                </label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  required
-                  placeholder="npr. Zagreb"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#ffffff',
-                    border: '2px solid #000000',
-                    fontSize: '1rem',
-                    color: '#000000',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', color: '#000000', fontWeight: '600', marginBottom: '0.5rem' }}>
-                  CIJENA (EUR)
-                </label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                  step="0.01"
-                  placeholder="50"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: '#ffffff',
-                    border: '2px solid #000000',
-                    fontSize: '1rem',
-                    color: '#000000',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-              {error && (
-                <div style={{ 
-                  color: '#dc2626', 
-                  marginBottom: '1rem',
-                  padding: '0.75rem',
-                  backgroundColor: '#fef2f2',
-                  border: '2px solid #dc2626'
-                }}>
-                  {error}
+        {activeTab === 'jobs' && (
+          <>
+            <div style={{ ...cardStyle, marginBottom: '2rem' }}>
+              <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem' }}>Objavi novi posao</h2>
+              <form onSubmit={handleCreateJob}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Naziv posla</label>
+                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="npr. Čišćenje stana" required style={inputStyle} />
                 </div>
-              )}
-              <button
-                type="submit"
-                disabled={submitting}
-                style={{
-                  width: '100%',
-                  backgroundColor: '#000000',
-                  color: '#ffffff',
-                  border: '2px solid #000000',
-                  padding: '0.875rem',
-                  fontSize: '1rem',
-                  fontWeight: '700',
-                  cursor: submitting ? 'not-allowed' : 'pointer',
-                  opacity: submitting ? 0.6 : 1
-                }}
-              >
-                {submitting ? 'Objavljujem...' : 'OBJAVI POSAO'}
-              </button>
-            </form>
-          </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Lokacija</label>
+                  <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="npr. Zagreb, Trešnjevka" required style={inputStyle} />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Cijena (EUR)</label>
+                  <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="50" required min="1" style={inputStyle} />
+                </div>
+                {error && <p style={{ color: '#dc2626', marginBottom: '1rem' }}>{error}</p>}
+                <button type="submit" disabled={submitting} style={buttonStyle}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
+              </form>
+            </div>
 
-          {/* Jobs list */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '1.5rem',
-            border: '2px solid #000000',
-            boxShadow: '4px 4px 0 #000000',
-            maxHeight: '500px',
-            overflowY: 'auto'
-          }}>
-            <h2 style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: '700', 
-              color: '#000000', 
-              marginTop: 0, 
-              marginBottom: '1.5rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              Vasi poslovi
-              <span style={{ 
-                backgroundColor: '#000000', 
-                color: '#ffffff', 
-                padding: '0.25rem 0.75rem'
-              }}>
-                {jobs.length}
-              </span>
-            </h2>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Moji poslovi ({jobs.length})</h2>
             {jobs.length === 0 ? (
-              <p style={{ color: '#525252', textAlign: 'center', paddingTop: '2rem' }}>
-                Nemate objavljenih poslova.
-              </p>
+              <p style={{ color: '#64748b' }}>Nemate objavljenih poslova.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {jobs.map((job) => (
-                  <div
-                    key={job.id}
-                    style={{
-                      backgroundColor: '#f1f5f9',
-                      padding: '1rem',
-                      border: '2px solid #000000'
-                    }}
-                  >
+                  <div key={job.id} style={cardStyle}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <h3 style={{ color: '#000000', fontWeight: '700', margin: 0 }}>{job.title}</h3>
-                      <span style={{
-                        backgroundColor: job.status === 'open' ? '#22c55e' : '#3b82f6',
-                        color: '#ffffff',
-                        padding: '0.25rem 0.5rem',
-                        fontSize: '0.75rem',
-                        fontWeight: '600'
-                      }}>
-                        {job.status === 'open' ? 'OTVORENO' : 'PRIHVACENO'}
-                      </span>
+                      <div>
+                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{job.title}</h3>
+                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b' }}>{job.location}</p>
+                        <p style={{ margin: '0', fontWeight: '700' }}>{Number(job.price).toFixed(2)} EUR</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '0.25rem 0.75rem',
+                          backgroundColor: job.status === 'open' ? '#fef3c7' : job.status === 'waiting_for_client' ? '#dbeafe' : '#d1fae5',
+                          color: job.status === 'open' ? '#92400e' : job.status === 'waiting_for_client' ? '#1e40af' : '#065f46',
+                          fontWeight: '600',
+                          fontSize: '0.875rem',
+                          border: '2px solid #000000',
+                        }}>
+                          {job.status === 'open' ? 'Otvoren' : job.status === 'waiting_for_client' ? 'Čeka potvrdu' : 'Potvrđen'}
+                        </span>
+                        {job.status === 'waiting_for_client' && (
+                          <div style={{ marginTop: '0.75rem' }}>
+                            <p style={{ fontSize: '0.875rem', color: '#64748b', margin: '0 0 0.5rem 0' }}>Čistač: {job.cleaner_name || 'Nepoznato'}</p>
+                            <button onClick={() => handleConfirmJob(job.id)} style={{ ...buttonStyle, backgroundColor: '#16a34a', padding: '0.5rem 1rem', fontSize: '0.875rem' }}>Potvrdi</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <p style={{ color: '#525252', margin: '0.5rem 0 0 0' }}>{job.location}</p>
-                    <p style={{ color: '#000000', fontWeight: '700', margin: '0.5rem 0 0 0' }}>{Number(job.price).toFixed(2)} EUR</p>
                   </div>
                 ))}
               </div>
             )}
+          </>
+        )}
+
+        {activeTab === 'profile' && (
+          <div style={cardStyle}>
+            <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem' }}>Moj Profil</h2>
+            <form onSubmit={handleSaveProfile}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Telefon</label>
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+385 91 234 5678" style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Spol</label>
+                <select value={gender} onChange={(e) => setGender(e.target.value)} style={inputStyle}>
+                  <option value="">Odaberi...</option>
+                  <option value="male">Muško</option>
+                  <option value="female">Žensko</option>
+                  <option value="other">Ostalo</option>
+                </select>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Opis</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Recite nešto o sebi..." rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
+              </div>
+              {profileMessage && <p style={{ color: profileMessage.includes('Greška') ? '#dc2626' : '#16a34a', marginBottom: '1rem' }}>{profileMessage}</p>}
+              <button type="submit" disabled={profileSaving} style={buttonStyle}>{profileSaving ? 'Spremam...' : 'Spremi profil'}</button>
+            </form>
           </div>
-        </div>
+        )}
       </main>
     </div>
   )
 }
 
+// ============ CLEANER DASHBOARD ============
 function CleanerDashboard({ onLogout, userName, userId }: { onLogout: () => void; userName: string; userId: string }) {
-  const [jobsList, setJobsList] = useState<Job[]>([])
+  const [activeTab, setActiveTab] = useState<'available' | 'my' | 'profile'>('available')
+  const [availableJobs, setAvailableJobs] = useState<Job[]>([])
+  const [myJobs, setMyJobs] = useState<Job[]>([])
+  const [accepting, setAccepting] = useState<number | null>(null)
+
+  const [phone, setPhone] = useState('')
+  const [gender, setGender] = useState('')
+  const [description, setDescription] = useState('')
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMessage, setProfileMessage] = useState('')
 
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const res = await fetch('/api/jobs?role=cleaner')
-        const data = await res.json()
-        setJobsList(data.jobs || [])
-      } catch {
-        // ignore
-      }
+        const resAvailable = await fetch('/api/jobs?role=cleaner')
+        const dataAvailable = await resAvailable.json()
+        setAvailableJobs(dataAvailable.jobs || [])
+
+        const resMy = await fetch(`/api/jobs/my?userId=${userId}`)
+        const dataMy = await resMy.json()
+        setMyJobs(dataMy.jobs || [])
+      } catch { /* ignore */ }
     }
     loadJobs()
-  }, [])
+  }, [userId])
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await fetch(`/api/profile?userId=${userId}`)
+        const data = await res.json()
+        if (data.user) {
+          setPhone(data.user.phone || '')
+          setGender(data.user.gender || '')
+          setDescription(data.user.description || '')
+        }
+      } catch { /* ignore */ }
+    }
+    if (userId) loadProfile()
+  }, [userId])
 
   const handleAccept = async (jobId: number) => {
+    setAccepting(jobId)
     try {
       const res = await fetch('/api/jobs/accept', {
         method: 'POST',
@@ -418,139 +396,169 @@ function CleanerDashboard({ onLogout, userName, userId }: { onLogout: () => void
       })
       const data = await res.json()
       if (data.success) {
-        setJobsList(jobsList.filter((j) => j.id !== jobId))
+        const acceptedJob = availableJobs.find(j => j.id === jobId)
+        if (acceptedJob) {
+          setAvailableJobs(availableJobs.filter(j => j.id !== jobId))
+          setMyJobs([{ ...acceptedJob, status: 'waiting_for_client' }, ...myJobs])
+        }
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
+    setAccepting(null)
   }
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProfileSaving(true)
+    setProfileMessage('')
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, phone, gender, description }),
+      })
+      const data = await res.json()
+      setProfileMessage(data.success ? 'Profil spremljen!' : 'Greška pri spremanju.')
+    } catch {
+      setProfileMessage('Mrežna greška.')
+    }
+    setProfileSaving(false)
+  }
+
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: '#ffffff',
+    border: '2px solid #000000',
+    padding: '1.5rem',
+    boxShadow: '4px 4px 0 #000000',
+  }
+
+  const buttonStyle: React.CSSProperties = {
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#000000',
+    color: '#ffffff',
+    border: 'none',
+    fontWeight: '600',
+    cursor: 'pointer',
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '0.75rem',
+    border: '2px solid #000000',
+    fontSize: '1rem',
+    boxSizing: 'border-box',
+  }
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    padding: '0.75rem 1.5rem',
+    backgroundColor: active ? '#000000' : '#ffffff',
+    color: active ? '#ffffff' : '#000000',
+    border: '2px solid #000000',
+    fontWeight: '600',
+    cursor: 'pointer',
+    marginRight: '-2px',
+  })
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
-      {/* Header */}
-      <header style={{ 
-        backgroundColor: '#ffffff', 
-        border: '2px solid #000000',
-        borderTop: 'none',
-        borderLeft: 'none',
-        borderRight: 'none',
-        padding: '1rem 2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
-            backgroundColor: '#000000', 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.25rem',
-            color: '#ffffff',
-            fontWeight: 'bold'
-          }}>
-            S
-          </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#000000' }}>SJAJ</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: '#525252', fontWeight: '500' }}>{userName}</span>
-          <button
-            onClick={onLogout}
-            style={{
-              backgroundColor: '#ffffff',
-              color: '#000000',
-              border: '2px solid #000000',
-              padding: '0.5rem 1rem',
-              cursor: 'pointer',
-              fontWeight: '600'
-            }}
-          >
-            Odjava
-          </button>
-        </div>
+      <header style={{ backgroundColor: '#ffffff', borderBottom: '2px solid #000000', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>Čistač: {userName}</h1>
+        <button onClick={onLogout} style={{ ...buttonStyle, backgroundColor: '#dc2626' }}>Odjava</button>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
-        <h1 style={{ 
-          fontSize: '2rem', 
-          fontWeight: '700', 
-          color: '#000000', 
-          marginBottom: '2rem' 
-        }}>
-          Dostupni poslovi
-        </h1>
-
-        <div style={{
-          backgroundColor: '#ffffff',
-          padding: '1.5rem',
-          border: '2px solid #000000',
-          boxShadow: '4px 4px 0 #000000'
-        }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '1.5rem'
-          }}>
-            <h2 style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: '700', 
-              color: '#000000', 
-              margin: 0
-            }}>
-              Poslovi na cekanju
-            </h2>
-            <span style={{ 
-              backgroundColor: '#000000', 
-              color: '#ffffff', 
-              padding: '0.25rem 0.75rem',
-              fontWeight: '600'
-            }}>
-              {jobsList.length}
-            </span>
-          </div>
-          
-          {jobsList.length === 0 ? (
-            <p style={{ color: '#525252', textAlign: 'center', paddingTop: '2rem' }}>
-              Nema dostupnih poslova.
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-              {jobsList.map((job) => (
-                <div
-                  key={job.id}
-                  style={{
-                    backgroundColor: '#f1f5f9',
-                    padding: '1.25rem',
-                    border: '2px solid #000000'
-                  }}
-                >
-                  <h3 style={{ color: '#000000', fontWeight: '700', margin: '0 0 0.5rem 0' }}>{job.title}</h3>
-                  <p style={{ color: '#525252', margin: '0.25rem 0' }}>{job.location}</p>
-                  <p style={{ color: '#000000', fontWeight: '700', margin: '0.75rem 0', fontSize: '1.25rem' }}>{Number(job.price).toFixed(2)} EUR</p>
-                  <button
-                    onClick={() => handleAccept(job.id)}
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#000000',
-                      color: '#ffffff',
-                      border: '2px solid #000000',
-                      padding: '0.75rem',
-                      fontSize: '1rem',
-                      fontWeight: '700',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    PRIHVATI POSAO
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+      <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex' }}>
+          <button style={tabStyle(activeTab === 'available')} onClick={() => setActiveTab('available')}>Dostupni Poslovi</button>
+          <button style={tabStyle(activeTab === 'my')} onClick={() => setActiveTab('my')}>Moji Poslovi</button>
+          <button style={tabStyle(activeTab === 'profile')} onClick={() => setActiveTab('profile')}>Moj Profil</button>
         </div>
+
+        {activeTab === 'available' && (
+          <>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Dostupni poslovi ({availableJobs.length})</h2>
+            {availableJobs.length === 0 ? (
+              <p style={{ color: '#64748b' }}>Nema dostupnih poslova.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {availableJobs.map((job) => (
+                  <div key={job.id} style={cardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{job.title}</h3>
+                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b' }}>{job.location}</p>
+                        <p style={{ margin: '0', fontWeight: '700', fontSize: '1.25rem' }}>{Number(job.price).toFixed(2)} EUR</p>
+                      </div>
+                      <button onClick={() => handleAccept(job.id)} disabled={accepting === job.id} style={{ ...buttonStyle, backgroundColor: '#16a34a' }}>
+                        {accepting === job.id ? 'Prihvaćam...' : 'Prihvati'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'my' && (
+          <>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Moji prihvaćeni poslovi ({myJobs.length})</h2>
+            {myJobs.length === 0 ? (
+              <p style={{ color: '#64748b' }}>Niste prihvatili nijedan posao.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {myJobs.map((job) => (
+                  <div key={job.id} style={cardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{job.title}</h3>
+                        <p style={{ margin: '0 0 0.25rem 0', color: '#64748b' }}>{job.location}</p>
+                        <p style={{ margin: '0', fontWeight: '700' }}>{Number(job.price).toFixed(2)} EUR</p>
+                      </div>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '0.25rem 0.75rem',
+                        backgroundColor: job.status === 'waiting_for_client' ? '#dbeafe' : '#d1fae5',
+                        color: job.status === 'waiting_for_client' ? '#1e40af' : '#065f46',
+                        fontWeight: '600',
+                        fontSize: '0.875rem',
+                        border: '2px solid #000000',
+                      }}>
+                        {job.status === 'waiting_for_client' ? 'Čeka potvrdu klijenta' : 'Potvrđen'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'profile' && (
+          <div style={cardStyle}>
+            <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.25rem' }}>Moj Profil</h2>
+            <form onSubmit={handleSaveProfile}>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Telefon</label>
+                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+385 91 234 5678" style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Spol</label>
+                <select value={gender} onChange={(e) => setGender(e.target.value)} style={inputStyle}>
+                  <option value="">Odaberi...</option>
+                  <option value="male">Muško</option>
+                  <option value="female">Žensko</option>
+                  <option value="other">Ostalo</option>
+                </select>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Opis</label>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Recite nešto o sebi, iskustvu..." rows={4} style={{ ...inputStyle, resize: 'vertical' }} />
+              </div>
+              {profileMessage && <p style={{ color: profileMessage.includes('Greška') ? '#dc2626' : '#16a34a', marginBottom: '1rem' }}>{profileMessage}</p>}
+              <button type="submit" disabled={profileSaving} style={buttonStyle}>{profileSaving ? 'Spremam...' : 'Spremi profil'}</button>
+            </form>
+          </div>
+        )}
       </main>
     </div>
   )

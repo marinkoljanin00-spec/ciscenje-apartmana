@@ -47,23 +47,30 @@ async function getCurrentUser() {
 // Get jobs
 export async function GET(request: Request) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ jobs: [] })
-    }
-
     const { searchParams } = new URL(request.url)
     const role = searchParams.get("role")
+    const userId = searchParams.get("userId")
+
+    // Try to get user from cookie first, then fall back to userId param
+    let clientId: number | null = null
+    const user = await getCurrentUser()
+    if (user) {
+      clientId = user.id
+    } else if (userId) {
+      clientId = parseInt(userId, 10)
+    }
 
     const sql = getSQL()
 
-    if (role === "client") {
-      // Return client's own jobs
+    if (role === "client" && clientId) {
+      // Return client's own jobs with cleaner info
       const jobs = await sql`
-        SELECT id, title, location, price, status, created_at 
-        FROM jobs 
-        WHERE client_id = ${user.id}
-        ORDER BY created_at DESC
+        SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.cleaner_id,
+               u.full_name as cleaner_name
+        FROM jobs j
+        LEFT JOIN users u ON j.cleaner_id = u.id
+        WHERE j.client_id = ${clientId}
+        ORDER BY j.created_at DESC
       `
       return NextResponse.json({ jobs })
     } else {
@@ -84,27 +91,33 @@ export async function GET(request: Request) {
 // Create a new job
 export async function POST(request: Request) {
   try {
+    const { title, location, price, userId } = await request.json()
+
+    // Try to get user from cookie first, then fall back to userId from body
+    let clientId: number | null = null
     const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ success: false, error: "Niste prijavljeni." }, { status: 401 })
-    }
-    if (user.role !== "client") {
-      return NextResponse.json({ success: false, error: "Samo klijenti mogu objavljivati poslove." }, { status: 403 })
+    if (user) {
+      clientId = user.id
+    } else if (userId) {
+      clientId = parseInt(userId, 10)
     }
 
-    const { title, location, price } = await request.json()
+    if (!clientId) {
+      return NextResponse.json({ success: false, error: "Niste prijavljeni." }, { status: 401 })
+    }
 
     if (!title || !location || isNaN(price)) {
       return NextResponse.json({ success: false, error: "Sva polja su obavezna." }, { status: 400 })
     }
 
     const sql = getSQL()
-    await sql`
+    const result = await sql`
       INSERT INTO jobs (title, location, price, status, client_id, created_at)
-      VALUES (${title}, ${location}, ${price}, 'open', ${user.id}, NOW())
+      VALUES (${title}, ${location}, ${price}, 'open', ${clientId}, NOW())
+      RETURNING id
     `
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, job: { id: result[0].id } })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepoznata greška"
     return NextResponse.json({ success: false, error: message }, { status: 500 })

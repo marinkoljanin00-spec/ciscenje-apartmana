@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     }
 
     await sql`
-      UPDATE jobs SET status = 'accepted' WHERE id = ${jobId}
+      UPDATE jobs SET status = 'waiting_for_client', cleaner_id = ${cleanerId} WHERE id = ${jobId}
     `
 
     return NextResponse.json({ success: true })
