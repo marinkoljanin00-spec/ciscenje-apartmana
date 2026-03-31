@@ -1,8 +1,9 @@
 'use client'
-// Build: 2026-03-31-v2
+// Build: 2026-03-31-v3-fixed
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect } from 'react'
 import AuthPage from './auth/page'
+import { CookieBanner } from '@/components/CookieBanner'
 
 type User = {
   id: number
@@ -25,11 +26,17 @@ export default function Home() {
   const [userName, setUserName] = useState<string>('')
   const [jobs, setJobs] = useState<Job[]>([])
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [showCookieBanner, setShowCookieBanner] = useState(false)
 
-  useEffect(() => {
-    // Odmah provjeri localStorage
+  useLayoutEffect(() => {
+    // Prvo provjeri localStorage prije rendera
     const storedRole = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
     const storedName = localStorage.getItem('user_email') || ''
+    const hasConsent = localStorage.getItem('cookie_consent')
+    
+    if (!hasConsent) {
+      setShowCookieBanner(true)
+    }
     
     if (storedRole) {
       setUserRole(storedRole)
@@ -60,20 +67,28 @@ export default function Home() {
   // Ne prikazuj ništa dok provjeravamo auth
   if (isCheckingAuth) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#0a0a0a', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}>
-        <div style={{ color: '#10b981', fontSize: '1.25rem' }}>Učitavanje...</div>
-      </div>
+      <>
+        <CookieBanner onConsent={() => setShowCookieBanner(false)} />
+        <div style={{ 
+          minHeight: '100vh', 
+          backgroundColor: '#0a0a0a', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
+          <div style={{ color: '#10b981', fontSize: '1.25rem' }}>Učitavanje...</div>
+        </div>
+      </>
     )
   }
 
   if (view === 'auth') {
-    return <AuthPage onLoginSuccess={handleLoginSuccess} />
+    return (
+      <>
+        <CookieBanner onConsent={() => setShowCookieBanner(false)} />
+        <AuthPage onLoginSuccess={handleLoginSuccess} />
+      </>
+    )
   }
 
   if (view === 'dashboard' && userRole === 'client') {
