@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 
-export default function AuthPage() {
+export default function AuthPage({ onLoginSuccess }: { onLoginSuccess?: (user: { id: number; email: string; role: 'client' | 'cleaner' }) => void }) {
   const [tab, setTab] = useState<"login" | "register">("login")
   const [role, setRole] = useState("client")
 
@@ -30,11 +30,12 @@ export default function AuthPage() {
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       })
       const data = await res.json()
-      if (data.success) {
-        setLoginSuccess("Uspjeh! Preusmjeravam...")
-        setTimeout(() => {
+      if (data.success && data.user) {
+        if (onLoginSuccess) {
+          onLoginSuccess(data.user)
+        } else {
           window.location.href = "/"
-        }, 500)
+        }
       } else {
         setLoginError(data.error || "Neispravan email ili lozinka.")
         setLoginLoading(false)
@@ -57,8 +58,12 @@ export default function AuthPage() {
         body: JSON.stringify({ email: regEmail, password: regPassword, fullName: regName, role }),
       })
       const data = await res.json()
-      if (data.success) {
-        window.location.href = "/"
+      if (data.success && data.user) {
+        if (onLoginSuccess) {
+          onLoginSuccess(data.user)
+        } else {
+          window.location.href = "/"
+        }
       } else {
         setRegError(data.error || "Greška pri registraciji.")
         setRegLoading(false)

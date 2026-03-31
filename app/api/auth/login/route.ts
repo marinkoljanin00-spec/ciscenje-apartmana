@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const sql = getSQL()
 
     const users = await sql`
-      SELECT id, password_hash FROM users WHERE email = ${email}
+      SELECT id, email, password_hash, role FROM users WHERE email = ${email}
     `
 
     if (users.length === 0) {
@@ -48,8 +48,15 @@ export async function POST(request: Request) {
     const sessionToken = generateSessionToken()
     const sessionValue = `${user.id}:${sessionToken}`
     
-    // Create response and set cookie on it
-    const response = NextResponse.json({ success: true })
+    // Create response and return user data
+    const response = NextResponse.json({ 
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      }
+    })
     response.cookies.set(SESSION_COOKIE, sessionValue, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

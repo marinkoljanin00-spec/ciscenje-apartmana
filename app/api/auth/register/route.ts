@@ -65,11 +65,18 @@ export async function POST(request: Request) {
       VALUES (${userId}, 0, 'EUR')
     `
 
-    // Set session cookie
+    // Set session cookie and return user data
     const sessionToken = generateSessionToken()
     const sessionValue = `${userId}:${sessionToken}`
     
-    const response = NextResponse.json({ success: true })
+    const response = NextResponse.json({ 
+      success: true,
+      user: {
+        id: userId,
+        email: email,
+        role: role
+      }
+    })
     response.cookies.set(SESSION_COOKIE, sessionValue, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

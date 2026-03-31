@@ -1,13 +1,12 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { CookieBanner } from "@/components/CookieBanner"
+import { useState } from 'react'
+import AuthPage from './auth/page'
 
 type User = {
   id: number
   email: string
-  full_name: string
-  role: string
+  role: 'client' | 'cleaner'
 }
 
 type Job = {
@@ -20,147 +19,178 @@ type Job = {
 }
 
 export default function Home() {
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<User | null>(null)
+  const [view, setView] = useState<'auth' | 'dashboard'>('auth')
+  const [userRole, setUserRole] = useState<'client' | 'cleaner' | null>(null)
   const [jobs, setJobs] = useState<Job[]>([])
-  const [cookieConsent, setCookieConsent] = useState(false)
-  const [showBanner, setShowBanner] = useState(false)
 
-  useEffect(() => {
-    // Prvo provjeri localStorage za cookie_consent
-    const savedConsent = localStorage.getItem("cookie_consent")
-    if (savedConsent) {
-      setCookieConsent(true)
-    } else {
-      setShowBanner(true)
-      setLoading(false)
-      return
+  // Check localStorage on mount to restore view
+  React.useEffect(() => {
+    const storedRole = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
+    if (storedRole) {
+      setUserRole(storedRole)
+      setView('dashboard')
     }
   }, [])
 
-  useEffect(() => {
-    if (!cookieConsent) return
-
-    const timeout = setTimeout(() => {
-      setLoading(false)
-    }, 3000)
-
-    fetch("/api/auth/me", { credentials: "include" })
-      .then((res) => {
-        return res.json()
-      })
-      .then((data) => {
-        clearTimeout(timeout)
-
-        if (data.user) {
-          setUser(data.user)
-
-          fetch(`/api/jobs?role=${data.user.role}`, { credentials: "include" })
-            .then((r) => r.json())
-            .then((jobsData) => setJobs(jobsData.jobs || []))
-            .finally(() => setLoading(false))
-        } else {
-          setLoading(false)
-          if (typeof window !== "undefined") {
-            window.location.href = "/auth"
-          }
-        }
-      })
-      .catch(() => {
-        clearTimeout(timeout)
-        setLoading(false)
-        if (typeof window !== "undefined") {
-          window.location.href = "/auth"
-        }
-      })
-
-    return () => clearTimeout(timeout)
-  }, [cookieConsent])
-
-  if (showBanner) {
-    return <CookieBanner onConsent={(consent) => { setCookieConsent(true); setShowBanner(false) }} />
+  const handleLoginSuccess = (user: User) => {
+    localStorage.setItem('user_role', user.role)
+    localStorage.setItem('user_id', user.id.toString())
+    localStorage.setItem('user_email', user.email)
+    setUserRole(user.role)
+    setView('dashboard')
   }
 
-  if (loading) {
-    return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Učitavanje...</div>
+  const handleLogout = () => {
+    localStorage.removeItem('user_role')
+    localStorage.removeItem('user_id')
+    localStorage.removeItem('user_email')
+    setUserRole(null)
+    setView('auth')
   }
 
-  if (!user) {
-    return null
+  if (view === 'auth') {
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />
   }
 
-  if (user.role === "client") {
-    return <ClientDashboard user={user} jobs={jobs} />
+  if (view === 'dashboard' && userRole === 'client') {
+    return <ClientDashboard onLogout={handleLogout} jobs={jobs} setJobs={setJobs} />
   }
 
-  return <CleanerDashboard user={user} jobs={jobs} />
+  if (view === 'dashboard' && userRole === 'cleaner') {
+    return <CleanerDashboard onLogout={handleLogout} jobs={jobs} />
+  }
+
+  return null
 }
 
-function ClientDashboard({ user, jobs }: { user: User; jobs: Job[] }) {
-  const [title, setTitle] = useState("")
-  const [location, setLocation] = useState("")
-  const [price, setPrice] = useState("")
-  const [error, setError] = useState("")
+function ClientDashboard({ onLogout, jobs, setJobs }: { onLogout: () => void; jobs: Job[]; setJobs: (jobs: Job[]) => void }) {
+  const [title, setTitle] = useState('')
+  const [location, setLocation] = useState('')
+  const [price, setPrice] = useState('')
+  const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
+    setError('')
     setSubmitting(true)
 
     try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+      const res = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, location, price: parseFloat(price) }),
       })
       const data = await res.json()
       if (data.success) {
-        setTitle("")
-        setLocation("")
-        setPrice("")
-        window.location.reload()
+        setTitle('')
+        setLocation('')
+        setPrice('')
+        // Refresh jobs list
+        const jobsRes = await fetch(`/api/jobs?role=client`)
+        const jobsData = await jobsRes.json()
+        setJobs(jobsData.jobs || [])
       } else {
-        setError(data.error || "Greska")
+        setError(data.error || 'Greška')
       }
     } catch {
-      setError("Mrezna greska")
+      setError('Mrežna greška')
     }
     setSubmitting(false)
   }
 
+  const handleLoad = async () => {
+    const jobsRes = await fetch(`/api/jobs?role=client`)
+    const jobsData = await jobsRes.json()
+    setJobs(jobsData.jobs || [])
+  }
+
+  React.useEffect(() => {
+    handleLoad()
+  }, [])
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f0f4f8", padding: "2rem" }}>
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <div style={{ marginBottom: "2rem" }}>
-          <h1>{user.full_name}</h1>
-          <button onClick={() => { fetch("/api/auth/logout", { method: "POST" }).then(() => { window.location.href = "/auth" }) }}>Odjava</button>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f0f4f8', padding: '2rem' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h1>Moji poslovi</h1>
+          <button onClick={onLogout} style={{ padding: '0.5rem 1rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Odjava</button>
         </div>
-        <form onSubmit={handleCreateJob}>
-          <input type="text" placeholder="Naslov" value={title} onChange={e => setTitle(e.target.value)} required />
-          <input type="text" placeholder="Lokacija" value={location} onChange={e => setLocation(e.target.value)} required />
-          <input type="number" placeholder="Cijena" value={price} onChange={e => setPrice(e.target.value)} required />
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={submitting}>{submitting ? "Objavljujem..." : "Objavi"}</button>
+
+        <form onSubmit={handleCreateJob} style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '8px', marginBottom: '2rem' }}>
+          <h2>Objavi novi posao</h2>
+          <input type='text' placeholder='Naslov' value={title} onChange={(e) => setTitle(e.target.value)} required style={{ display: 'block', width: '100%', marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+          <input type='text' placeholder='Lokacija' value={location} onChange={(e) => setLocation(e.target.value)} required style={{ display: 'block', width: '100%', marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+          <input type='number' placeholder='Cijena (EUR)' value={price} onChange={(e) => setPrice(e.target.value)} required style={{ display: 'block', width: '100%', marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+          {error && <p style={{ color: 'red' }}>{error}</p>}
+          <button type='submit' disabled={submitting} style={{ backgroundColor: '#3b82f6', color: 'white', padding: '0.75rem 1.5rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
         </form>
+
         <div>
-          <h2>Moji poslovi</h2>
-          {jobs.length === 0 ? <p>Nema poslova</p> : jobs.map(j => <div key={j.id}>{j.title} - {j.price} EUR</div>)}
+          <h2>Objavljeni poslovi</h2>
+          {jobs.length === 0 ? (
+            <p>Nema objavljenih poslova</p>
+          ) : (
+            jobs.map((j) => (
+              <div key={j.id} style={{ backgroundColor: 'white', padding: '1rem', marginBottom: '1rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                <div style={{ fontWeight: 'bold' }}>{j.title}</div>
+                <div>Lokacija: {j.location}</div>
+                <div>Cijena: {j.price} EUR</div>
+                <div>Status: {j.status}</div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-function CleanerDashboard({ user, jobs }: { user: User; jobs: Job[] }) {
+function CleanerDashboard({ onLogout, jobs }: { onLogout: () => void; jobs: Job[] }) {
+  const [jobs_list, setJobs] = React.useState<Job[]>(jobs)
+
+  React.useEffect(() => {
+    const loadJobs = async () => {
+      const res = await fetch(`/api/jobs?role=cleaner`)
+      const data = await res.json()
+      setJobs(data.jobs || [])
+    }
+    loadJobs()
+  }, [])
+
+  const handleAccept = async (jobId: number) => {
+    try {
+      await fetch('/api/jobs/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId }),
+      })
+      setJobs(jobs_list.filter((j) => j.id !== jobId))
+    } catch {
+      console.error('Greška pri prihvaćanju posla')
+    }
+  }
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f0f4f8", padding: "2rem" }}>
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <h1>{user.full_name}</h1>
-        <button onClick={() => { fetch("/api/auth/logout", { method: "POST" }).then(() => { window.location.href = "/auth" }) }}>Odjava</button>
-        <h2>Dostupni poslovi</h2>
-        {jobs.length === 0 ? <p>Nema poslova</p> : jobs.map(j => <div key={j.id} style={{ marginBottom: "1rem", padding: "1rem", border: "1px solid #ddd" }}><div>{j.title} - {j.price} EUR - {j.location}</div><button onClick={() => { fetch("/api/jobs/accept", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ jobId: j.id }) }).then(() => window.location.reload()) }}>Prihvati</button></div>)}
+    <div style={{ minHeight: '100vh', backgroundColor: '#f0f4f8', padding: '2rem' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h1>Dostupni poslovi</h1>
+          <button onClick={onLogout} style={{ padding: '0.5rem 1rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Odjava</button>
+        </div>
+
+        {jobs_list.length === 0 ? (
+          <p>Nema dostupnih poslova</p>
+        ) : (
+          jobs_list.map((j) => (
+            <div key={j.id} style={{ backgroundColor: 'white', padding: '1.5rem', marginBottom: '1rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{j.title}</div>
+              <div>Lokacija: {j.location}</div>
+              <div>Cijena: {j.price} EUR</div>
+              <button onClick={() => handleAccept(j.id)} style={{ marginTop: '1rem', backgroundColor: '#10b981', color: 'white', padding: '0.75rem 1.5rem', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Prihvati posao</button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
