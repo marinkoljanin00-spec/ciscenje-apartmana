@@ -1,8 +1,7 @@
 "use client"
 
-import { useActionState, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { register, login, type ActionState } from "@/app/actions"
+import { useState } from "react"
+import { register, login } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,32 +16,46 @@ import {
 import { Lock, Mail, Eye, EyeOff, Loader2, Home, AlertCircle } from "lucide-react"
 import Link from "next/link"
 
-const initialState: ActionState = {
-  success: false,
-  error: undefined,
-}
-
 export default function AuthPage() {
-  const router = useRouter()
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegPassword, setShowRegPassword] = useState(false)
+  
+  const [loginError, setLoginError] = useState("")
+  const [registerError, setRegisterError] = useState("")
+  const [isLoginPending, setIsLoginPending] = useState(false)
+  const [isRegisterPending, setIsRegisterPending] = useState(false)
 
-  const [registerState, registerAction, isRegisterPending] = useActionState(register, initialState)
-  const [loginState, loginAction, isLoginPending] = useActionState(login, initialState)
-
-  // Redirect on successful registration
-  useEffect(() => {
-    if (registerState.success) {
-      router.push("/success")
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setIsLoginPending(true)
+    setLoginError("")
+    
+    const formData = new FormData(e.currentTarget)
+    const result = await login(undefined as any, formData)
+    
+    if (result.success) {
+      window.location.href = "/"
+    } else {
+      setLoginError(result.error || "Greška pri prijavi")
+      setIsLoginPending(false)
     }
-  }, [registerState.success, router])
+  }
 
-  // Redirect on successful login
-  useEffect(() => {
-    if (loginState.success) {
-      router.push("/")
+  async function handleRegister(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setIsRegisterPending(true)
+    setRegisterError("")
+    
+    const formData = new FormData(e.currentTarget)
+    const result = await register(undefined as any, formData)
+    
+    if (result.success) {
+      window.location.href = "/success"
+    } else {
+      setRegisterError(result.error || "Greška pri registraciji")
+      setIsRegisterPending(false)
     }
-  }, [loginState.success, router])
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -50,9 +63,9 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
             <Home className="w-4 h-4" />
-            Povratak na početnu
+            Povratak na pocetnu
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Sjaj Čistoće</h1>
+          <h1 className="text-2xl font-bold text-foreground">Sjaj Cistoce</h1>
           <p className="text-muted-foreground">Prijavite se ili registrirajte</p>
         </div>
 
@@ -62,7 +75,6 @@ export default function AuthPage() {
             <TabsTrigger value="register">Registracija</TabsTrigger>
           </TabsList>
 
-          {/* LOGIN TAB */}
           <TabsContent value="login">
             <Card>
               <CardHeader>
@@ -70,7 +82,7 @@ export default function AuthPage() {
                 <CardDescription>Unesite svoje podatke za prijavu</CardDescription>
               </CardHeader>
               <CardContent>
-                <form action={loginAction} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <div className="relative">
@@ -110,10 +122,10 @@ export default function AuthPage() {
                     </div>
                   </div>
 
-                  {loginState.error && (
+                  {loginError && (
                     <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                       <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      {loginState.error}
+                      {loginError}
                     </div>
                   )}
 
@@ -132,15 +144,14 @@ export default function AuthPage() {
             </Card>
           </TabsContent>
 
-          {/* REGISTER TAB */}
           <TabsContent value="register">
             <Card>
               <CardHeader>
                 <CardTitle>Registracija</CardTitle>
-                <CardDescription>Kreirajte novi korisnički račun</CardDescription>
+                <CardDescription>Kreirajte novi korisnicki racun</CardDescription>
               </CardHeader>
               <CardContent>
-                <form action={registerAction} className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="reg-email">Email</Label>
                     <div className="relative">
@@ -198,10 +209,10 @@ export default function AuthPage() {
                     </div>
                   </div>
 
-                  {registerState.error && (
+                  {registerError && (
                     <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
                       <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      {registerState.error}
+                      {registerError}
                     </div>
                   )}
 
