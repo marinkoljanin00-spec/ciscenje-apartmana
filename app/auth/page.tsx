@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
+import { useActionState } from "react"
+import { useState } from "react"
+import { register, login, type ActionState } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,74 +29,15 @@ import {
   Gift,
 } from "lucide-react"
 import Image from "next/image"
-import { loginUser, registerUser } from "@/lib/auth-actions"
+
+const initialState: ActionState = { success: false }
 
 export default function AuthPage() {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-
-  // Login state
-  const [loginEmail, setLoginEmail] = useState("")
-  const [loginPassword, setLoginPassword] = useState("")
-  const [loginError, setLoginError] = useState("")
   const [showLoginPassword, setShowLoginPassword] = useState(false)
-
-  // Register state
-  const [regEmail, setRegEmail] = useState("")
-  const [regPassword, setRegPassword] = useState("")
-  const [regConfirmPassword, setRegConfirmPassword] = useState("")
   const [showRegPassword, setShowRegPassword] = useState(false)
-  const [regError, setRegError] = useState("")
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoginError("")
-
-    startTransition(async () => {
-      const result = await loginUser(loginEmail, loginPassword)
-      
-      if (result.success) {
-        router.push("/")
-        router.refresh()
-      } else {
-        setLoginError(result.error || "Pogrešni podaci za prijavu.")
-      }
-    })
-  }
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault()
-    setRegError("")
-    setRegSuccess("")
-
-    if (!regEmail || !regPassword) {
-      setRegError("Molimo ispunite sva polja.")
-      return
-    }
-
-    if (regPassword !== regConfirmPassword) {
-      setRegError("Lozinke se ne podudaraju.")
-      return
-    }
-
-    if (regPassword.length < 6) {
-      setRegError("Lozinka mora imati najmanje 6 znakova.")
-      return
-    }
-
-    startTransition(async () => {
-      try {
-        const result = await registerUser(regEmail, regPassword)
-        // If we get here (no redirect), it means an error occurred
-        if (result?.error) {
-          setRegError(result.error)
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Nepoznata greška"
-        setRegError(`Server greška: ${errorMessage}`)
-      }
-    })
-  }
+  const [registerState, registerAction, isRegisterPending] = useActionState(register, initialState)
+  const [loginState, loginAction, isLoginPending] = useActionState(login, initialState)
 
   const features = [
     {
@@ -237,19 +179,18 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleLogin} className="space-y-4">
+                  <form action={loginAction} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="login-email">Email</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="login-email"
+                          name="email"
                           type="email"
                           placeholder="vas@email.com"
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
                           className="pl-10"
-                          disabled={isPending}
+                          disabled={isLoginPending}
                           required
                         />
                       </div>
@@ -260,12 +201,11 @@ export default function AuthPage() {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="login-password"
+                          name="password"
                           type={showLoginPassword ? "text" : "password"}
                           placeholder="********"
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
                           className="pl-10 pr-10"
-                          disabled={isPending}
+                          disabled={isLoginPending}
                           required
                         />
                         <button
@@ -279,12 +219,12 @@ export default function AuthPage() {
                       </div>
                     </div>
 
-                    {loginError && (
-                      <p className="text-sm text-destructive">{loginError}</p>
+                    {loginState.error && (
+                      <p className="text-sm text-destructive">{loginState.error}</p>
                     )}
                     
-                    <Button type="submit" className="w-full" disabled={isPending}>
-                      {isPending ? (
+                    <Button type="submit" className="w-full" disabled={isLoginPending}>
+                      {isLoginPending ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Prijava...
@@ -307,19 +247,18 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleRegister} className="space-y-4">
+                  <form action={registerAction} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="reg-email">Email</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="reg-email"
+                          name="email"
                           type="email"
                           placeholder="vas@email.com"
-                          value={regEmail}
-                          onChange={(e) => setRegEmail(e.target.value)}
                           className="pl-10"
-                          disabled={isPending}
+                          disabled={isRegisterPending}
                           required
                         />
                       </div>
@@ -330,12 +269,11 @@ export default function AuthPage() {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="reg-password"
+                          name="password"
                           type={showRegPassword ? "text" : "password"}
                           placeholder="Najmanje 6 znakova"
-                          value={regPassword}
-                          onChange={(e) => setRegPassword(e.target.value)}
                           className="pl-10 pr-10"
-                          disabled={isPending}
+                          disabled={isRegisterPending}
                           required
                         />
                         <button
@@ -354,23 +292,22 @@ export default function AuthPage() {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           id="reg-confirm-password"
+                          name="confirmPassword"
                           type={showRegPassword ? "text" : "password"}
                           placeholder="Ponovite lozinku"
-                          value={regConfirmPassword}
-                          onChange={(e) => setRegConfirmPassword(e.target.value)}
                           className="pl-10"
-                          disabled={isPending}
+                          disabled={isRegisterPending}
                           required
                         />
                       </div>
                     </div>
 
-                    {regError && (
-                      <p className="text-sm text-destructive">{regError}</p>
+                    {registerState.error && (
+                      <p className="text-sm text-destructive">{registerState.error}</p>
                     )}
                     
-                    <Button type="submit" className="w-full" disabled={isPending}>
-                      {isPending ? (
+                    <Button type="submit" className="w-full" disabled={isRegisterPending}>
+                      {isRegisterPending ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Registracija...
