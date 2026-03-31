@@ -24,19 +24,22 @@ export default function Home() {
   const [view, setView] = useState<'auth' | 'dashboard'>('auth')
   const [userRole, setUserRole] = useState<'client' | 'cleaner' | null>(null)
   const [userName, setUserName] = useState<string>('')
+  const [userId, setUserId] = useState<string>('')
   const [jobs, setJobs] = useState<Job[]>([])
 
   // Mounted check to avoid hydration errors
   useEffect(() => {
     setMounted(true)
     
-    // Check localStorage after mount
+    // Check localStorage after mount - PERSISTENT STATE
     const storedRole = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
     const storedName = localStorage.getItem('user_email') || ''
+    const storedId = localStorage.getItem('user_id') || ''
     
-    if (storedRole) {
+    if (storedRole && storedId) {
       setUserRole(storedRole)
       setUserName(storedName)
+      setUserId(storedId)
       setView('dashboard')
     }
   }, [])
@@ -47,6 +50,7 @@ export default function Home() {
     localStorage.setItem('user_email', user.email)
     setUserRole(user.role)
     setUserName(user.email)
+    setUserId(user.id.toString())
     setView('dashboard')
   }
 
@@ -56,6 +60,7 @@ export default function Home() {
     localStorage.removeItem('user_email')
     setUserRole(null)
     setUserName('')
+    setUserId('')
     setView('auth')
   }
 
@@ -84,17 +89,17 @@ export default function Home() {
   }
 
   if (view === 'dashboard' && userRole === 'client') {
-    return <ClientDashboard onLogout={handleLogout} jobs={jobs} setJobs={setJobs} userName={userName} />
+    return <ClientDashboard onLogout={handleLogout} jobs={jobs} setJobs={setJobs} userName={userName} userId={userId} />
   }
 
   if (view === 'dashboard' && userRole === 'cleaner') {
-    return <CleanerDashboard onLogout={handleLogout} userName={userName} />
+    return <CleanerDashboard onLogout={handleLogout} userName={userName} userId={userId} />
   }
 
   return null
 }
 
-function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () => void; jobs: Job[]; setJobs: (jobs: Job[]) => void; userName: string }) {
+function ClientDashboard({ onLogout, jobs, setJobs, userName, userId }: { onLogout: () => void; jobs: Job[]; setJobs: (jobs: Job[]) => void; userName: string; userId: string }) {
   const [title, setTitle] = useState('')
   const [location, setLocation] = useState('')
   const [price, setPrice] = useState('')
@@ -104,15 +109,15 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const res = await fetch('/api/jobs?role=client')
+        const res = await fetch(`/api/jobs?role=client&userId=${userId}`)
         const data = await res.json()
         setJobs(data.jobs || [])
       } catch {
         // ignore
       }
     }
-    loadJobs()
-  }, [setJobs])
+    if (userId) loadJobs()
+  }, [setJobs, userId])
 
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,7 +128,7 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
       const res = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, location, price: parseFloat(price) }),
+        body: JSON.stringify({ title, location, price: parseFloat(price), userId }),
       })
       const data = await res.json()
       if (data.success) {
@@ -387,7 +392,7 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
   )
 }
 
-function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userName: string }) {
+function CleanerDashboard({ onLogout, userName, userId }: { onLogout: () => void; userName: string; userId: string }) {
   const [jobsList, setJobsList] = useState<Job[]>([])
 
   useEffect(() => {
@@ -408,7 +413,7 @@ function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userNa
       const res = await fetch('/api/jobs/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId }),
+        body: JSON.stringify({ jobId, odrzavateljId: userId }),
       })
       const data = await res.json()
       if (data.success) {

@@ -46,15 +46,23 @@ async function getCurrentUser() {
 
 export async function POST(request: Request) {
   try {
+    const { jobId, odrzavateljId } = await request.json()
+    
+    // Try cookie first, then fall back to odrzavateljId from request
+    let cleanerId: number | null = null
     const user = await getCurrentUser()
-    if (!user) {
+    if (user) {
+      cleanerId = user.id
+      if (user.role !== "cleaner") {
+        return NextResponse.json({ success: false, error: "Samo čistači mogu prihvatiti poslove." }, { status: 403 })
+      }
+    } else if (odrzavateljId) {
+      cleanerId = parseInt(odrzavateljId, 10)
+    }
+    
+    if (!cleanerId) {
       return NextResponse.json({ success: false, error: "Niste prijavljeni." }, { status: 401 })
     }
-    if (user.role !== "cleaner") {
-      return NextResponse.json({ success: false, error: "Samo čistači mogu prihvatiti poslove." }, { status: 403 })
-    }
-
-    const { jobId } = await request.json()
 
     if (!jobId || isNaN(Number(jobId))) {
       return NextResponse.json({ success: false, error: "Neispravan ID posla." }, { status: 400 })
