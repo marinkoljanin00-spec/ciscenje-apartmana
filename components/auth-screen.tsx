@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useAppStore, type UserType, type UserSpol } from "@/lib/store"
+import { type UserType, type UserSpol } from "@/lib/store"
+import { register as registerAction, login as loginAction } from "@/app/actions"
 import { 
   Sparkles, 
   Lock, 
@@ -44,7 +45,7 @@ import Image from "next/image"
 const SAVED_CREDENTIALS_KEY = "cleanup_saved_credentials"
 
 export function AuthScreen() {
-  const { login, register } = useAppStore()
+  const [isPending, startTransition] = useTransition()
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("")
@@ -85,16 +86,29 @@ export function AuthScreen() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
     setLoginError("")
-    const success = login(loginEmail, loginPassword)
-    if (success) {
-      if (rememberMe) {
-        localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }))
-      } else {
-        localStorage.removeItem(SAVED_CREDENTIALS_KEY)
+    
+    const formData = new FormData()
+    formData.set("email", loginEmail)
+    formData.set("password", loginPassword)
+    
+    startTransition(async () => {
+      try {
+        const result = await loginAction({ success: false }, formData)
+        
+        if (result.success) {
+          if (rememberMe) {
+            localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }))
+          } else {
+            localStorage.removeItem(SAVED_CREDENTIALS_KEY)
+          }
+          window.location.href = "/"
+        } else {
+          setLoginError(result.error || "Pogrešni podaci za prijavu.")
+        }
+      } catch (error) {
+        setLoginError(error instanceof Error ? error.message : "Greška pri prijavi.")
       }
-    } else {
-      setLoginError("Pogrešni podaci za prijavu.")
-    }
+    })
   }
 
   const handleForgetCredentials = () => {
@@ -115,21 +129,25 @@ export function AuthScreen() {
       return
     }
 
-    const success = register({
-      email: regEmail,
-      lozinka: regPassword,
-      ime: regIme,
-      mobitel: regMobitel,
-      tip: regTip,
-      spol: regSpol,
-      opis: regOpis,
-    })
+    const formData = new FormData()
+    formData.set("email", regEmail)
+    formData.set("password", regPassword)
+    formData.set("confirmPassword", regPassword)
+    
+    startTransition(async () => {
+      try {
+        const result = await registerAction({ success: false }, formData)
 
-    if (success) {
-      setRegSuccess("Registracija uspješna!")
-    } else {
-      setRegError("Email je već zauzet.")
-    }
+        if (result.success) {
+          setRegSuccess("Registracija uspješna!")
+          window.location.href = "/success"
+        } else {
+          setRegError(result.error || "Greška pri registraciji.")
+        }
+      } catch (error) {
+        setRegError(error instanceof Error ? error.message : "Greška pri registraciji.")
+      }
+    })
   }
 
   const features = [
@@ -336,47 +354,9 @@ export function AuthScreen() {
                     {loginError && (
                       <p className="text-sm text-destructive">{loginError}</p>
                     )}
-                    <Button type="submit" className="w-full">
-                      Uđi u sustav
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                      {isPending ? "Prijava..." : "Uđi u sustav"}
                     </Button>
-                    
-                    <div className="relative my-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-border" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">Demo računi</span>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => {
-                          setLoginEmail("demo@sjaj.hr")
-                          setLoginPassword("demo123")
-                        }}
-                      >
-                        <Home className="w-3 h-3 mr-1" />
-                        Vlasnik
-                      </Button>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => {
-                          setLoginEmail("cistac@sjaj.hr")
-                          setLoginPassword("demo123")
-                        }}
-                      >
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Čistač
-                      </Button>
-                    </div>
                   </form>
                 </CardContent>
               </Card>
@@ -525,8 +505,8 @@ export function AuthScreen() {
                         {regSuccess}
                       </p>
                     )}
-                    <Button type="submit" className="w-full">
-                      Rezerviraj Sjaj
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                      {isPending ? "Registracija..." : "Rezerviraj Sjaj"}
                     </Button>
                   </form>
                 </CardContent>
