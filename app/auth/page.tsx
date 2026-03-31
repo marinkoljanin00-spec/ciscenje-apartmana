@@ -26,6 +26,7 @@ export default function AuthPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email: loginEmail, password: loginPassword }),
       })
       const data = await res.json()
@@ -52,6 +53,7 @@ export default function AuthPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email: regEmail, password: regPassword, fullName: regName, role }),
       })
       const data = await res.json()
