@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AuthPage from './auth/page'
 
 type User = {
@@ -24,7 +24,7 @@ export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([])
 
   // Check localStorage on mount to restore view
-  React.useEffect(() => {
+  useEffect(() => {
     const storedRole = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
     if (storedRole) {
       setUserRole(storedRole)
