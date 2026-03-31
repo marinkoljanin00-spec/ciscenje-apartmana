@@ -1,4 +1,5 @@
 'use client'
+// v4 - toFixed fix applied
 
 import React, { useState, useEffect } from 'react'
 import AuthPage from './auth/page'
@@ -380,7 +381,7 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName, userId }: { onLogo
                       </span>
                     </div>
                     <p style={{ color: '#525252', margin: '0.5rem 0 0 0' }}>{job.location}</p>
-                    <p style={{ color: '#000000', fontWeight: '700', margin: '0.5rem 0 0 0' }}>{job.price.toFixed(2)} EUR</p>
+                    <p style={{ color: '#000000', fontWeight: '700', margin: '0.5rem 0 0 0' }}>{Number(job.price).toFixed(2)} EUR</p>
                   </div>
                 ))}
               </div>
@@ -529,7 +530,7 @@ function CleanerDashboard({ onLogout, userName, userId }: { onLogout: () => void
                 >
                   <h3 style={{ color: '#000000', fontWeight: '700', margin: '0 0 0.5rem 0' }}>{job.title}</h3>
                   <p style={{ color: '#525252', margin: '0.25rem 0' }}>{job.location}</p>
-                  <p style={{ color: '#000000', fontWeight: '700', margin: '0.75rem 0', fontSize: '1.25rem' }}>{job.price.toFixed(2)} EUR</p>
+                  <p style={{ color: '#000000', fontWeight: '700', margin: '0.75rem 0', fontSize: '1.25rem' }}>{Number(job.price).toFixed(2)} EUR</p>
                   <button
                     onClick={() => handleAccept(job.id)}
                     style={{
