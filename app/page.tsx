@@ -1,14 +1,13 @@
 import { getCurrentUser, getClientJobs, getOpenJobs } from "@/app/actions"
 import { ClientDashboard } from "@/components/client-dashboard"
 import { CleanerDashboard } from "@/components/cleaner-marketplace"
-import AuthPageContent from "./auth/auth-content"
+import AuthPage from "./auth/page"
 
 export default async function Home() {
   const user = await getCurrentUser()
-  
-  // If not logged in, show auth page content directly
+
   if (!user) {
-    return <AuthPageContent />
+    return <AuthPage />
   }
   
   // Show different dashboard based on user role
