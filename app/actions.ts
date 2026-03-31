@@ -30,6 +30,8 @@ export async function register(prevState: ActionState, formData: FormData): Prom
   const password = formData.get("password") as string
   const confirmPassword = formData.get("confirmPassword") as string
 
+  console.log("[v0] register called with email:", email)
+
   // Validation
   if (!email || !password) {
     return { success: false, error: "Email i lozinka su obavezni." }
@@ -56,8 +58,11 @@ export async function register(prevState: ActionState, formData: FormData): Prom
     }
 
     // Hash password and insert
+    console.log("[v0] Hashing password...")
     const passwordHash = await bcrypt.hash(password, 10)
+    console.log("[v0] Password hashed successfully")
     
+    console.log("[v0] Inserting user into database...")
     const result = await sql`
       INSERT INTO users (email, password_hash, created_at)
       VALUES (${email}, ${passwordHash}, NOW())
@@ -67,6 +72,8 @@ export async function register(prevState: ActionState, formData: FormData): Prom
     if (result.length === 0) {
       return { success: false, error: "Greška pri registraciji." }
     }
+
+    console.log("[v0] User inserted successfully with ID:", result[0].id)
 
     // Set session cookie
     const sessionToken = generateSessionToken()
@@ -78,6 +85,8 @@ export async function register(prevState: ActionState, formData: FormData): Prom
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
+    console.log("[v0] Session cookie set, registration complete")
+
     return { success: true }
   } catch (error) {
     console.error("[v0] Registration error:", error)
@@ -133,10 +142,12 @@ export async function getAccounts(): Promise<Account[]> {
     const user = await getCurrentUser()
     
     if (!user) {
+      console.log("[v0] getAccounts: No user logged in")
       return []
     }
     
     const sql = getSQL()
+    console.log("[v0] getAccounts: Fetching accounts for user_id:", user.id)
     
     const accounts = await sql`
       SELECT id, name, balance, currency, user_id, created_at 
@@ -145,6 +156,7 @@ export async function getAccounts(): Promise<Account[]> {
       ORDER BY created_at DESC
     `
     
+    console.log("[v0] getAccounts: Found", accounts.length, "accounts")
     return accounts as Account[]
   } catch (error) {
     console.error("[v0] getAccounts error:", error)
@@ -156,6 +168,8 @@ export async function login(prevState: ActionState, formData: FormData): Promise
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
+  console.log("[v0] login called with email:", email)
+
   if (!email || !password) {
     return { success: false, error: "Email i lozinka su obavezni." }
   }
@@ -163,6 +177,7 @@ export async function login(prevState: ActionState, formData: FormData): Promise
   try {
     const sql = getSQL()
 
+    console.log("[v0] Querying user from database...")
     const users = await sql`
       SELECT id, email, password_hash FROM users WHERE email = ${email}
     `
@@ -172,12 +187,14 @@ export async function login(prevState: ActionState, formData: FormData): Promise
     }
 
     const user = users[0]
+    console.log("[v0] User found, comparing passwords...")
     const isValidPassword = await bcrypt.compare(password, user.password_hash as string)
 
     if (!isValidPassword) {
       return { success: false, error: "Pogrešni podaci za prijavu." }
     }
 
+    console.log("[v0] Password valid, setting session cookie...")
     // Set session cookie
     const sessionToken = generateSessionToken()
     const cookieStore = await cookies()
@@ -188,6 +205,8 @@ export async function login(prevState: ActionState, formData: FormData): Promise
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
+    console.log("[v0] Login successful")
+
     return { success: true }
   } catch (error) {
     console.error("[v0] Login error:", error)

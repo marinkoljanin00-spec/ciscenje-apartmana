@@ -1,17 +1,25 @@
 "use client"
 
 import { useState } from "react"
+import { register, login } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Lock, Mail, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Lock, Mail, Eye, EyeOff, Loader2, Home, AlertCircle } from "lucide-react"
+import Link from "next/link"
 
 export default function AuthPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegPassword, setShowRegPassword] = useState(false)
-
+  
   const [loginError, setLoginError] = useState("")
   const [registerError, setRegisterError] = useState("")
   const [isLoginPending, setIsLoginPending] = useState(false)
@@ -21,27 +29,14 @@ export default function AuthPage() {
     e.preventDefault()
     setIsLoginPending(true)
     setLoginError("")
-
+    
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await res.json()
-
-      if (res.ok && data.success) {
-        window.location.href = "/dashboard"
-      } else {
-        setLoginError(data.error || "Greška pri prijavi.")
-        setIsLoginPending(false)
-      }
-    } catch {
-      setLoginError("Nije moguće spojiti se na server.")
+    const result = await login(undefined as any, formData)
+    
+    if (result.success) {
+      window.location.href = "/"
+    } else {
+      setLoginError(result.error || "Greška pri prijavi")
       setIsLoginPending(false)
     }
   }
@@ -50,28 +45,14 @@ export default function AuthPage() {
     e.preventDefault()
     setIsRegisterPending(true)
     setRegisterError("")
-
+    
     const formData = new FormData(e.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const confirmPassword = formData.get("confirmPassword") as string
-
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, confirmPassword }),
-      })
-      const data = await res.json()
-
-      if (res.ok && data.success) {
-        window.location.href = "/dashboard"
-      } else {
-        setRegisterError(data.error || "Greška pri registraciji.")
-        setIsRegisterPending(false)
-      }
-    } catch {
-      setRegisterError("Nije moguće spojiti se na server.")
+    const result = await register(undefined as any, formData)
+    
+    if (result.success) {
+      window.location.href = "/success"
+    } else {
+      setRegisterError(result.error || "Greška pri registraciji")
       setIsRegisterPending(false)
     }
   }
@@ -80,8 +61,12 @@ export default function AuthPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Sjaj Čistoće</h1>
-          <p className="text-muted-foreground mt-1">Prijavite se ili registrirajte</p>
+          <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
+            <Home className="w-4 h-4" />
+            Povratak na pocetnu
+          </Link>
+          <h1 className="text-2xl font-bold text-foreground">Sjaj Cistoce</h1>
+          <p className="text-muted-foreground">Prijavite se ili registrirajte</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
@@ -90,7 +75,6 @@ export default function AuthPage() {
             <TabsTrigger value="register">Registracija</TabsTrigger>
           </TabsList>
 
-          {/* LOGIN */}
           <TabsContent value="login">
             <Card>
               <CardHeader>
@@ -132,7 +116,6 @@ export default function AuthPage() {
                         type="button"
                         onClick={() => setShowLoginPassword(!showLoginPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        aria-label={showLoginPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
                       >
                         {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -161,12 +144,11 @@ export default function AuthPage() {
             </Card>
           </TabsContent>
 
-          {/* REGISTER */}
           <TabsContent value="register">
             <Card>
               <CardHeader>
                 <CardTitle>Registracija</CardTitle>
-                <CardDescription>Kreirajte novi korisnički račun</CardDescription>
+                <CardDescription>Kreirajte novi korisnicki racun</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleRegister} className="space-y-4">
@@ -204,7 +186,6 @@ export default function AuthPage() {
                         type="button"
                         onClick={() => setShowRegPassword(!showRegPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        aria-label={showRegPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
                       >
                         {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
