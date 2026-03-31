@@ -3,7 +3,6 @@
 import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 
 const SESSION_COOKIE = "sjaj_session"
 
@@ -86,15 +85,14 @@ export async function register(prevState: ActionState, formData: FormData): Prom
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
-    console.log("[v0] Session cookie set, redirecting to /success")
+    console.log("[v0] Session cookie set, registration complete")
 
+    return { success: true }
   } catch (error) {
     console.error("[v0] Registration error:", error)
     const errorMessage = error instanceof Error ? error.message : "Nepoznata greška"
     return { success: false, error: errorMessage }
   }
-
-  redirect("/success")
 }
 
 export async function login(prevState: ActionState, formData: FormData): Promise<ActionState> {
@@ -138,13 +136,12 @@ export async function login(prevState: ActionState, formData: FormData): Promise
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     })
-    console.log("[v0] Login successful, redirecting to home")
+    console.log("[v0] Login successful")
 
+    return { success: true }
   } catch (error) {
     console.error("[v0] Login error:", error)
     const errorMessage = error instanceof Error ? error.message : "Nepoznata greška"
     return { success: false, error: errorMessage }
   }
-
-  redirect("/")
 }
