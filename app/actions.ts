@@ -46,6 +46,13 @@ export type Job = {
   client_name?: string
 }
 
+export type Account = {
+  id: number
+  user_id: number
+  balance: number
+  currency: string
+}
+
 // Get current user from session
 export async function getCurrentUser(): Promise<User | null> {
   try {
@@ -302,5 +309,23 @@ export async function acceptJob(prevState: ActionState, formData: FormData): Pro
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepoznata greška"
     return { success: false, error: message }
+  }
+}
+
+// Get accounts for a user
+export async function getAccounts(): Promise<Account[]> {
+  try {
+    const user = await getCurrentUser()
+    if (!user) return []
+
+    const sql = getSQL()
+    const accounts = await sql`
+      SELECT id, user_id, balance, currency
+      FROM accounts
+      WHERE user_id = ${user.id}
+    `
+    return accounts as Account[]
+  } catch {
+    return []
   }
 }
