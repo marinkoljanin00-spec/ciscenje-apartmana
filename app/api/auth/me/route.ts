@@ -12,12 +12,18 @@ function getSQL() {
   return neon(databaseUrl)
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Debug: log all cookies from request headers
+    const cookieHeader = request.headers.get("cookie")
+    console.log("[v0] ME: Cookie header:", cookieHeader)
+    
     const cookieStore = await cookies()
     const sessionCookie = cookieStore.get(SESSION_COOKIE)
+    console.log("[v0] ME: Session cookie value:", sessionCookie?.value || "NONE")
 
     if (!sessionCookie?.value) {
+      console.log("[v0] ME: No session cookie found")
       return NextResponse.json({ user: null })
     }
 
@@ -32,9 +38,11 @@ export async function GET() {
     `
 
     if (users.length === 0) {
+      console.log("[v0] ME: User not found in database")
       return NextResponse.json({ user: null })
     }
 
+    console.log("[v0] ME: User found:", users[0].email, "role:", users[0].role)
     return NextResponse.json({ user: users[0] })
   } catch {
     return NextResponse.json({ user: null })

@@ -22,32 +22,43 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [jobs, setJobs] = useState<Job[]>([])
+  const [mounted, setMounted] = useState(false)
+
+  // Wait for component to mount before doing anything
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
-    async function checkSession() {
+    if (!mounted) return
+    
+    // Small delay to ensure router is initialized
+    const timer = setTimeout(async () => {
       try {
-        const res = await fetch("/api/auth/me")
+        const res = await fetch("/api/auth/me", { credentials: "include" })
         const data = await res.json()
         
         if (data.user) {
           setUser(data.user)
-          // Fetch jobs based on role
-          const jobsRes = await fetch(`/api/jobs?role=${data.user.role}`)
+          const jobsRes = await fetch(`/api/jobs?role=${data.user.role}`, { credentials: "include" })
           const jobsData = await jobsRes.json()
           setJobs(jobsData.jobs || [])
+          setLoading(false)
         } else {
-          // No session, redirect to auth
-          window.location.href = "/auth"
-          return
+          // Use location.replace instead of href to avoid history issues
+          if (typeof window !== "undefined") {
+            window.location.replace("/auth")
+          }
         }
       } catch {
-        window.location.href = "/auth"
-        return
+        if (typeof window !== "undefined") {
+          window.location.replace("/auth")
+        }
       }
-      setLoading(false)
-    }
-    checkSession()
-  }, [])
+    }, 100)
+    
+    return () => clearTimeout(timer)
+  }, [mounted])
 
   if (loading) {
     return (
