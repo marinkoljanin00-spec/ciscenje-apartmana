@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -45,7 +45,7 @@ import Image from "next/image"
 const SAVED_CREDENTIALS_KEY = "cleanup_saved_credentials"
 
 export function AuthScreen() {
-  const [isPending, startTransition] = useTransition()
+  const [isPending, setIsPending] = useState(false)
 
   // Login state
   const [loginEmail, setLoginEmail] = useState("")
@@ -83,32 +83,33 @@ export function AuthScreen() {
     }
   }, [])
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoginError("")
+    setIsPending(true)
     
     const formData = new FormData()
     formData.set("email", loginEmail)
     formData.set("password", loginPassword)
     
-    startTransition(async () => {
-      try {
-        const result = await loginAction({ success: false }, formData)
-        
-        if (result.success) {
-          if (rememberMe) {
-            localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }))
-          } else {
-            localStorage.removeItem(SAVED_CREDENTIALS_KEY)
-          }
-          window.location.href = "/"
+    try {
+      const result = await loginAction({ success: false }, formData)
+      
+      if (result.success) {
+        if (rememberMe) {
+          localStorage.setItem(SAVED_CREDENTIALS_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }))
         } else {
-          setLoginError(result.error || "Pogrešni podaci za prijavu.")
+          localStorage.removeItem(SAVED_CREDENTIALS_KEY)
         }
-      } catch (error) {
-        setLoginError(error instanceof Error ? error.message : "Greška pri prijavi.")
+        window.location.href = "/"
+      } else {
+        setLoginError(result.error || "Pogrešni podaci za prijavu.")
+        setIsPending(false)
       }
-    })
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : "Greška pri prijavi.")
+      setIsPending(false)
+    }
   }
 
   const handleForgetCredentials = () => {
@@ -119,7 +120,7 @@ export function AuthScreen() {
     setHasSavedCredentials(false)
   }
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setRegError("")
     setRegSuccess("")
@@ -129,25 +130,27 @@ export function AuthScreen() {
       return
     }
 
+    setIsPending(true)
+    
     const formData = new FormData()
     formData.set("email", regEmail)
     formData.set("password", regPassword)
     formData.set("confirmPassword", regPassword)
     
-    startTransition(async () => {
-      try {
-        const result = await registerAction({ success: false }, formData)
+    try {
+      const result = await registerAction({ success: false }, formData)
 
-        if (result.success) {
-          setRegSuccess("Registracija uspješna!")
-          window.location.href = "/success"
-        } else {
-          setRegError(result.error || "Greška pri registraciji.")
-        }
-      } catch (error) {
-        setRegError(error instanceof Error ? error.message : "Greška pri registraciji.")
+      if (result.success) {
+        setRegSuccess("Registracija uspješna!")
+        window.location.href = "/success"
+      } else {
+        setRegError(result.error || "Greška pri registraciji.")
+        setIsPending(false)
       }
-    })
+    } catch (error) {
+      setRegError(error instanceof Error ? error.message : "Greška pri registraciji.")
+      setIsPending(false)
+    }
   }
 
   const features = [

@@ -95,6 +95,75 @@ export async function register(prevState: ActionState, formData: FormData): Prom
   }
 }
 
+// Get current user from session cookie
+export async function getCurrentUser() {
+  try {
+    const cookieStore = await cookies()
+    const sessionCookie = cookieStore.get(SESSION_COOKIE)
+    
+    if (!sessionCookie?.value) {
+      return null
+    }
+    
+    const [userId] = sessionCookie.value.split(":")
+    if (!userId) {
+      return null
+    }
+    
+    const sql = getSQL()
+    const users = await sql`
+      SELECT id, email, created_at FROM users WHERE id = ${parseInt(userId, 10)}
+    `
+    
+    if (users.length === 0) {
+      return null
+    }
+    
+    return users[0]
+  } catch (error) {
+    console.error("[v0] getCurrentUser error:", error)
+    return null
+  }
+}
+
+// Account type
+export type Account = {
+  id: number
+  name: string
+  balance: number
+  currency: string
+  user_id: number
+  created_at: string
+}
+
+// Get accounts for the current logged-in user
+export async function getAccounts(): Promise<Account[]> {
+  try {
+    const user = await getCurrentUser()
+    
+    if (!user) {
+      console.log("[v0] getAccounts: No user logged in")
+      return []
+    }
+    
+    const sql = getSQL()
+    console.log("[v0] getAccounts: Fetching accounts for user_id:", user.id)
+    
+    const accounts = await sql`
+      SELECT id, name, balance, currency, user_id, created_at 
+      FROM accounts 
+      WHERE user_id = ${user.id}
+      ORDER BY created_at DESC
+    `
+    
+    console.log("[v0] getAccounts: Found", accounts.length, "accounts")
+    return accounts as Account[]
+  } catch (error) {
+    console.error("[v0] getAccounts error:", error)
+    return []
+  }
+}
+
 export async function login(prevState: ActionState, formData: FormData): Promise<ActionState> {
   const email = formData.get("email") as string
   const password = formData.get("password") as string
