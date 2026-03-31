@@ -3,7 +3,6 @@
 import { neon } from "@neondatabase/serverless"
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
-import { revalidatePath } from "next/cache"
 
 const SESSION_COOKIE = "marketplace_session"
 
@@ -227,9 +226,6 @@ export async function createJob(prevState: ActionState, formData: FormData): Pro
       VALUES (${title}, ${location}, ${price}, 'open', ${user.id}, NOW())
       RETURNING id, title, location, price, status, created_at
     `
-
-    // Osvježi podatke bez redirecta
-    revalidatePath('/')
 
     return { success: true }
   } catch (error) {
