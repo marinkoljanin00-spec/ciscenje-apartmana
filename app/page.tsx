@@ -1,14 +1,14 @@
-import { redirect } from "next/navigation"
 import { getCurrentUser, getClientJobs, getOpenJobs } from "@/app/actions"
 import { ClientDashboard } from "@/components/client-dashboard"
-import { CleanerMarketplace } from "@/components/cleaner-marketplace"
+import { CleanerDashboard } from "@/components/cleaner-marketplace"
+import AuthPageContent from "./auth/auth-content"
 
 export default async function Home() {
   const user = await getCurrentUser()
   
-  // If not logged in, redirect to auth page
+  // If not logged in, show auth page content directly
   if (!user) {
-    redirect("/auth")
+    return <AuthPageContent />
   }
   
   // Show different dashboard based on user role
@@ -17,6 +17,6 @@ export default async function Home() {
     return <ClientDashboard user={user} jobs={jobs} />
   } else {
     const jobs = await getOpenJobs()
-    return <CleanerMarketplace user={user} jobs={jobs} />
+    return <CleanerDashboard user={user} jobs={jobs} />
   }
 }
