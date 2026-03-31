@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { register, login } from "@/app/actions"
 
 import { Button } from "@/components/ui/button"
@@ -29,15 +30,14 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 
-const initialState: ActionState = { success: false }
-
 export default function AuthPage() {
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegPassword, setShowRegPassword] = useState(false)
   const [registerError, setRegisterError] = useState("")
   const [loginError, setLoginError] = useState("")
-  const [isRegisterLoading, setIsRegisterLoading] = useState(false)
-  const [isLoginLoading, setIsLoginLoading] = useState(false)
 
   const features = [
     {
@@ -61,6 +61,30 @@ export default function AuthPage() {
       description: "Isti dan rezervacije"
     }
   ]
+
+  async function handleRegister(formData: FormData) {
+    setRegisterError("")
+    startTransition(async () => {
+      const result = await register({ success: false }, formData)
+      if (result.success) {
+        router.push("/success")
+      } else if (result.error) {
+        setRegisterError(result.error)
+      }
+    })
+  }
+
+  async function handleLogin(formData: FormData) {
+    setLoginError("")
+    startTransition(async () => {
+      const result = await login({ success: false }, formData)
+      if (result.success) {
+        router.push("/")
+      } else if (result.error) {
+        setLoginError(result.error)
+      }
+    })
+  }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
@@ -170,6 +194,7 @@ export default function AuthPage() {
               </TabsTrigger>
             </TabsList>
 
+            {/* LOGIN TAB */}
             <TabsContent value="login">
               <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                 <CardHeader>
@@ -179,22 +204,41 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form
-                    onSubmit={async (e) => {
-                      e.preventDefault()
-                      setIsLoginLoading(true)
-                      setLoginError("")
-                      const formData = new FormData(e.currentTarget)
-                      try {
-                        await login(undefined as any, formData)
-                      } catch (error) {
-                        const message = error instanceof Error ? error.message : "Greška pri prijavi"
-                        setLoginError(message)
-                      }
-                      setIsLoginLoading(false)
-                    }}
-                    className="space-y-4"
-                  >
+                  <form action={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="login-email"
+                          name="email"
+                          type="email"
+                          placeholder="vas@email.com"
+                          className="pl-10"
+                          disabled={isPending}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">Lozinka</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          name="password"
+                          type={showLoginPassword ? "text" : "password"}
+                          placeholder="********"
+                          className="pl-10 pr-10"
+                          disabled={isPending}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={showLoginPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
+                        >
                           {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
@@ -204,8 +248,8 @@ export default function AuthPage() {
                       <p className="text-sm text-destructive">{loginError}</p>
                     )}
                     
-                    <Button type="submit" className="w-full" disabled={isLoginLoading}>
-                      {isLoginLoading ? (
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                      {isPending ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Prijava...
@@ -219,6 +263,7 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
 
+            {/* REGISTER TAB */}
             <TabsContent value="register">
               <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                 <CardHeader>
@@ -228,22 +273,7 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form
-                    onSubmit={async (e) => {
-                      e.preventDefault()
-                      setIsRegisterLoading(true)
-                      setRegisterError("")
-                      const formData = new FormData(e.currentTarget)
-                      try {
-                        await register(undefined as any, formData)
-                      } catch (error) {
-                        const message = error instanceof Error ? error.message : "Greška pri registraciji"
-                        setRegisterError(message)
-                      }
-                      setIsRegisterLoading(false)
-                    }}
-                    className="space-y-4"
-                  >
+                  <form action={handleRegister} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="reg-email">Email</Label>
                       <div className="relative">
@@ -254,7 +284,7 @@ export default function AuthPage() {
                           type="email"
                           placeholder="vas@email.com"
                           className="pl-10"
-                          disabled={isRegisterLoading}
+                          disabled={isPending}
                           required
                         />
                       </div>
@@ -269,7 +299,7 @@ export default function AuthPage() {
                           type={showRegPassword ? "text" : "password"}
                           placeholder="Najmanje 6 znakova"
                           className="pl-10 pr-10"
-                          disabled={isRegisterLoading}
+                          disabled={isPending}
                           required
                         />
                         <button
@@ -292,7 +322,7 @@ export default function AuthPage() {
                           type={showRegPassword ? "text" : "password"}
                           placeholder="Ponovite lozinku"
                           className="pl-10"
-                          disabled={isRegisterLoading}
+                          disabled={isPending}
                           required
                         />
                       </div>
@@ -302,8 +332,8 @@ export default function AuthPage() {
                       <p className="text-sm text-destructive">{registerError}</p>
                     )}
                     
-                    <Button type="submit" className="w-full" disabled={isRegisterLoading}>
-                      {isRegisterLoading ? (
+                    <Button type="submit" className="w-full" disabled={isPending}>
+                      {isPending ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Registracija...
