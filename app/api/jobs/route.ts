@@ -42,6 +42,43 @@ async function getCurrentUser() {
   }
 }
 
+// Get jobs
+export async function GET(request: Request) {
+  try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ jobs: [] })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const role = searchParams.get("role")
+
+    const sql = getSQL()
+
+    if (role === "client") {
+      // Return client's own jobs
+      const jobs = await sql`
+        SELECT id, title, location, price, status, created_at 
+        FROM jobs 
+        WHERE client_id = ${user.id}
+        ORDER BY created_at DESC
+      `
+      return NextResponse.json({ jobs })
+    } else {
+      // Return all open jobs for cleaners
+      const jobs = await sql`
+        SELECT id, title, location, price, status, created_at 
+        FROM jobs 
+        WHERE status = 'open'
+        ORDER BY created_at DESC
+      `
+      return NextResponse.json({ jobs })
+    }
+  } catch {
+    return NextResponse.json({ jobs: [] })
+  }
+}
+
 // Create a new job
 export async function POST(request: Request) {
   try {

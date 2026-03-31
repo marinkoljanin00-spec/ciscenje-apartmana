@@ -9,6 +9,7 @@ export default function AuthPage() {
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
   const [loginError, setLoginError] = useState("")
+  const [loginSuccess, setLoginSuccess] = useState("")
   const [loginLoading, setLoginLoading] = useState(false)
 
   const [regEmail, setRegEmail] = useState("")
@@ -29,7 +30,10 @@ export default function AuthPage() {
       })
       const data = await res.json()
       if (data.success) {
-        window.location.href = "/"
+        setLoginSuccess("Uspjeh! Preusmjeravam...")
+        setTimeout(() => {
+          window.location.href = "/"
+        }, 500)
       } else {
         setLoginError(data.error || "Neispravan email ili lozinka.")
         setLoginLoading(false)
@@ -125,6 +129,12 @@ export default function AuthPage() {
               {loginError && (
                 <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626", padding: "0.75rem", borderRadius: "6px", fontSize: "0.875rem", marginBottom: "1rem" }}>
                   {loginError}
+                </div>
+              )}
+              
+              {loginSuccess && (
+                <div style={{ backgroundColor: "#f0fdf4", border: "1px solid #bbf7d0", color: "#16a34a", padding: "0.75rem", borderRadius: "6px", fontSize: "0.875rem", marginBottom: "1rem" }}>
+                  {loginSuccess}
                 </div>
               )}
 
