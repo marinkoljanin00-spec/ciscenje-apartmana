@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { CookieBanner } from "@/components/CookieBanner"
 
 type User = {
   id: number
@@ -22,46 +23,50 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [jobs, setJobs] = useState<Job[]>([])
+  const [cookieConsent, setCookieConsent] = useState(false)
+  const [showBanner, setShowBanner] = useState(false)
 
   useEffect(() => {
-    console.log("[v0] PAGE: Pocet ucitavanja")
-    
-    // 3-sekundni timeout osigurač
+    // Prvo provjeri localStorage za cookie_consent
+    const savedConsent = localStorage.getItem("cookie_consent")
+    if (savedConsent) {
+      setCookieConsent(true)
+    } else {
+      setShowBanner(true)
+      setLoading(false)
+      return
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!cookieConsent) return
+
     const timeout = setTimeout(() => {
-      console.log("[v0] PAGE: Timeout - API nije odgovorio")
       setLoading(false)
     }, 3000)
 
-    // Odmah pozovi fetch bez kašnjenja
     fetch("/api/auth/me", { credentials: "include" })
-      .then(res => {
-        console.log("[v0] PAGE: /api/auth/me status:", res.status)
+      .then((res) => {
         return res.json()
       })
-      .then(data => {
-        console.log("[v0] PAGE: Odgovor:", data)
+      .then((data) => {
         clearTimeout(timeout)
-        
-        // KLJUČNO: Odmah postavi setLoading(false) kada dobiješ odgovor
+
         if (data.user) {
-          console.log("[v0] PAGE: Korisnik pronaden")
           setUser(data.user)
-          setLoading(false)
-          
-          // Učitaj poslove nakon što znamo ulogu
+
           fetch(`/api/jobs?role=${data.user.role}`, { credentials: "include" })
-            .then(r => r.json())
-            .then(jobsData => setJobs(jobsData.jobs || []))
+            .then((r) => r.json())
+            .then((jobsData) => setJobs(jobsData.jobs || []))
+            .finally(() => setLoading(false))
         } else {
-          console.log("[v0] PAGE: Nema korisnika - redirect na /auth")
           setLoading(false)
           if (typeof window !== "undefined") {
             window.location.href = "/auth"
           }
         }
       })
-      .catch(err => {
-        console.error("[v0] PAGE: Greska:", err)
+      .catch(() => {
         clearTimeout(timeout)
         setLoading(false)
         if (typeof window !== "undefined") {
@@ -70,10 +75,14 @@ export default function Home() {
       })
 
     return () => clearTimeout(timeout)
-  }, [])
+  }, [cookieConsent])
+
+  if (showBanner) {
+    return <CookieBanner onConsent={(consent) => { setCookieConsent(true); setShowBanner(false) }} />
+  }
 
   if (loading) {
-    return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Ucitavanje...</div>
+    return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Učitavanje...</div>
   }
 
   if (!user) {
