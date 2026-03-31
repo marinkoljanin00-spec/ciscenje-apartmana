@@ -1,7 +1,6 @@
 'use client'
-// Build: 2026-03-31-v3-fixed
 
-import React, { useState, useEffect, useLayoutEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import AuthPage from './auth/page'
 import { CookieBanner } from '@/components/CookieBanner'
 
@@ -21,29 +20,25 @@ type Job = {
 }
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false)
   const [view, setView] = useState<'auth' | 'dashboard'>('auth')
   const [userRole, setUserRole] = useState<'client' | 'cleaner' | null>(null)
   const [userName, setUserName] = useState<string>('')
   const [jobs, setJobs] = useState<Job[]>([])
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const [showCookieBanner, setShowCookieBanner] = useState(false)
 
-  useLayoutEffect(() => {
-    // Prvo provjeri localStorage prije rendera
+  // Mounted check to avoid hydration errors
+  useEffect(() => {
+    setMounted(true)
+    
+    // Check localStorage after mount
     const storedRole = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
     const storedName = localStorage.getItem('user_email') || ''
-    const hasConsent = localStorage.getItem('cookie_consent')
-    
-    if (!hasConsent) {
-      setShowCookieBanner(true)
-    }
     
     if (storedRole) {
       setUserRole(storedRole)
       setUserName(storedName)
       setView('dashboard')
     }
-    setIsCheckingAuth(false)
   }, [])
 
   const handleLoginSuccess = (user: User) => {
@@ -64,28 +59,25 @@ export default function Home() {
     setView('auth')
   }
 
-  // Ne prikazuj ništa dok provjeravamo auth
-  if (isCheckingAuth) {
+  // Don't render until mounted - prevents hydration errors
+  if (!mounted) {
     return (
-      <>
-        <CookieBanner onConsent={() => setShowCookieBanner(false)} />
-        <div style={{ 
-          minHeight: '100vh', 
-          backgroundColor: '#0a0a0a', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center' 
-        }}>
-          <div style={{ color: '#10b981', fontSize: '1.25rem' }}>Učitavanje...</div>
-        </div>
-      </>
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#f1f5f9', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <div style={{ color: '#000000', fontSize: '1.25rem', fontWeight: '600' }}>Ucitavanje sucelja...</div>
+      </div>
     )
   }
 
   if (view === 'auth') {
     return (
       <>
-        <CookieBanner onConsent={() => setShowCookieBanner(false)} />
+        <CookieBanner onConsent={() => {}} />
         <AuthPage onLoginSuccess={handleLoginSuccess} />
       </>
     )
@@ -112,11 +104,11 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const jobsRes = await fetch('/api/jobs?role=client')
-        const jobsData = await jobsRes.json()
-        setJobs(jobsData.jobs || [])
+        const res = await fetch('/api/jobs?role=client')
+        const data = await res.json()
+        setJobs(data.jobs || [])
       } catch {
-        // Ignoriraj grešku
+        // ignore
       }
     }
     loadJobs()
@@ -148,20 +140,23 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
         setLocation('')
         setPrice('')
       } else {
-        setError(data.error || 'Greška pri objavi')
+        setError(data.error || 'Greska pri objavi')
       }
     } catch {
-      setError('Mrežna greška')
+      setError('Mrezna greska')
     }
     setSubmitting(false)
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', color: '#e5e5e5' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
       {/* Header */}
       <header style={{ 
-        backgroundColor: '#111111', 
-        borderBottom: '1px solid #1f1f1f',
+        backgroundColor: '#ffffff', 
+        border: '2px solid #000000',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
         padding: '1rem 2rem',
         display: 'flex',
         justifyContent: 'space-between',
@@ -171,30 +166,29 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
           <div style={{ 
             width: '40px', 
             height: '40px', 
-            backgroundColor: '#10b981', 
-            borderRadius: '10px',
+            backgroundColor: '#000000', 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '1.25rem'
+            fontSize: '1.25rem',
+            color: '#ffffff',
+            fontWeight: 'bold'
           }}>
             S
           </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#ffffff' }}>SJAJ</span>
+          <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#000000' }}>SJAJ</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: '#a3a3a3' }}>{userName}</span>
+          <span style={{ color: '#525252', fontWeight: '500' }}>{userName}</span>
           <button
             onClick={onLogout}
             style={{
-              backgroundColor: 'transparent',
-              color: '#ef4444',
-              border: '1px solid #ef4444',
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              border: '2px solid #000000',
               padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
               cursor: 'pointer',
-              fontWeight: '500',
-              transition: 'all 0.2s'
+              fontWeight: '600'
             }}
           >
             Odjava
@@ -202,28 +196,28 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
         </div>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
         <h1 style={{ 
           fontSize: '2rem', 
           fontWeight: '700', 
-          color: '#ffffff', 
+          color: '#000000', 
           marginBottom: '2rem' 
         }}>
           Dashboard Klijenta
         </h1>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-          {/* Form za objavljivanje posla */}
+          {/* Form */}
           <div style={{
-            backgroundColor: '#111111',
+            backgroundColor: '#ffffff',
             padding: '1.5rem',
-            borderRadius: '1rem',
-            border: '1px solid #1f1f1f'
+            border: '2px solid #000000',
+            boxShadow: '4px 4px 0 #000000'
           }}>
             <h2 style={{ 
               fontSize: '1.25rem', 
-              fontWeight: '600', 
-              color: '#10b981', 
+              fontWeight: '700', 
+              color: '#000000', 
               marginTop: 0, 
               marginBottom: '1.5rem' 
             }}>
@@ -231,30 +225,28 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
             </h2>
             <form onSubmit={handleCreateJob}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#a3a3a3', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                  NASLOV POSLA
+                <label style={{ display: 'block', color: '#000000', fontWeight: '600', marginBottom: '0.5rem' }}>
+                  NASLOV
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  placeholder="npr. Čišćenje stana"
+                  placeholder="npr. Ciscenje stana"
                   style={{
                     width: '100%',
-                    padding: '0.875rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #262626',
-                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    backgroundColor: '#ffffff',
+                    border: '2px solid #000000',
                     fontSize: '1rem',
-                    color: '#ffffff',
-                    boxSizing: 'border-box',
-                    outline: 'none'
+                    color: '#000000',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', color: '#a3a3a3', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontWeight: '600', marginBottom: '0.5rem' }}>
                   LOKACIJA
                 </label>
                 <input
@@ -262,22 +254,20 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   required
-                  placeholder="npr. Zagreb, Centar"
+                  placeholder="npr. Zagreb"
                   style={{
                     width: '100%',
-                    padding: '0.875rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #262626',
-                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    backgroundColor: '#ffffff',
+                    border: '2px solid #000000',
                     fontSize: '1rem',
-                    color: '#ffffff',
-                    boxSizing: 'border-box',
-                    outline: 'none'
+                    color: '#000000',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
               <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', color: '#a3a3a3', fontWeight: '500', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                <label style={{ display: 'block', color: '#000000', fontWeight: '600', marginBottom: '0.5rem' }}>
                   CIJENA (EUR)
                 </label>
                 <input
@@ -286,28 +276,25 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
                   onChange={(e) => setPrice(e.target.value)}
                   required
                   step="0.01"
-                  placeholder="50.00"
+                  placeholder="50"
                   style={{
                     width: '100%',
-                    padding: '0.875rem',
-                    backgroundColor: '#0a0a0a',
-                    border: '1px solid #262626',
-                    borderRadius: '0.5rem',
+                    padding: '0.75rem',
+                    backgroundColor: '#ffffff',
+                    border: '2px solid #000000',
                     fontSize: '1rem',
-                    color: '#ffffff',
-                    boxSizing: 'border-box',
-                    outline: 'none'
+                    color: '#000000',
+                    boxSizing: 'border-box'
                   }}
                 />
               </div>
               {error && (
                 <div style={{ 
-                  color: '#ef4444', 
+                  color: '#dc2626', 
                   marginBottom: '1rem',
                   padding: '0.75rem',
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.875rem'
+                  backgroundColor: '#fef2f2',
+                  border: '2px solid #dc2626'
                 }}>
                   {error}
                 </div>
@@ -317,56 +304,52 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
                 disabled={submitting}
                 style={{
                   width: '100%',
-                  backgroundColor: '#10b981',
-                  color: '#000000',
-                  border: 'none',
+                  backgroundColor: '#000000',
+                  color: '#ffffff',
+                  border: '2px solid #000000',
                   padding: '0.875rem',
-                  borderRadius: '0.5rem',
                   fontSize: '1rem',
-                  fontWeight: '600',
+                  fontWeight: '700',
                   cursor: submitting ? 'not-allowed' : 'pointer',
-                  opacity: submitting ? 0.6 : 1,
-                  transition: 'all 0.2s'
+                  opacity: submitting ? 0.6 : 1
                 }}
               >
-                {submitting ? 'Objavljujem...' : 'Objavi posao'}
+                {submitting ? 'Objavljujem...' : 'OBJAVI POSAO'}
               </button>
             </form>
           </div>
 
-          {/* Lista poslova */}
+          {/* Jobs list */}
           <div style={{
-            backgroundColor: '#111111',
+            backgroundColor: '#ffffff',
             padding: '1.5rem',
-            borderRadius: '1rem',
-            border: '1px solid #1f1f1f',
+            border: '2px solid #000000',
+            boxShadow: '4px 4px 0 #000000',
             maxHeight: '500px',
             overflowY: 'auto'
           }}>
             <h2 style={{ 
               fontSize: '1.25rem', 
-              fontWeight: '600', 
-              color: '#10b981', 
+              fontWeight: '700', 
+              color: '#000000', 
               marginTop: 0, 
               marginBottom: '1.5rem',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              Vaši poslovi
+              Vasi poslovi
               <span style={{ 
-                backgroundColor: '#10b981', 
-                color: '#000000', 
-                padding: '0.25rem 0.75rem', 
-                borderRadius: '9999px',
-                fontSize: '0.875rem'
+                backgroundColor: '#000000', 
+                color: '#ffffff', 
+                padding: '0.25rem 0.75rem'
               }}>
                 {jobs.length}
               </span>
             </h2>
             {jobs.length === 0 ? (
               <p style={{ color: '#525252', textAlign: 'center', paddingTop: '2rem' }}>
-                Još niste objavili niti jedan posao.
+                Nemate objavljenih poslova.
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -374,27 +357,25 @@ function ClientDashboard({ onLogout, jobs, setJobs, userName }: { onLogout: () =
                   <div
                     key={job.id}
                     style={{
-                      backgroundColor: '#0a0a0a',
+                      backgroundColor: '#f1f5f9',
                       padding: '1rem',
-                      borderRadius: '0.75rem',
-                      border: '1px solid #262626'
+                      border: '2px solid #000000'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <h3 style={{ color: '#ffffff', fontWeight: '600', margin: 0, fontSize: '1rem' }}>{job.title}</h3>
+                      <h3 style={{ color: '#000000', fontWeight: '700', margin: 0 }}>{job.title}</h3>
                       <span style={{
-                        backgroundColor: job.status === 'open' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                        color: job.status === 'open' ? '#10b981' : '#3b82f6',
+                        backgroundColor: job.status === 'open' ? '#22c55e' : '#3b82f6',
+                        color: '#ffffff',
                         padding: '0.25rem 0.5rem',
-                        borderRadius: '0.25rem',
                         fontSize: '0.75rem',
-                        fontWeight: '500'
+                        fontWeight: '600'
                       }}>
-                        {job.status === 'open' ? 'Otvoreno' : 'Prihvaćeno'}
+                        {job.status === 'open' ? 'OTVORENO' : 'PRIHVACENO'}
                       </span>
                     </div>
-                    <p style={{ color: '#a3a3a3', margin: '0.5rem 0 0 0', fontSize: '0.875rem' }}>{job.location}</p>
-                    <p style={{ color: '#10b981', fontWeight: '600', margin: '0.5rem 0 0 0' }}>{job.price.toFixed(2)} EUR</p>
+                    <p style={{ color: '#525252', margin: '0.5rem 0 0 0' }}>{job.location}</p>
+                    <p style={{ color: '#000000', fontWeight: '700', margin: '0.5rem 0 0 0' }}>{job.price.toFixed(2)} EUR</p>
                   </div>
                 ))}
               </div>
@@ -412,11 +393,11 @@ function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userNa
   useEffect(() => {
     const loadJobs = async () => {
       try {
-        const jobsRes = await fetch('/api/jobs?role=cleaner')
-        const jobsData = await jobsRes.json()
-        setJobsList(jobsData.jobs || [])
+        const res = await fetch('/api/jobs?role=cleaner')
+        const data = await res.json()
+        setJobsList(data.jobs || [])
       } catch {
-        // Ignoriraj grešku
+        // ignore
       }
     }
     loadJobs()
@@ -434,16 +415,19 @@ function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userNa
         setJobsList(jobsList.filter((j) => j.id !== jobId))
       }
     } catch {
-      // Ignoriraj grešku
+      // ignore
     }
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0a0a', color: '#e5e5e5' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f9' }}>
       {/* Header */}
       <header style={{ 
-        backgroundColor: '#111111', 
-        borderBottom: '1px solid #1f1f1f',
+        backgroundColor: '#ffffff', 
+        border: '2px solid #000000',
+        borderTop: 'none',
+        borderLeft: 'none',
+        borderRight: 'none',
         padding: '1rem 2rem',
         display: 'flex',
         justifyContent: 'space-between',
@@ -453,31 +437,29 @@ function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userNa
           <div style={{ 
             width: '40px', 
             height: '40px', 
-            backgroundColor: '#10b981', 
-            borderRadius: '10px',
+            backgroundColor: '#000000', 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '1.25rem',
-            color: '#000000',
+            color: '#ffffff',
             fontWeight: 'bold'
           }}>
             S
           </div>
-          <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#ffffff' }}>SJAJ</span>
+          <span style={{ fontSize: '1.25rem', fontWeight: '700', color: '#000000' }}>SJAJ</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ color: '#a3a3a3' }}>{userName}</span>
+          <span style={{ color: '#525252', fontWeight: '500' }}>{userName}</span>
           <button
             onClick={onLogout}
             style={{
-              backgroundColor: 'transparent',
-              color: '#ef4444',
-              border: '1px solid #ef4444',
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              border: '2px solid #000000',
               padding: '0.5rem 1rem',
-              borderRadius: '0.5rem',
               cursor: 'pointer',
-              fontWeight: '500'
+              fontWeight: '600'
             }}
           >
             Odjava
@@ -485,21 +467,21 @@ function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userNa
         </div>
       </header>
 
-      <main style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
         <h1 style={{ 
           fontSize: '2rem', 
           fontWeight: '700', 
-          color: '#ffffff', 
+          color: '#000000', 
           marginBottom: '2rem' 
         }}>
           Dostupni poslovi
         </h1>
 
         <div style={{
-          backgroundColor: '#111111',
+          backgroundColor: '#ffffff',
           padding: '1.5rem',
-          borderRadius: '1rem',
-          border: '1px solid #1f1f1f'
+          border: '2px solid #000000',
+          boxShadow: '4px 4px 0 #000000'
         }}>
           <div style={{ 
             display: 'flex', 
@@ -509,18 +491,16 @@ function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userNa
           }}>
             <h2 style={{ 
               fontSize: '1.25rem', 
-              fontWeight: '600', 
-              color: '#10b981', 
+              fontWeight: '700', 
+              color: '#000000', 
               margin: 0
             }}>
-              Poslovi na čekanju
+              Poslovi na cekanju
             </h2>
             <span style={{ 
-              backgroundColor: '#10b981', 
-              color: '#000000', 
-              padding: '0.25rem 0.75rem', 
-              borderRadius: '9999px',
-              fontSize: '0.875rem',
+              backgroundColor: '#000000', 
+              color: '#ffffff', 
+              padding: '0.25rem 0.75rem',
               fontWeight: '600'
             }}>
               {jobsList.length}
@@ -529,38 +509,36 @@ function CleanerDashboard({ onLogout, userName }: { onLogout: () => void; userNa
           
           {jobsList.length === 0 ? (
             <p style={{ color: '#525252', textAlign: 'center', paddingTop: '2rem' }}>
-              Trenutno nema dostupnih poslova.
+              Nema dostupnih poslova.
             </p>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
               {jobsList.map((job) => (
                 <div
                   key={job.id}
                   style={{
-                    backgroundColor: '#0a0a0a',
+                    backgroundColor: '#f1f5f9',
                     padding: '1.25rem',
-                    borderRadius: '0.75rem',
-                    border: '1px solid #262626'
+                    border: '2px solid #000000'
                   }}
                 >
-                  <h3 style={{ color: '#ffffff', fontWeight: '600', margin: '0 0 0.5rem 0' }}>{job.title}</h3>
-                  <p style={{ color: '#a3a3a3', margin: '0.25rem 0', fontSize: '0.875rem' }}>{job.location}</p>
-                  <p style={{ color: '#10b981', fontWeight: '700', margin: '0.75rem 0', fontSize: '1.25rem' }}>{job.price.toFixed(2)} EUR</p>
+                  <h3 style={{ color: '#000000', fontWeight: '700', margin: '0 0 0.5rem 0' }}>{job.title}</h3>
+                  <p style={{ color: '#525252', margin: '0.25rem 0' }}>{job.location}</p>
+                  <p style={{ color: '#000000', fontWeight: '700', margin: '0.75rem 0', fontSize: '1.25rem' }}>{job.price.toFixed(2)} EUR</p>
                   <button
                     onClick={() => handleAccept(job.id)}
                     style={{
                       width: '100%',
-                      backgroundColor: '#10b981',
-                      color: '#000000',
-                      border: 'none',
+                      backgroundColor: '#000000',
+                      color: '#ffffff',
+                      border: '2px solid #000000',
                       padding: '0.75rem',
-                      borderRadius: '0.5rem',
                       fontSize: '1rem',
-                      fontWeight: '600',
+                      fontWeight: '700',
                       cursor: 'pointer'
                     }}
                   >
-                    Prihvati posao
+                    PRIHVATI POSAO
                   </button>
                 </div>
               ))}
