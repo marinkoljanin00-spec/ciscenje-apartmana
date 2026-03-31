@@ -85,16 +85,18 @@ export default function AuthPage() {
     }
 
     startTransition(async () => {
-      const result = await registerUser(regEmail, regPassword)
-      
-      if (result.success) {
-        setRegSuccess("Registracija uspješna! Preusmjeravanje...")
-        setTimeout(() => {
-          router.push("/")
-          router.refresh()
-        }, 1500)
-      } else {
-        setRegError(result.error || "Greška pri registraciji.")
+      try {
+        const result = await registerUser(regEmail, regPassword)
+        
+        if (result.success) {
+          setRegSuccess("Registracija uspješna! Preusmjeravanje...")
+          router.push("/success")
+        } else {
+          setRegError(result.error || "Greška pri registraciji.")
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Nepoznata greška"
+        setRegError(`Server greška: ${errorMessage}`)
       }
     })
   }

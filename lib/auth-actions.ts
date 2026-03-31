@@ -75,6 +75,8 @@ export async function registerUser(email: string, password: string): Promise<Aut
 
     // Insert new user
     console.log("[v0] Inserting new user into database...")
+    console.log("[v0] Data being sent: { email:", email, ", password_hash:", passwordHash.substring(0, 10) + "...", ", created_at: NOW() }")
+    
     const result = await sql`
       INSERT INTO users (email, password_hash, created_at)
       VALUES (${email}, ${passwordHash}, NOW())
