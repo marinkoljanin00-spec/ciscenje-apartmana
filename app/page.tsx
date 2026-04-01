@@ -446,7 +446,7 @@ function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | 'registe
 // CLIENT DASHBOARD - Dark Emerald Theme
 // ═══════════════════════════════════════════════════════════════
 function ClientDash({ logout, name, uid }: { logout: () => void; name: string; uid: string }) {
-  const [tab, setTab] = useState<'jobs' | 'profile'>('jobs')
+  const [tab, setTab] = useState<'active' | 'completed' | 'profile'>('active')
   const [jobs, setJobs] = useState<Job[]>([])
   const [stats, setStats] = useState<Stats>({})
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -454,6 +454,12 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
   const [acceptingId, setAcceptingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [acceptedCleaner, setAcceptedCleaner] = useState<{ name: string; email: string; phone: string; rating: number } | null>(null)
+  
+  // Review modal state
+  const [reviewJob, setReviewJob] = useState<Job | null>(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
@@ -519,6 +525,43 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
     setJobs(jobs.filter(j => j.id !== jobId))
   }
 
+  const submitReview = async () => {
+    if (!reviewJob) return
+    setSubmittingReview(true)
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: reviewJob.id,
+          clientId: uid,
+          cleanerId: reviewJob.cleaner_id,
+          rating: reviewRating,
+          comment: reviewComment
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setToast({ message: 'Hvala na recenziji!', type: 'success' })
+        setTimeout(() => setToast(null), 5000)
+        // Refresh jobs
+        const jobsRes = await fetch(`/api/jobs?role=client&userId=${uid}`)
+        const jobsData = await jobsRes.json()
+        setJobs(jobsData.jobs || [])
+        setReviewJob(null)
+        setReviewRating(5)
+        setReviewComment('')
+      } else {
+        setToast({ message: data.error || 'Greska pri slanju recenzije', type: 'error' })
+        setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Mrezna greska', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+    }
+    setSubmittingReview(false)
+  }
+
   const createJob = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setSubmitting(true)
     const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
@@ -560,8 +603,8 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
       {/* Tabs */}
       <div style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4 }}>
-          {[{ k: 'jobs', l: 'Moji poslovi' }, { k: 'profile', l: 'Profil' }].map(x => (
-            <button key={x.k} onClick={() => setTab(x.k as 'jobs' | 'profile')} style={{ 
+          {[{ k: 'active', l: 'Aktivni poslovi' }, { k: 'completed', l: 'Zavrseni' }, { k: 'profile', l: 'Profil' }].map(x => (
+            <button key={x.k} onClick={() => setTab(x.k as 'active' | 'completed' | 'profile')} style={{ 
               padding: '16px 20px', 
               background: 'none', 
               border: 'none', 
@@ -577,7 +620,7 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
       </div>
 
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
-        {tab === 'jobs' && (
+        {tab === 'active' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
             {/* Create Job Form */}
             <div style={{ ...cardStyle, padding: 24 }}>
@@ -627,16 +670,16 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
               </form>
             </div>
 
-            {/* Jobs List */}
+            {/* Jobs List - Active only */}
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Objavljeni poslovi ({jobs.length})</h3>
-              {jobs.length === 0 ? (
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni poslovi ({jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length})</h3>
+              {jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length === 0 ? (
                 <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
-                  <p style={{ color: t.textMuted, margin: 0 }}>Nemate objavljenih poslova</p>
+                  <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih poslova</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {jobs.map(job => (
+                  {jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).map(job => (
                     <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                         <div>
@@ -657,10 +700,10 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                           borderRadius: 100, 
                           fontSize: 12, 
                           fontWeight: 600,
-                          background: job.status === 'open' ? t.accentGlow : job.status === 'waiting_for_client' ? 'rgba(234, 179, 8, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                          color: job.status === 'open' ? t.accent : job.status === 'waiting_for_client' ? '#eab308' : t.accent
+                          background: job.status === 'open' ? t.accentGlow : job.status === 'accepted' ? 'rgba(59, 130, 246, 0.15)' : job.status === 'completed' ? 'rgba(234, 179, 8, 0.15)' : t.accentGlow,
+                          color: job.status === 'open' ? t.accent : job.status === 'accepted' ? '#3b82f6' : job.status === 'completed' ? '#eab308' : t.accent
                         }}>
-                          {job.status === 'open' ? 'Otvoren' : job.status === 'waiting_for_client' ? 'Ceka potvrdu' : 'Potvrdjen'}
+                          {job.status === 'open' ? 'Otvoren' : job.status === 'accepted' ? 'U tijeku' : job.status === 'completed' ? 'Ceka recenziju' : 'Zavrseno'}
                         </span>
                         <div style={{ display: 'flex', gap: 8 }}>
                           {job.status === 'open' && job.application_count && job.application_count > 0 && (
@@ -676,12 +719,21 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                         </div>
                       </div>
                       
-                      {/* Show cleaner contact info for accepted jobs */}
-                      {job.status === 'accepted' && job.cleaner_name && (
-                        <div style={{ marginTop: 16, padding: 16, background: t.accentGlow, borderRadius: 12, border: `1px solid ${t.accent}` }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                            <span style={{ color: t.accent, fontWeight: 600, fontSize: 13 }}>Cistac prihvacen</span>
+                      {/* Show cleaner contact info for accepted/completed jobs */}
+                      {(job.status === 'accepted' || job.status === 'completed') && job.cleaner_name && (
+                        <div style={{ marginTop: 16, padding: 16, background: job.status === 'completed' ? 'rgba(234, 179, 8, 0.1)' : t.accentGlow, borderRadius: 12, border: `1px solid ${job.status === 'completed' ? '#eab308' : t.accent}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={job.status === 'completed' ? '#eab308' : t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                              <span style={{ color: job.status === 'completed' ? '#eab308' : t.accent, fontWeight: 600, fontSize: 13 }}>
+                                {job.status === 'completed' ? 'Posao zavrsen - ocijeni cistaca' : 'Posao u tijeku'}
+                              </span>
+                            </div>
+                            {job.status === 'completed' && (
+                              <button onClick={() => setReviewJob(job)} style={{ ...btnPrimary, padding: '8px 16px', fontSize: 12, background: '#eab308' }}>
+                                Ocijeni
+                              </button>
+                            )}
                           </div>
                           <div style={{ fontWeight: 700, color: t.text, fontSize: 15, marginBottom: 8 }}>{job.cleaner_name}</div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -705,6 +757,39 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {tab === 'completed' && (
+          <div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Zavrseni poslovi ({jobs.filter(j => j.status === 'reviewed').length})</h3>
+            {jobs.filter(j => j.status === 'reviewed').length === 0 ? (
+              <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
+                <p style={{ color: t.textMuted, margin: 0 }}>Nemate zavrsenih poslova</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+                {jobs.filter(j => j.status === 'reviewed').map(job => (
+                  <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div>
+                        <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{job.title}</h4>
+                        <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
+                        <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: t.accentGlow, color: t.accent }}>
+                          Zavrseno
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ padding: 12, background: t.bgCard, borderRadius: 10 }}>
+                      <div style={{ color: t.textMuted, fontSize: 13 }}>Cistac: <span style={{ color: t.text, fontWeight: 600 }}>{job.cleaner_name}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -881,6 +966,80 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
         </div>
       )}
 
+      {/* Review Modal */}
+      {reviewJob && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 }} onClick={() => setReviewJob(null)}>
+          <div style={{ ...cardStyle, padding: 28, maxWidth: 450, width: '100%' }} onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ 
+                width: 64, 
+                height: 64, 
+                background: 'rgba(234, 179, 8, 0.15)', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#eab308" stroke="none">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <h3 style={{ fontSize: 22, fontWeight: 700, color: t.text, margin: '0 0 8px 0' }}>Ocijeni cistaca</h3>
+              <p style={{ color: t.textMuted, fontSize: 15, margin: 0 }}>{reviewJob.cleaner_name}</p>
+            </div>
+
+            {/* Star Rating */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button 
+                  key={star} 
+                  type="button"
+                  onClick={() => setReviewRating(star)}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    padding: 4,
+                    transition: 'transform 0.15s'
+                  }}
+                  onMouseOver={e => (e.currentTarget.style.transform = 'scale(1.2)')}
+                  onMouseOut={e => (e.currentTarget.style.transform = 'scale(1)')}
+                >
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill={star <= reviewRating ? '#eab308' : 'transparent'} stroke={star <= reviewRating ? '#eab308' : t.textDim} strokeWidth="1.5">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            {/* Comment */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Komentar (opcionalno)</label>
+              <textarea 
+                value={reviewComment} 
+                onChange={e => setReviewComment(e.target.value)} 
+                placeholder="Podijelite svoje iskustvo..."
+                rows={3}
+                style={{ ...inputStyle, resize: 'vertical' }}
+              />
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setReviewJob(null)} style={{ ...btnSecondary, flex: 1 }}>Odustani</button>
+              <button 
+                onClick={submitReview} 
+                disabled={submittingReview}
+                style={{ ...btnPrimary, flex: 1, background: '#eab308', opacity: submittingReview ? 0.7 : 1 }}
+              >
+                {submittingReview ? 'Saljem...' : 'Posalji recenziju'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CSS Animation for spinner */}
       <style>{`
         @keyframes spin {
@@ -902,12 +1061,18 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
   const [stats, setStats] = useState<Stats>({})
   const [filterUrgent, setFilterUrgent] = useState(false)
   const [filterType, setFilterType] = useState('')
+  const [completingId, setCompletingId] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   useEffect(() => {
     loadJobs()
-    fetch(`/api/applications?cleanerId=${uid}`).then(r => r.json()).then(d => setMyApplications(d.applications || []))
+    loadMyApplications()
     fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
   }, [uid])
+
+  const loadMyApplications = () => {
+    fetch(`/api/applications?cleanerId=${uid}`).then(r => r.json()).then(d => setMyApplications(d.applications || []))
+  }
 
   const loadJobs = () => {
     let url = '/api/jobs?role=cleaner'
@@ -920,8 +1085,33 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
 
   const applyToJob = async (jobId: number, message: string) => {
     await fetch('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, cleanerId: uid, message }) })
-    fetch(`/api/applications?cleanerId=${uid}`).then(r => r.json()).then(d => setMyApplications(d.applications || []))
+    loadMyApplications()
     loadJobs()
+  }
+
+  const completeJob = async (jobId: number) => {
+    setCompletingId(jobId)
+    try {
+      const res = await fetch('/api/jobs/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, cleanerId: uid })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setToast({ message: 'Posao je oznacen kao zavrsen! Cestitamo!', type: 'success' })
+        setTimeout(() => setToast(null), 5000)
+        loadMyApplications()
+        fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
+      } else {
+        setToast({ message: data.error || 'Greska', type: 'error' })
+        setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Mrezna greska', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+    }
+    setCompletingId(null)
   }
 
   return (
@@ -1026,14 +1216,92 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
 
         {tab === 'my' && (
           <div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Moje prijave ({myApplications.length})</h3>
-            {myApplications.length === 0 ? (
+            {/* Accepted Jobs - In Progress */}
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
+              Prihvaceni poslovi ({myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').length})
+            </h3>
+            {myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                {myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').map(app => (
+                  <div key={app.id} style={{ ...cardStyle, padding: 20, border: `2px solid ${t.accent}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: 0 }}>{app.title}</h4>
+                          {app.is_urgent && <span style={{ background: t.urgent, color: '#fff', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100 }}>HITNO</span>}
+                        </div>
+                        <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
+                        <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
+                          U tijeku
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Client Contact */}
+                    <div style={{ padding: 16, background: t.accentGlow, borderRadius: 12, marginBottom: 16 }}>
+                      <div style={{ fontWeight: 600, color: t.accent, marginBottom: 8, fontSize: 13 }}>Kontakt klijenta:</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ color: t.text, fontSize: 14, fontWeight: 600 }}>{app.client_name}</div>
+                        {app.client_email && (
+                          <a href={`mailto:${app.client_email}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.textMuted, fontSize: 13, textDecoration: 'none' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            {app.client_email}
+                          </a>
+                        )}
+                        {app.client_phone && (
+                          <a href={`tel:${app.client_phone}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.textMuted, fontSize: 13, textDecoration: 'none' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+                            {app.client_phone}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Mark as Complete Button */}
+                    <button 
+                      onClick={() => completeJob(app.job_id)}
+                      disabled={completingId === app.job_id}
+                      style={{ 
+                        ...btnPrimary, 
+                        width: '100%', 
+                        padding: '16px 24px',
+                        fontSize: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 10,
+                        opacity: completingId === app.job_id ? 0.7 : 1
+                      }}
+                    >
+                      {completingId === app.job_id ? (
+                        <>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10"/></svg>
+                          Oznacavam...
+                        </>
+                      ) : (
+                        <>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                          Oznaci kao obavljeno
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Pending Applications */}
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Prijave na cekanju ({myApplications.filter(a => a.status === 'pending').length})</h3>
+            {myApplications.filter(a => a.status === 'pending').length === 0 ? (
               <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
-                <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih prijava</p>
+                <p style={{ color: t.textMuted, margin: 0 }}>Nemate prijava na cekanju</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {myApplications.map(app => (
+                {myApplications.filter(a => a.status === 'pending').map(app => (
                   <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
@@ -1042,24 +1310,11 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
-                        <span style={{ 
-                          padding: '4px 10px', 
-                          borderRadius: 100, 
-                          fontSize: 12, 
-                          fontWeight: 600,
-                          background: app.status === 'pending' ? 'rgba(234, 179, 8, 0.15)' : app.status === 'accepted' ? t.accentGlow : 'rgba(239, 68, 68, 0.15)',
-                          color: app.status === 'pending' ? '#eab308' : app.status === 'accepted' ? t.accent : t.urgent
-                        }}>
-                          {app.status === 'pending' ? 'Na cekanju' : app.status === 'accepted' ? 'Prihvaceno' : 'Odbijeno'}
+                        <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
+                          Na cekanju
                         </span>
                       </div>
                     </div>
-                    {app.status === 'accepted' && (
-                      <div style={{ marginTop: 12, padding: 12, background: t.accentGlow, borderRadius: 10 }}>
-                        <div style={{ fontWeight: 600, color: t.accent, marginBottom: 4 }}>Kontakt klijenta:</div>
-                        <div style={{ color: t.text, fontSize: 14 }}>{app.client_name} - {app.client_phone || app.client_email}</div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -1095,6 +1350,41 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
           </div>
         )}
       </main>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 24, 
+          right: 24, 
+          padding: '16px 24px', 
+          background: toast.type === 'success' ? t.accent : t.urgent, 
+          color: toast.type === 'success' ? '#000' : '#fff', 
+          borderRadius: 12, 
+          fontWeight: 600, 
+          fontSize: 14, 
+          zIndex: 200,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }}>
+          {toast.type === 'success' ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          )}
+          {toast.message}
+        </div>
+      )}
+
+      {/* CSS Animation for spinner */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }

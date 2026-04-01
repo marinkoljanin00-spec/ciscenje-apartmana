@@ -82,14 +82,7 @@ async function POST(request) {
       UPDATE jobs SET status = 'accepted', cleaner_id = ${cleanerId}
       WHERE id = ${jobId}
     `;
-        // Get job price to update cleaner's earnings
-        const job = await sql`SELECT price FROM jobs WHERE id = ${jobId}`;
-        if (job.length > 0) {
-            await sql`
-        UPDATE users SET total_earned = total_earned + ${job[0].price}
-        WHERE id = ${cleanerId}
-      `;
-        }
+        // NOTE: Earnings are added when cleaner marks job as completed (in /api/jobs/complete)
         // Get cleaner contact info to return to client
         const cleaner = await sql`
       SELECT id, full_name, email, phone, rating FROM users WHERE id = ${cleanerId}
