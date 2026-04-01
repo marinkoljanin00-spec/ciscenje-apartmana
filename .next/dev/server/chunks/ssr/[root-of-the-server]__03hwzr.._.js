@@ -56,7 +56,7 @@ const __TURBOPACK__default__export__ = fontData;
 "[project]/app/layout.tsx [app-rsc] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-// sjaj.hr - main layout - fresh rebuild
+// sjaj.hr - main layout - clean v3
 __turbopack_context__.s([
     "default",
     ()=>RootLayout,

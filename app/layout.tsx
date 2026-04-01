@@ -1,4 +1,4 @@
-// sjaj.hr - main layout - fresh rebuild
+// sjaj.hr - main layout - clean v3
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
