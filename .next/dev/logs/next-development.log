@@ -1,1 +1,7 @@
-{"timestamp":"00:17:39.616","source":"Server","level":"LOG","message":"✓ Compiled in 46ms"}
+{"timestamp":"00:21:27.197","source":"Server","level":"LOG","message":"✓ Compiled in 73ms"}
+{"timestamp":"00:21:49.989","source":"Server","level":"ERROR","message":"⨯ Error: ENOENT: no such file or directory, open '/vercel/share/v0-project/.next/dev/server/app/page/build-manifest.json'"}
+{"timestamp":"00:21:50.017","source":"Server","level":"ERROR","message":"⨯ Error: ENOENT: no such file or directory, open '/vercel/share/v0-project/.next/dev/server/pages/_app/build-manifest.json'"}
+{"timestamp":"00:21:50.061","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, open '/vercel/share/v0-project/.next/dev/server/app/page/build-manifest.json'"}
+{"timestamp":"00:21:50.086","source":"Server","level":"ERROR","message":"⨯ Error: ENOENT: no such file or directory, open '/vercel/share/v0-project/.next/dev/server/pages/_app/build-manifest.json'"}
+{"timestamp":"00:21:50.108","source":"Server","level":"ERROR","message":"Error: ENOENT: no such file or directory, open '/vercel/share/v0-project/.next/dev/server/pages/_app/build-manifest.json'"}
+{"timestamp":"00:21:50.394","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}

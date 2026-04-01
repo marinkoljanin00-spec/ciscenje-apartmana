@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 10, "column": 0}, "map": {"version":3,"sources":["file:///vercel/share/v0-project/app/page.tsx"],"sourcesContent":["export const dynamic = 'force-dynamic'\n\nexport default function Page() {\n  return (\n    <div style={{ \n      minHeight: '100vh', \n      display: 'flex', \n      alignItems: 'center', \n      justifyContent: 'center',\n      background: '#0a0a0a',\n      color: '#22c55e',\n      fontFamily: 'system-ui, sans-serif'\n    }}>\n      <div style={{ textAlign: 'center' }}>\n        <h1 style={{ fontSize: 48, margin: 0 }}>sjaj.hr</h1>\n        <p style={{ color: '#888', marginTop: 16 }}>Oporavak u tijeku...</p>\n      </div>\n    </div>\n  )\n}\n"],"names":["dynamic","Page","style","minHeight","display","alignItems","justifyContent","background","color","fontFamily","textAlign","fontSize","margin","marginTop"],"mappings":";;;;;;;;AAAO,MAAMA,UAAU;AAER,SAASC;IACtB,qBACE,6WAAC;QAAIC,OAAO;YACVC,WAAW;YACXC,SAAS;YACTC,YAAY;YACZC,gBAAgB;YAChBC,YAAY;YACZC,OAAO;YACPC,YAAY;QACd;kBACE,cAAA,6WAAC;YAAIP,OAAO;gBAAEQ,WAAW;YAAS;;8BAChC,6WAAC;oBAAGR,OAAO;wBAAES,UAAU;wBAAIC,QAAQ;oBAAE;8BAAG;;;;;;8BACxC,6WAAC;oBAAEV,OAAO;wBAAEM,OAAO;wBAAQK,WAAW;oBAAG;8BAAG;;;;;;;;;;;;;;;;;AAIpD"}}]
+}
