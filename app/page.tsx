@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
+
+const MapPicker = lazy(() => import('@/components/MapPicker'))
 
 type User = { id: number; email: string; role: 'client' | 'cleaner' }
 type Job = { 
@@ -452,7 +454,14 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
+  const [latitude, setLatitude] = useState<number | null>(null); const [longitude, setLongitude] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
+
+  const handleLocationSelect = (address: string, lat: number, lng: number) => {
+    setLocation(address)
+    setLatitude(lat)
+    setLongitude(lng)
+  }
 
   useEffect(() => {
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
@@ -483,11 +492,18 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
   const createJob = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setSubmitting(true)
     const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
-    const res = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid }) })
+    const res = await fetch('/api/jobs', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ 
+        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid,
+        latitude, longitude
+      }) 
+    })
     const data = await res.json()
     if (data.success) {
       setJobs([{ ...data.job, price: finalPrice }, ...jobs])
-      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false)
+      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setLatitude(null); setLongitude(null)
       fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
     } else { setErr(data.error) }
     setSubmitting(false)
@@ -541,9 +557,25 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                 <div style={{ marginBottom: 14 }}>
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Naslov posla" style={inputStyle} />
                 </div>
+                
+                {/* Location with Map */}
                 <div style={{ marginBottom: 14 }}>
-                  <input type="text" value={location} onChange={e => setLocation(e.target.value)} required placeholder="Lokacija (grad, adresa)" style={inputStyle} />
+                  <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Lokacija</label>
+                  <Suspense fallback={<div style={{ padding: 20, textAlign: 'center', color: t.textMuted }}>Ucitavam mapu...</div>}>
+                    <MapPicker onLocationSelect={handleLocationSelect} theme={t} />
+                  </Suspense>
+                  {location && (
+                    <div style={{ marginTop: 10, padding: 12, background: t.accentGlow, borderRadius: 8, border: `1px solid ${t.accent}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span style={{ color: t.text, fontSize: 14, fontWeight: 500 }}>{location}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                   <input type="number" value={price} onChange={e => setPrice(e.target.value)} required placeholder="Cijena (EUR)" min="1" style={inputStyle} />
                   <select value={propertyType} onChange={e => setPropertyType(e.target.value)} style={selectStyle}>
@@ -561,7 +593,7 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                   <span style={{ color: t.text, fontWeight: 500 }}>Hitno (+50%)</span>
                   {isUrgent && price && <span style={{ color: t.accent, fontSize: 13 }}>= {(Number(price) * 1.5).toFixed(2)} EUR</span>}
                 </label>
-                <button type="submit" disabled={submitting} style={{ ...btnPrimary, width: '100%' }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
+                <button type="submit" disabled={submitting || !location} style={{ ...btnPrimary, width: '100%', opacity: (!location || submitting) ? 0.6 : 1 }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
               </form>
             </div>
 
