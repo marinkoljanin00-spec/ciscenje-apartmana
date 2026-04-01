@@ -451,6 +451,9 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
   const [stats, setStats] = useState<Stats>({})
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [applications, setApplications] = useState<Application[]>([])
+  const [acceptingId, setAcceptingId] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [acceptedCleaner, setAcceptedCleaner] = useState<{ name: string; email: string; phone: string; rating: number } | null>(null)
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
@@ -476,11 +479,38 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
   }
 
   const acceptApplication = async (app: Application) => {
-    await fetch('/api/applications/accept', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ applicationId: app.id, jobId: app.job_id, cleanerId: app.cleaner_id }) })
-    const res = await fetch(`/api/jobs?role=client&userId=${uid}`)
-    const data = await res.json()
-    setJobs(data.jobs || [])
-    setSelectedJob(null)
+    setAcceptingId(app.id)
+    try {
+      const res = await fetch('/api/applications/accept', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ applicationId: app.id, jobId: app.job_id, cleanerId: app.cleaner_id }) 
+      })
+      const result = await res.json()
+      
+      if (result.success && result.cleaner) {
+        // Update jobs list
+        const jobsRes = await fetch(`/api/jobs?role=client&userId=${uid}`)
+        const jobsData = await jobsRes.json()
+        setJobs(jobsData.jobs || [])
+        
+        // Show accepted cleaner info
+        setAcceptedCleaner(result.cleaner)
+        setApplications([])
+        
+        // Show toast
+        setToast({ message: `Uspjesno ste prihvatili cistaca ${result.cleaner.name}!`, type: 'success' })
+        setTimeout(() => setToast(null), 5000)
+      } else {
+        setToast({ message: result.error || 'Doslo je do greske', type: 'error' })
+        setTimeout(() => setToast(null), 3000)
+        setSelectedJob(null)
+      }
+    } catch {
+      setToast({ message: 'Mrezna greska', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+    }
+    setAcceptingId(null)
   }
 
   const deleteJob = async (jobId: number) => {
@@ -643,9 +673,33 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                               Obrisi
                             </button>
                           )}
-                          {job.cleaner_name && <span style={{ color: t.textMuted, fontSize: 13 }}>Cistac: {job.cleaner_name}</span>}
                         </div>
                       </div>
+                      
+                      {/* Show cleaner contact info for accepted jobs */}
+                      {job.status === 'accepted' && job.cleaner_name && (
+                        <div style={{ marginTop: 16, padding: 16, background: t.accentGlow, borderRadius: 12, border: `1px solid ${t.accent}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                            <span style={{ color: t.accent, fontWeight: 600, fontSize: 13 }}>Cistac prihvacen</span>
+                          </div>
+                          <div style={{ fontWeight: 700, color: t.text, fontSize: 15, marginBottom: 8 }}>{job.cleaner_name}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {job.cleaner_email && (
+                              <a href={`mailto:${job.cleaner_email}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.textMuted, fontSize: 13, textDecoration: 'none' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                {job.cleaner_email}
+                              </a>
+                            )}
+                            {job.cleaner_phone && (
+                              <a href={`tel:${job.cleaner_phone}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.textMuted, fontSize: 13, textDecoration: 'none' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+                                {job.cleaner_phone}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -679,33 +733,161 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
         )}
       </main>
 
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 24, 
+          right: 24, 
+          padding: '16px 24px', 
+          background: toast.type === 'success' ? t.accent : t.urgent, 
+          color: toast.type === 'success' ? '#000' : '#fff', 
+          borderRadius: 12, 
+          fontWeight: 600, 
+          fontSize: 14, 
+          zIndex: 200,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10
+        }}>
+          {toast.type === 'success' ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          )}
+          {toast.message}
+        </div>
+      )}
+
       {/* Applications Modal */}
       {selectedJob && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 }} onClick={() => setSelectedJob(null)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 }} onClick={() => { setSelectedJob(null); setAcceptedCleaner(null) }}>
           <div style={{ ...cardStyle, padding: 28, maxWidth: 500, width: '100%', maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Prijave za: {selectedJob.title}</h3>
-            {applications.length === 0 ? (
-              <p style={{ color: t.textMuted }}>Nema prijava za ovaj posao.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {applications.map(app => (
-                  <div key={app.id} style={{ background: t.bgCard, borderRadius: 12, padding: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <div>
-                        <div style={{ fontWeight: 600, color: t.text }}>{app.cleaner_name}</div>
-                        <div style={{ fontSize: 13, color: t.accent }}>Ocjena: {app.rating || 5.0}</div>
-                      </div>
-                      <button onClick={() => acceptApplication(app)} style={{ ...btnPrimary, padding: '10px 16px', fontSize: 13 }}>Prihvati</button>
-                    </div>
-                    {app.message && <p style={{ color: t.textMuted, fontSize: 14, margin: 0 }}>{app.message}</p>}
+            
+            {/* Show accepted cleaner contact info */}
+            {acceptedCleaner ? (
+              <>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div style={{ 
+                    width: 64, 
+                    height: 64, 
+                    background: t.accentGlow, 
+                    borderRadius: '50%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    margin: '0 auto 16px'
+                  }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   </div>
-                ))}
-              </div>
+                  <h3 style={{ fontSize: 22, fontWeight: 700, color: t.text, margin: '0 0 8px 0' }}>Cestitamo!</h3>
+                  <p style={{ color: t.textMuted, fontSize: 15, margin: 0 }}>Uspjesno ste odabrali cistaca</p>
+                </div>
+
+                <div style={{ background: t.bgCard, borderRadius: 16, padding: 24, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                    <div style={{ 
+                      width: 56, 
+                      height: 56, 
+                      background: `linear-gradient(135deg, ${t.accent} 0%, #059669 100%)`, 
+                      borderRadius: '50%', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 22
+                    }}>
+                      {acceptedCleaner.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: t.text }}>{acceptedCleaner.name}</div>
+                      <div style={{ color: t.accent, fontSize: 14, fontWeight: 600 }}>Ocjena: {acceptedCleaner.rating || 5.0}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 20 }}>
+                    <h4 style={{ fontSize: 13, fontWeight: 600, color: t.textMuted, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Kontakt podaci</h4>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                      <div style={{ width: 40, height: 40, background: t.accentGlow, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: t.textMuted }}>Email</div>
+                        <a href={`mailto:${acceptedCleaner.email}`} style={{ color: t.text, fontWeight: 600, fontSize: 15, textDecoration: 'none' }}>{acceptedCleaner.email}</a>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 40, height: 40, background: t.accentGlow, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, color: t.textMuted }}>Telefon</div>
+                        <a href={`tel:${acceptedCleaner.phone}`} style={{ color: t.text, fontWeight: 600, fontSize: 15, textDecoration: 'none' }}>{acceptedCleaner.phone || 'Nije dostupan'}</a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={() => { setSelectedJob(null); setAcceptedCleaner(null) }} style={{ ...btnPrimary, width: '100%' }}>Zatvori</button>
+              </>
+            ) : (
+              <>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Prijave za: {selectedJob.title}</h3>
+                {applications.length === 0 ? (
+                  <p style={{ color: t.textMuted }}>Nema prijava za ovaj posao.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {applications.map(app => (
+                      <div key={app.id} style={{ background: t.bgCard, borderRadius: 12, padding: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                          <div>
+                            <div style={{ fontWeight: 600, color: t.text }}>{app.cleaner_name}</div>
+                            <div style={{ fontSize: 13, color: t.accent }}>Ocjena: {app.rating || 5.0}</div>
+                          </div>
+                          <button 
+                            onClick={() => acceptApplication(app)} 
+                            disabled={acceptingId === app.id}
+                            style={{ 
+                              ...btnPrimary, 
+                              padding: '10px 16px', 
+                              fontSize: 13,
+                              opacity: acceptingId === app.id ? 0.7 : 1,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8
+                            }}
+                          >
+                            {acceptingId === app.id ? (
+                              <>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10"/></svg>
+                                Prihvacam...
+                              </>
+                            ) : 'Prihvati'}
+                          </button>
+                        </div>
+                        {app.message && <p style={{ color: t.textMuted, fontSize: 14, margin: 0 }}>{app.message}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button onClick={() => { setSelectedJob(null); setAcceptedCleaner(null) }} style={{ ...btnSecondary, width: '100%', marginTop: 20 }}>Zatvori</button>
+              </>
             )}
-            <button onClick={() => setSelectedJob(null)} style={{ ...btnSecondary, width: '100%', marginTop: 20 }}>Zatvori</button>
           </div>
         </div>
       )}
+
+      {/* CSS Animation for spinner */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   )
 }

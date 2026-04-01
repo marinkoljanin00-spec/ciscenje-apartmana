@@ -44,7 +44,21 @@ export async function POST(request: Request) {
       `
     }
     
-    return NextResponse.json({ success: true })
+    // Get cleaner contact info to return to client
+    const cleaner = await sql`
+      SELECT id, full_name, email, phone, rating FROM users WHERE id = ${cleanerId}
+    `
+    
+    return NextResponse.json({ 
+      success: true, 
+      cleaner: cleaner.length > 0 ? {
+        id: cleaner[0].id,
+        name: cleaner[0].full_name,
+        email: cleaner[0].email,
+        phone: cleaner[0].phone,
+        rating: cleaner[0].rating
+      } : null
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepoznata greška"
     return NextResponse.json({ error: message }, { status: 500 })

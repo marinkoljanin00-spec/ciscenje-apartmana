@@ -90,8 +90,19 @@ async function POST(request) {
         WHERE id = ${cleanerId}
       `;
         }
+        // Get cleaner contact info to return to client
+        const cleaner = await sql`
+      SELECT id, full_name, email, phone, rating FROM users WHERE id = ${cleanerId}
+    `;
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
-            success: true
+            success: true,
+            cleaner: cleaner.length > 0 ? {
+                id: cleaner[0].id,
+                name: cleaner[0].full_name,
+                email: cleaner[0].email,
+                phone: cleaner[0].phone,
+                rating: cleaner[0].rating
+            } : null
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : "Nepoznata greška";
