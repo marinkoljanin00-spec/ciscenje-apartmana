@@ -232,7 +232,14 @@ export default function MapPicker({ onLocationSelect, theme }: MapPickerProps) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 12,
+      position: 'relative',
+      zIndex: 1,
+      isolation: 'isolate'
+    }}>
       {/* City dropdown and GPS button */}
       <div style={{ display: 'flex', gap: 10 }}>
         <select 
@@ -273,18 +280,29 @@ export default function MapPicker({ onLocationSelect, theme }: MapPickerProps) {
         </button>
       </div>
 
-      {/* Map container */}
-      <div 
-        ref={mapRef}
-        style={{ 
-          width: '100%', 
-          height: 220, 
-          borderRadius: 12, 
-          border: `1px solid ${theme.border}`,
-          background: theme.bgCard,
-          overflow: 'hidden'
-        }} 
-      />
+      {/* Map container - constrained height with overflow hidden */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        height: 220,
+        maxHeight: 220,
+        borderRadius: 12,
+        border: `1px solid ${theme.border}`,
+        background: theme.bgCard,
+        overflow: 'hidden',
+        zIndex: 1
+      }}>
+        <div 
+          ref={mapRef}
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0
+          }} 
+        />
+      </div>
 
       {/* Loading indicator */}
       {isLoading && (
@@ -307,6 +325,19 @@ export default function MapPicker({ onLocationSelect, theme }: MapPickerProps) {
       }}>
         Klikni na mapu za postavljanje lokacije
       </p>
+
+      {/* Override Leaflet z-index styles */}
+      <style>{`
+        .leaflet-pane { z-index: 1 !important; }
+        .leaflet-tile-pane { z-index: 1 !important; }
+        .leaflet-overlay-pane { z-index: 2 !important; }
+        .leaflet-shadow-pane { z-index: 3 !important; }
+        .leaflet-marker-pane { z-index: 4 !important; }
+        .leaflet-tooltip-pane { z-index: 5 !important; }
+        .leaflet-popup-pane { z-index: 6 !important; }
+        .leaflet-control { z-index: 7 !important; }
+        .custom-marker { z-index: 4 !important; }
+      `}</style>
     </div>
   )
 }

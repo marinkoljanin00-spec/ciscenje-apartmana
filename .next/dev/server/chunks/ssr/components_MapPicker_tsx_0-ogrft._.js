@@ -302,7 +302,10 @@ function MapPicker({ onLocationSelect, theme }) {
         style: {
             display: 'flex',
             flexDirection: 'column',
-            gap: 12
+            gap: 12,
+            position: 'relative',
+            zIndex: 1,
+            isolation: 'isolate'
         },
         children: [
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -325,7 +328,7 @@ function MapPicker({ onLocationSelect, theme }) {
                                 children: "Odaberi grad..."
                             }, void 0, false, {
                                 fileName: "[project]/components/MapPicker.tsx",
-                                lineNumber: 243,
+                                lineNumber: 250,
                                 columnNumber: 11
                             }, this),
                             CROATIAN_CITIES.map((city)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("option", {
@@ -333,13 +336,13 @@ function MapPicker({ onLocationSelect, theme }) {
                                     children: city.name
                                 }, city.name, false, {
                                     fileName: "[project]/components/MapPicker.tsx",
-                                    lineNumber: 245,
+                                    lineNumber: 252,
                                     columnNumber: 13
                                 }, this))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/MapPicker.tsx",
-                        lineNumber: 238,
+                        lineNumber: 245,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -376,7 +379,7 @@ function MapPicker({ onLocationSelect, theme }) {
                                         r: "10"
                                     }, void 0, false, {
                                         fileName: "[project]/components/MapPicker.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 277,
                                         columnNumber: 13
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("circle", {
@@ -385,7 +388,7 @@ function MapPicker({ onLocationSelect, theme }) {
                                         r: "3"
                                     }, void 0, false, {
                                         fileName: "[project]/components/MapPicker.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 277,
                                         columnNumber: 45
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
@@ -395,7 +398,7 @@ function MapPicker({ onLocationSelect, theme }) {
                                         y2: "4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/MapPicker.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 277,
                                         columnNumber: 76
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
@@ -405,7 +408,7 @@ function MapPicker({ onLocationSelect, theme }) {
                                         y2: "22"
                                     }, void 0, false, {
                                         fileName: "[project]/components/MapPicker.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 277,
                                         columnNumber: 113
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
@@ -415,7 +418,7 @@ function MapPicker({ onLocationSelect, theme }) {
                                         y2: "12"
                                     }, void 0, false, {
                                         fileName: "[project]/components/MapPicker.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 277,
                                         columnNumber: 152
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("line", {
@@ -425,41 +428,57 @@ function MapPicker({ onLocationSelect, theme }) {
                                         y2: "12"
                                     }, void 0, false, {
                                         fileName: "[project]/components/MapPicker.tsx",
-                                        lineNumber: 270,
+                                        lineNumber: 277,
                                         columnNumber: 189
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/MapPicker.tsx",
-                                lineNumber: 269,
+                                lineNumber: 276,
                                 columnNumber: 11
                             }, this),
                             "GPS"
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/MapPicker.tsx",
-                        lineNumber: 249,
+                        lineNumber: 256,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/MapPicker.tsx",
-                lineNumber: 237,
+                lineNumber: 244,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                ref: mapRef,
                 style: {
+                    position: 'relative',
                     width: '100%',
                     height: 220,
+                    maxHeight: 220,
                     borderRadius: 12,
                     border: `1px solid ${theme.border}`,
                     background: theme.bgCard,
-                    overflow: 'hidden'
-                }
+                    overflow: 'hidden',
+                    zIndex: 1
+                },
+                children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                    ref: mapRef,
+                    style: {
+                        width: '100%',
+                        height: '100%',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0
+                    }
+                }, void 0, false, {
+                    fileName: "[project]/components/MapPicker.tsx",
+                    lineNumber: 295,
+                    columnNumber: 9
+                }, this)
             }, void 0, false, {
                 fileName: "[project]/components/MapPicker.tsx",
-                lineNumber: 277,
+                lineNumber: 284,
                 columnNumber: 7
             }, this),
             isLoading && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -472,7 +491,7 @@ function MapPicker({ onLocationSelect, theme }) {
                 children: "Dohvacam adresu..."
             }, void 0, false, {
                 fileName: "[project]/components/MapPicker.tsx",
-                lineNumber: 291,
+                lineNumber: 309,
                 columnNumber: 9
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -485,7 +504,24 @@ function MapPicker({ onLocationSelect, theme }) {
                 children: "Klikni na mapu za postavljanje lokacije"
             }, void 0, false, {
                 fileName: "[project]/components/MapPicker.tsx",
-                lineNumber: 302,
+                lineNumber: 320,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$2$2e$0_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("style", {
+                children: `
+        .leaflet-pane { z-index: 1 !important; }
+        .leaflet-tile-pane { z-index: 1 !important; }
+        .leaflet-overlay-pane { z-index: 2 !important; }
+        .leaflet-shadow-pane { z-index: 3 !important; }
+        .leaflet-marker-pane { z-index: 4 !important; }
+        .leaflet-tooltip-pane { z-index: 5 !important; }
+        .leaflet-popup-pane { z-index: 6 !important; }
+        .leaflet-control { z-index: 7 !important; }
+        .custom-marker { z-index: 4 !important; }
+      `
+            }, void 0, false, {
+                fileName: "[project]/components/MapPicker.tsx",
+                lineNumber: 330,
                 columnNumber: 7
             }, this)
         ]
