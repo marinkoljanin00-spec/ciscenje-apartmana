@@ -1,6 +1,6 @@
 'use client'
 // sjaj.hr v8 - selectStyle fix applied
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 
 const t = {
@@ -1070,11 +1070,15 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
     let url = '/api/jobs?role=cleaner'
     if (filterUrgent) url += '&urgent=true'
     if (filterType) url += `&propertyType=${filterType}`
-    if (filterCity) url += `&city=${encodeURIComponent(filterCity)}`
     fetch(url).then(r => r.json()).then(d => setJobs(d.jobs || []))
   }
 
-  useEffect(() => { loadJobs() }, [filterUrgent, filterType, filterCity])
+  useEffect(() => { loadJobs() }, [filterUrgent, filterType])
+
+  // Client-side city filtering using useMemo to avoid API calls on every dropdown change
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => filterCity ? job.city === filterCity : true)
+  }, [jobs, filterCity])
 
   const applyToJob = async (jobId: number, message: string) => {
     await fetch('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, cleanerId: uid, message }) })
@@ -1168,7 +1172,7 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
 
             {/* Jobs Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-              {jobs.map(job => {
+              {filteredJobs.map(job => {
                 const alreadyApplied = myApplications.some(a => a.job_id === job.id)
                 return (
                   <div key={job.id} style={{ ...cardStyle, padding: 20 }}>

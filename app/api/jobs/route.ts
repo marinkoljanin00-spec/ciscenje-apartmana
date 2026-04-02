@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     const userId = searchParams.get("userId")
     const filterUrgent = searchParams.get("urgent")
     const filterType = searchParams.get("propertyType")
-    const filterCity = searchParams.get("city")
+    // City filtering is done client-side for performance
 
     // Try to get user from cookie first, then fall back to userId param
     let clientId: number | null = null
@@ -79,42 +79,17 @@ export async function GET(request: Request) {
       `
       return NextResponse.json({ jobs })
     } else {
-      // Return all open jobs for cleaners with filters
-      // Build dynamic conditions
+      // Return all open jobs for cleaners with filters (city filtered client-side)
       const isUrgentFilter = filterUrgent === 'true'
       
       let jobs;
-      if (isUrgentFilter && filterType && filterCity) {
-        jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
-          FROM jobs j JOIN users u ON j.client_id = u.id
-          WHERE j.status = 'open' AND j.is_urgent = true AND j.property_type = ${filterType} AND j.city = ${filterCity}
-          ORDER BY j.created_at DESC
-        `
-      } else if (isUrgentFilter && filterType) {
+      if (isUrgentFilter && filterType) {
         jobs = await sql`
           SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
                  u.full_name as client_name
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.is_urgent = true AND j.property_type = ${filterType}
           ORDER BY j.created_at DESC
-        `
-      } else if (isUrgentFilter && filterCity) {
-        jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
-          FROM jobs j JOIN users u ON j.client_id = u.id
-          WHERE j.status = 'open' AND j.is_urgent = true AND j.city = ${filterCity}
-          ORDER BY j.created_at DESC
-        `
-      } else if (filterType && filterCity) {
-        jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
-          FROM jobs j JOIN users u ON j.client_id = u.id
-          WHERE j.status = 'open' AND j.property_type = ${filterType} AND j.city = ${filterCity}
-          ORDER BY j.is_urgent DESC, j.created_at DESC
         `
       } else if (isUrgentFilter) {
         jobs = await sql`
@@ -130,14 +105,6 @@ export async function GET(request: Request) {
                  u.full_name as client_name
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.property_type = ${filterType}
-          ORDER BY j.is_urgent DESC, j.created_at DESC
-        `
-      } else if (filterCity) {
-        jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
-          FROM jobs j JOIN users u ON j.client_id = u.id
-          WHERE j.status = 'open' AND j.city = ${filterCity}
           ORDER BY j.is_urgent DESC, j.created_at DESC
         `
       } else {
