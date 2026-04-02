@@ -1,44 +1,21 @@
 'use client'
-// sjaj.hr v5 - clean rebuild without external map dependencies
-import React, { useState, useEffect } from 'react'
+// sjaj.hr v7 - fresh cache rebuild
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+
+const t = {
+  bg: '#050505', bgCard: '#0a0a0a', card: '#111111', border: '#1f1f1f', borderLight: '#262626',
+  text: '#ffffff', textMuted: '#a3a3a3', textDim: '#737373', accent: '#10b981', accentGlow: 'rgba(16,185,129,0.15)', urgent: '#ef4444'
+}
+const cardStyle = { background: t.card, border: `1px solid ${t.border}`, borderRadius: 16 }
+const btnPrimary = { padding: '14px 28px', background: t.accent, border: 'none', borderRadius: 10, color: '#000', fontWeight: 700, fontSize: 15, cursor: 'pointer' }
+const btnSecondary = { padding: '14px 28px', background: 'transparent', border: `1px solid ${t.borderLight}`, borderRadius: 10, color: t.text, fontWeight: 600, fontSize: 15, cursor: 'pointer' }
+const inputStyle = { width: '100%', padding: '14px 16px', background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 10, color: t.text, fontSize: 15, outline: 'none', boxSizing: 'border-box' as const }
 
 type User = { id: number; email: string; role: 'client' | 'cleaner' }
-type Job = { 
-  id: number; title: string; location: string; price: number; status: string; created_at: string; 
-  property_type?: string; is_urgent?: boolean; description?: string; cleaner_id?: number; 
-  cleaner_name?: string; cleaner_phone?: string; cleaner_email?: string; application_count?: number;
-  client_name?: string; latitude?: number; longitude?: number;
-}
-type Application = {
-  id: number; job_id: number; cleaner_id: number; status: string; message?: string; created_at: string;
-  cleaner_name?: string; rating?: number; phone?: string; email?: string; bio?: string;
-  title?: string; location?: string; price?: number; job_status?: string; is_urgent?: boolean;
-  client_name?: string; client_phone?: string; client_email?: string;
-}
+type Job = { id: number; title: string; location: string; price: number; status: string; created_at: string; property_type?: string; is_urgent?: boolean; description?: string; cleaner_id?: number; cleaner_name?: string; application_count?: number }
+type Application = { id: number; job_id: number; cleaner_id: number; status: string; message?: string; created_at: string; cleaner_name?: string; rating?: number; phone?: string; email?: string; title?: string; location?: string; price?: number; job_status?: string }
 type Stats = { totalJobs?: number; activeApplications?: number; totalSpent?: number; completedJobs?: number; pendingApplications?: number; totalEarned?: number; rating?: number }
-
-// Dark Emerald Theme
-const t = {
-  bg: '#050505',
-  bgCard: '#0a0a0a',
-  card: '#111111',
-  cardHover: '#1a1a1a',
-  border: '#1f1f1f',
-  borderLight: '#262626',
-  text: '#ffffff',
-  textMuted: '#a3a3a3',
-  textDim: '#737373',
-  accent: '#10b981',
-  accentHover: '#059669',
-  accentGlow: 'rgba(16, 185, 129, 0.15)',
-  urgent: '#ef4444',
-}
-
-const cardStyle: React.CSSProperties = { background: t.card, border: `1px solid ${t.border}`, borderRadius: 16 }
-const btnPrimary: React.CSSProperties = { padding: '14px 28px', background: t.accent, border: 'none', borderRadius: 10, color: '#000', fontWeight: 700, fontSize: 15, cursor: 'pointer', transition: 'all 0.2s' }
-const btnSecondary: React.CSSProperties = { padding: '14px 28px', background: 'transparent', border: `1px solid ${t.borderLight}`, borderRadius: 10, color: t.text, fontWeight: 600, fontSize: 15, cursor: 'pointer', transition: 'all 0.2s' }
-const inputStyle: React.CSSProperties = { width: '100%', padding: '14px 16px', background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 10, color: t.text, fontSize: 15, outline: 'none', boxSizing: 'border-box' }
-const selectStyle: React.CSSProperties = { ...inputStyle, cursor: 'pointer' }
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
@@ -63,17 +40,9 @@ export default function Home() {
     setUserRole(u.role); setUserName(u.email); setUserId(u.id.toString()); setView('dashboard')
   }
 
-  const logout = () => {
-    localStorage.clear()
-    setUserRole(null); setUserName(''); setUserId(''); setView('landing')
-  }
+  const logout = () => { localStorage.clear(); setUserRole(null); setUserName(''); setUserId(''); setView('landing') }
 
-  if (!mounted) return (
-    <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: t.accent, fontSize: 20, fontWeight: 600 }}>Ucitavanje...</div>
-    </div>
-  )
-
+  if (!mounted) return <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: t.accent, fontSize: 20, fontWeight: 600 }}>Učitavanje...</div></div>
   if (view === 'landing') return <LandingPage onLogin={() => { setAuthMode('login'); setView('auth') }} onRegister={() => { setAuthMode('register'); setView('auth') }} />
   if (view === 'auth') return <AuthPage mode={authMode} setMode={setAuthMode} onLogin={login} onBack={() => setView('landing')} />
   if (userRole === 'client') return <ClientDash logout={logout} name={userName} uid={userId} />

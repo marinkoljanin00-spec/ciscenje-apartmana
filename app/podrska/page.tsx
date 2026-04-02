@@ -50,7 +50,15 @@ export default function PodrskaPage() {
       
       <main style={{ maxWidth: 600, margin: '0 auto', padding: '48px 24px' }}>
         <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 16 }}>Podrška</h1>
-        <p style={{ color: t.textMuted, marginBottom: 32 }}>Imate problem ili pitanje? Javite nam se i odgovorit ćemo u najkraćem roku.</p>
+        <p style={{ color: t.textMuted, marginBottom: 24 }}>Imate problem ili pitanje? Javite nam se i odgovorit ćemo u najkraćem roku.</p>
+        
+        <div style={{ background: t.accentGlow, border: `1px solid ${t.accent}`, padding: 20, borderRadius: 12, marginBottom: 32, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ width: 48, height: 48, background: t.accent, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>✉</div>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14, color: t.text, marginBottom: 4 }}>Kontaktirajte nas direktno</div>
+            <a href="mailto:info.sjaj.hr@gmail.com" style={{ color: t.accent, fontSize: 16, fontWeight: 700, textDecoration: 'none' }}>info.sjaj.hr@gmail.com</a>
+          </div>
+        </div>
         
         {success ? (
           <div style={{ background: t.accentGlow, border: `1px solid ${t.accent}`, padding: 32, borderRadius: 16, textAlign: 'center' }}>
@@ -64,18 +72,18 @@ export default function PodrskaPage() {
             {error && <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', padding: 14, marginBottom: 20, borderRadius: 10, color: '#ef4444', fontSize: 14 }}>{error}</div>}
             
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Ime i prezime</label>
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Vaše ime" style={inputStyle} />
+              <label htmlFor="name" style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Ime i prezime</label>
+              <input id="name" name="name" type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Vaše ime" style={inputStyle} />
             </div>
             
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="vas@email.com" style={inputStyle} />
+              <label htmlFor="email" style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Email</label>
+              <input id="email" name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="vas@email.com" style={inputStyle} />
             </div>
             
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Vrsta problema</label>
-              <select value={subject} onChange={e => setSubject(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+              <label htmlFor="subject" style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Vrsta problema</label>
+              <select id="subject" name="subject" value={subject} onChange={e => setSubject(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="technical">Tehnički problem</option>
                 <option value="cleaner">Problem s čistačem</option>
                 <option value="payment">Plaćanje</option>
@@ -85,8 +93,8 @@ export default function PodrskaPage() {
             </div>
             
             <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis problema</label>
-              <textarea value={message} onChange={e => setMessage(e.target.value)} required placeholder="Opišite svoj problem što detaljnije..." rows={5} style={{ ...inputStyle, resize: 'vertical' }} />
+              <label htmlFor="message" style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis problema</label>
+              <textarea id="message" name="message" value={message} onChange={e => setMessage(e.target.value)} required placeholder="Opišite svoj problem što detaljnije..." rows={5} style={{ ...inputStyle, resize: 'vertical' }} />
             </div>
             
             <button type="submit" disabled={submitting} style={{ ...btnPrimary, width: '100%', opacity: submitting ? 0.7 : 1 }}>
@@ -102,6 +110,9 @@ export default function PodrskaPage() {
           <Link href="/privacy" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Privatnost</Link>
           <Link href="/conduct" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Pravila ponašanja</Link>
           <Link href="/podrska" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Podrška</Link>
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <a href="mailto:info.sjaj.hr@gmail.com" style={{ color: t.accent, textDecoration: 'none', fontSize: 13 }}>info.sjaj.hr@gmail.com</a>
         </div>
         <p style={{ color: '#737373', fontSize: 12, margin: 0 }}>© 2026 sjaj.hr. Sva prava pridržana.</p>
       </footer>
