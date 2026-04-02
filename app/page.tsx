@@ -1,5 +1,5 @@
 'use client'
-// sjaj.hr v7 - fresh cache rebuild
+// sjaj.hr v8 - selectStyle fix applied
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
@@ -11,6 +11,7 @@ const cardStyle = { background: t.card, border: `1px solid ${t.border}`, borderR
 const btnPrimary = { padding: '14px 28px', background: t.accent, border: 'none', borderRadius: 10, color: '#000', fontWeight: 700, fontSize: 15, cursor: 'pointer' }
 const btnSecondary = { padding: '14px 28px', background: 'transparent', border: `1px solid ${t.borderLight}`, borderRadius: 10, color: t.text, fontWeight: 600, fontSize: 15, cursor: 'pointer' }
 const inputStyle = { width: '100%', padding: '14px 16px', background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 10, color: t.text, fontSize: 15, outline: 'none', boxSizing: 'border-box' as const }
+const selectStyle = { ...inputStyle, cursor: 'pointer' }
 
 type User = { id: number; email: string; role: 'client' | 'cleaner' }
 type Job = { id: number; title: string; location: string; price: number; status: string; created_at: string; property_type?: string; is_urgent?: boolean; description?: string; cleaner_id?: number; cleaner_name?: string; application_count?: number }

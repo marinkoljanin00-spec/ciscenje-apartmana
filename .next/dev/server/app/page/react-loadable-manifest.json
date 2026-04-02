@@ -1,9 +1,1 @@
-{
-  "[project]/components/MapPicker.tsx [app-client] (ecmascript, next/dynamic entry)": {
-    "id": "[project]/components/MapPicker.tsx [app-client] (ecmascript, next/dynamic entry)",
-    "files": [
-      "static/chunks/components_MapPicker_tsx_0ngl1lw._.js",
-      "static/chunks/components_MapPicker_tsx_0qu87vw._.js"
-    ]
-  }
-}
+{}
