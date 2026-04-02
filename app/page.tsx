@@ -13,8 +13,15 @@ const btnSecondary = { padding: '14px 28px', background: 'transparent', border: 
 const inputStyle = { width: '100%', padding: '14px 16px', background: t.bgCard, border: `1px solid ${t.border}`, borderRadius: 10, color: t.text, fontSize: 15, outline: 'none', boxSizing: 'border-box' as const }
 const selectStyle = { ...inputStyle, cursor: 'pointer' }
 
-type User = { id: number; email: string; role: 'client' | 'cleaner' }
-type Job = { id: number; title: string; location: string; price: number; status: string; created_at: string; property_type?: string; is_urgent?: boolean; description?: string; cleaner_id?: number; cleaner_name?: string; application_count?: number }
+const CROATIAN_CITIES = [
+  'Zagreb', 'Split', 'Rijeka', 'Osijek', 'Zadar', 'Slavonski Brod', 'Pula', 'Sesvete', 'Karlovac',
+  'Varaždin', 'Šibenik', 'Sisak', 'Vinkovci', 'Velika Gorica', 'Vukovar', 'Bjelovar',
+  'Dubrovnik', 'Koprivnica', 'Požega', 'Čakovec', 'Petrinja', 'Gospić', 'Virovitica',
+  'Kutina', 'Samobor', 'Solin', 'Đakovo', 'Knin', 'Makarska', 'Metković'
+]
+
+type User = { id: number; email: string; role: 'client' | 'cleaner'; city?: string }
+type Job = { id: number; title: string; location: string; price: number; status: string; created_at: string; property_type?: string; is_urgent?: boolean; description?: string; cleaner_id?: number; cleaner_name?: string; application_count?: number; city?: string }
 type Application = { id: number; job_id: number; cleaner_id: number; status: string; message?: string; created_at: string; cleaner_name?: string; rating?: number; phone?: string; email?: string; title?: string; location?: string; price?: number; job_status?: string }
 type Stats = { totalJobs?: number; activeApplications?: number; totalSpent?: number; completedJobs?: number; pendingApplications?: number; totalEarned?: number; rating?: number }
 
@@ -272,12 +279,13 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
 function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | 'register'; setMode: (m: 'login' | 'register') => void; onLogin: (u: User) => void; onBack: () => void }) {
   const [role, setRole] = useState<'client' | 'cleaner'>('client')
   const [email, setEmail] = useState(''); const [pass, setPass] = useState(''); const [name, setName] = useState(''); const [phone, setPhone] = useState('')
+  const [city, setCity] = useState('Zagreb')
   const [err, setErr] = useState(''); const [loading, setLoading] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setLoading(true)
     const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
-    const body = mode === 'login' ? { email, password: pass } : { email, password: pass, fullName: name, role, phone }
+    const body = mode === 'login' ? { email, password: pass } : { email, password: pass, fullName: name, role, phone, city: role === 'client' ? city : null }
     try {
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
@@ -389,7 +397,7 @@ function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | 'registe
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Mobitel</label>
                   <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+385 91 234 5678" style={inputStyle} />
                 </div>
-                <div style={{ marginBottom: 24 }}>
+                <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 10, color: t.textMuted }}>Registriram se kao:</label>
                   <div style={{ display: 'flex', gap: 10 }}>
                     {(['client', 'cleaner'] as const).map(r => (
@@ -405,11 +413,19 @@ function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | 'registe
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                       }}>
-                        {r === 'client' ? 'Klijent' : 'Cistac'}
+                        {r === 'client' ? 'Klijent' : 'Čistač'}
                       </button>
                     ))}
                   </div>
                 </div>
+                {role === 'client' && (
+                  <div style={{ marginBottom: 24 }}>
+                    <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Grad</label>
+                    <select value={city} onChange={e => setCity(e.target.value)} style={selectStyle}>
+                      {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                )}
               </>
             )}
             <button type="submit" disabled={loading} style={{ ...btnPrimary, width: '100%', opacity: loading ? 0.7 : 1 }}>
@@ -443,6 +459,7 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
+  const [jobCity, setJobCity] = useState('Zagreb')
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
 
   useEffect(() => {
@@ -541,14 +558,14 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
     const res = await fetch('/api/jobs', { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({ 
-        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid
-      }) 
-    })
-    const data = await res.json()
-    if (data.success) {
-      setJobs([{ ...data.job, price: finalPrice }, ...jobs])
-      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false)
+  body: JSON.stringify({
+  title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity
+  })
+  })
+  const data = await res.json()
+  if (data.success) {
+  setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
+  setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb')
       fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
     } else { setErr(data.error) }
     setSubmitting(false)
@@ -620,9 +637,15 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                   <input type="number" value={price} onChange={e => setPrice(e.target.value)} required placeholder="Cijena (EUR)" min="1" style={inputStyle} />
                   <select value={propertyType} onChange={e => setPropertyType(e.target.value)} style={selectStyle}>
                     <option value="stan">Stan</option>
-                    <option value="kuca">Kuca</option>
+                    <option value="kuca">Kuća</option>
                     <option value="ured">Ured</option>
                     <option value="poslovni">Poslovni prostor</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Grad</label>
+                  <select value={jobCity} onChange={e => setJobCity(e.target.value)} style={selectStyle}>
+                    {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div style={{ marginBottom: 14 }}>
@@ -653,6 +676,7 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                             <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: 0 }}>{job.title}</h4>
                             {job.is_urgent && <span style={{ background: t.urgent, color: '#fff', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100 }}>HITNO</span>}
+                            {job.city && <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100 }}>{job.city}</span>}
                           </div>
                           <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
                         </div>
