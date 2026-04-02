@@ -1,12 +1,7 @@
 'use client'
-// sjaj.hr - fixed lazy loading with next/dynamic
+// sjaj.hr v4 - cache rebuilt
 import React, { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
-
-const MapPicker = dynamic(() => import('@/components/MapPicker'), { 
-  ssr: false,
-  loading: () => <div style={{ padding: 20, textAlign: 'center', color: '#a3a3a3' }}>Učitavam mapu...</div>
-})
+import MapPicker from '@/components/MapPicker'
 
 type User = { id: number; email: string; role: 'client' | 'cleaner' }
 type Job = { 
@@ -182,7 +177,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                 borderRadius: 100,
                 marginBottom: 24 
               }}>
-                <span style={{ color: t.accent, fontSize: 13, fontWeight: 600 }}>PROFESIONALNO CISCENJE NA ZAHTJEV</span>
+                <span style={{ color: t.accent, fontSize: 13, fontWeight: 600 }}>PROFESIONALNO ČIŠĆENJE NA ZAHTJEV</span>
               </div>
               
               <h1 style={{ 
@@ -193,8 +188,8 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                 margin: '0 0 20px 0', 
                 letterSpacing: -2 
               }}>
-                Cist dom.<br/>
-                <span style={{ color: t.accent }}>Sretan zivot.</span>
+                Čist dom.<br/>
+                <span style={{ color: t.accent }}>Sretan život.</span>
               </h1>
               
               <p style={{ 
@@ -204,12 +199,12 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
                 margin: '0 auto 32px', 
                 maxWidth: 500 
               }}>
-                Pronadi pouzdane profesionalce ili ponudi svoje usluge. Jednostavno, brzo i sigurno.
+                Pronađi pouzdane profesionalce ili ponudi svoje usluge. Jednostavno, brzo i sigurno.
               </p>
               
               <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 48 }}>
                 <button onClick={onRegister} style={{ ...btnPrimary, padding: '16px 32px', fontSize: 16 }}>
-                  Zapocni besplatno
+                  Započni besplatno
                 </button>
                 <button onClick={onLogin} style={{ ...btnSecondary, padding: '16px 32px', fontSize: 16 }}>
                   Prijavi se
@@ -225,9 +220,9 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
               marginBottom: 48
             }}>
               {[
-                { num: '01', icon: '📝', title: 'Objavi posao', desc: 'Opisi sto treba ocistiti, postavi lokaciju i cijenu.' },
-                { num: '02', icon: '👥', title: 'Primi prijave', desc: 'Verificirani cistaci se prijavljuju na tvoj posao.' },
-                { num: '03', icon: '✨', title: 'Uzivaj u cistoci', desc: 'Odaberi najboljeg i uzivaj u blistavom domu.' }
+                { num: '01', icon: '📝', title: 'Objavi posao', desc: 'Opiši što treba očistiti, postavi lokaciju i cijenu.' },
+                { num: '02', icon: '👥', title: 'Primi prijave', desc: 'Verificirani čistači se prijavljuju na tvoj posao.' },
+                { num: '03', icon: '✨', title: 'Uživaj u čistoći', desc: 'Odaberi najboljeg i uživaj u blistavom domu.' }
               ].map((step, i) => (
                 <div key={i} style={{ 
                   ...cardStyle, 
@@ -262,7 +257,7 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
             }}>
               {[
                 { n: '500+', l: 'Klijenata' }, 
-                { n: '100+', l: 'Cistaca' }, 
+                { n: '100+', l: 'Čistača' }, 
                 { n: '4.9', l: 'Ocjena' }
               ].map((s, i) => (
                 <div key={i} style={{ textAlign: 'center' }}>
@@ -276,14 +271,26 @@ function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister:
 
         {/* Footer */}
         <footer style={{ 
-          padding: '16px 32px', 
+          padding: '24px 32px', 
           borderTop: `1px solid ${t.border}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          background: t.bgCard
         }}>
-          <span style={{ color: t.textDim, fontSize: 13 }}>sjaj.hr 2026</span>
-          <span style={{ color: t.textDim, fontSize: 13 }}>Sva prava pridrzana</span>
+          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: t.accent }}>sjaj.hr</div>
+              <div style={{ color: t.textDim, fontSize: 12 }}>Vaš dom, naš sjaj.</div>
+            </div>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+              <a href="/terms" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Uvjeti korištenja</a>
+              <a href="/privacy" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Privatnost</a>
+              <a href="/conduct" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Pravila ponašanja</a>
+              <a href="/podrska" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Podrška</a>
+            </div>
+          </div>
+          <div style={{ maxWidth: 1200, margin: '16px auto 0', paddingTop: 16, borderTop: `1px solid ${t.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <a href="mailto:info.sjaj.hr@gmail.com" style={{ color: t.accent, textDecoration: 'none', fontSize: 13 }}>info.sjaj.hr@gmail.com</a>
+            <span style={{ color: t.textDim, fontSize: 12 }}>© 2026 sjaj.hr. Sva prava pridržana.</span>
+          </div>
         </footer>
       </div>
     </div>
@@ -1055,7 +1062,7 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
 
 // ═══════════════════════════════════════════════════════════════
 // CLEANER DASHBOARD - Dark Emerald Theme
-// ════════��══════════════════════════════════════════════════════
+// ════════��════��═════════════════════════════════════════════════
 function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; uid: string }) {
   const [tab, setTab] = useState<'available' | 'my' | 'profile'>('available')
   const [jobs, setJobs] = useState<Job[]>([])
