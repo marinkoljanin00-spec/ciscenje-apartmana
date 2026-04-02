@@ -1,7 +1,7 @@
+// sjaj.hr - main layout - clean v3
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
-import { CookieConsent } from '@/components/cookie-consent'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -39,7 +39,6 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-sans antialiased">
         {children}
-        <CookieConsent />
         <Analytics />
       </body>
     </html>
