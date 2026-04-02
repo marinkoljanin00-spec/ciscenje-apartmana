@@ -1,7 +1,6 @@
 'use client'
-// sjaj.hr v8 - selectStyle fix applied
-import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
+// sjaj.hr v9 - secure session auth with httpOnly cookies
+import { useState, useEffect, useMemo, useCallback } from 'react'
 
 const t = {
   bg: '#050505', bgCard: '#0a0a0a', card: '#111111', border: '#1f1f1f', borderLight: '#262626',
@@ -32,29 +31,88 @@ export default function Home() {
   const [userRole, setUserRole] = useState<'client' | 'cleaner' | null>(null)
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
+  const [isOffline, setIsOffline] = useState(false)
 
+  // Check authentication via httpOnly session cookie
   useEffect(() => {
-    const role = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
-    const name = localStorage.getItem('user_email') || ''
-    const id = localStorage.getItem('user_id') || ''
-    if (role && id) { setUserRole(role); setUserName(name); setUserId(id); setView('dashboard') }
-    setMounted(true)
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me')
+        const data = await res.json()
+        if (data.user) {
+          setUserRole(data.user.role)
+          setUserName(data.user.email)
+          setUserId(data.user.id.toString())
+          setView('dashboard')
+        }
+      } catch {
+        // Not authenticated or network error
+      }
+      setMounted(true)
+    }
+    checkAuth()
+  }, [])
+
+  // Offline detection
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
+    
+    setIsOffline(!navigator.onLine)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [])
 
   const login = (u: User) => {
-    localStorage.setItem('user_role', u.role)
-    localStorage.setItem('user_id', u.id.toString())
-    localStorage.setItem('user_email', u.email)
+    // Session cookie is set by the API - just update local state
     setUserRole(u.role); setUserName(u.email); setUserId(u.id.toString()); setView('dashboard')
   }
 
-  const logout = () => { localStorage.clear(); setUserRole(null); setUserName(''); setUserId(''); setView('landing') }
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+    } catch {
+      // Continue with logout even if API fails
+    }
+    setUserRole(null); setUserName(''); setUserId(''); setView('landing')
+  }
+
+  // Offline banner component
+  const OfflineBanner = () => isOffline ? (
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      background: '#dc2626', 
+      color: '#fff', 
+      padding: '12px 24px', 
+      textAlign: 'center', 
+      fontWeight: 600, 
+      fontSize: 14, 
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+      </svg>
+      Nema internetske veze — neke funkcije mozda nece raditi
+    </div>
+  ) : null
 
   if (!mounted) return <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: t.accent, fontSize: 20, fontWeight: 600 }}>Učitavanje...</div></div>
-  if (view === 'landing') return <LandingPage onLogin={() => { setAuthMode('login'); setView('auth') }} onRegister={() => { setAuthMode('register'); setView('auth') }} />
-  if (view === 'auth') return <AuthPage mode={authMode} setMode={setAuthMode} onLogin={login} onBack={() => setView('landing')} />
-  if (userRole === 'client') return <ClientDash logout={logout} name={userName} uid={userId} />
-  if (userRole === 'cleaner') return <CleanerDash logout={logout} name={userName} uid={userId} />
+  if (view === 'landing') return <><OfflineBanner /><LandingPage onLogin={() => { setAuthMode('login'); setView('auth') }} onRegister={() => { setAuthMode('register'); setView('auth') }} /></>
+  if (view === 'auth') return <><OfflineBanner /><AuthPage mode={authMode} setMode={setAuthMode} onLogin={login} onBack={() => setView('landing')} /></>
+  if (userRole === 'client') return <><OfflineBanner /><ClientDash logout={logout} name={userName} uid={userId} /></>
+  if (userRole === 'cleaner') return <><OfflineBanner /><CleanerDash logout={logout} name={userName} uid={userId} /></>
   return null
 }
 
@@ -461,6 +519,8 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
   const [jobCity, setJobCity] = useState('Zagreb')
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
+  // Form validation errors
+  const [fieldErrors, setFieldErrors] = useState<{ title?: string; location?: string; price?: string; description?: string }>({})
 
   useEffect(() => {
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
@@ -552,21 +612,58 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
     setSubmittingReview(false)
   }
 
+  const validateForm = (): boolean => {
+    const errors: { title?: string; location?: string; price?: string; description?: string } = {}
+    
+    if (!title || title.trim().length < 5) {
+      errors.title = 'Naslov mora imati najmanje 5 znakova'
+    }
+    if (!location || location.trim().length < 5) {
+      errors.location = 'Lokacija mora imati najmanje 5 znakova'
+    }
+    const priceNum = Number(price)
+    if (!price || isNaN(priceNum) || priceNum < 1 || priceNum > 9999) {
+      errors.price = 'Cijena mora biti izmedu 1 i 9999 EUR'
+    }
+    if (desc && desc.trim().length > 0 && desc.trim().length < 10) {
+      errors.description = 'Opis mora imati najmanje 10 znakova'
+    }
+    
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const createJob = async (e: React.FormEvent) => {
-    e.preventDefault(); setErr(''); setSubmitting(true)
+    e.preventDefault(); setErr(''); setFieldErrors({})
+    
+    // Client-side validation
+    if (!validateForm()) {
+      return
+    }
+    
+    setSubmitting(true)
     const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
     const res = await fetch('/api/jobs', { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' }, 
-  body: JSON.stringify({
-  title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity
-  })
-  })
-  const data = await res.json()
-  if (data.success) {
-  setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
-  setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb')
+      body: JSON.stringify({
+        title: title.trim(), 
+        location: location.trim(), 
+        price: Number(price), 
+        propertyType, 
+        isUrgent, 
+        description: desc.trim() || null, 
+        userId: uid, 
+        city: jobCity
+      })
+    })
+    const data = await res.json()
+    if (data.success) {
+      setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
+      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb')
       fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
+      setToast({ message: 'Posao je uspjesno objavljen!', type: 'success' })
+      setTimeout(() => setToast(null), 3000)
     } else { setErr(data.error) }
     setSubmitting(false)
   }
@@ -583,15 +680,15 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
             <span style={{ fontWeight: 800, fontSize: 20, color: t.text }}>sjaj.hr</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
-            <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
+            <span className="hide-on-mobile" style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+            <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13, whiteSpace: 'nowrap' }}>Odjava</button>
           </div>
         </div>
       </header>
 
       {/* Tabs */}
       <div style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4, overflowX: 'auto' }}>
           {[{ k: 'active', l: 'Aktivni poslovi' }, { k: 'completed', l: 'Zavrseni' }, { k: 'profile', l: 'Profil' }].map(x => (
             <button key={x.k} onClick={() => setTab(x.k as 'active' | 'completed' | 'profile')} style={{ 
               padding: '16px 20px', 
@@ -602,7 +699,8 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
               fontWeight: 600, 
               fontSize: 14, 
               cursor: 'pointer',
-              marginBottom: -1
+              marginBottom: -1,
+              whiteSpace: 'nowrap'
             }}>{x.l}</button>
           ))}
         </div>
@@ -610,14 +708,22 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
 
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
         {tab === 'active' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div className="client-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
             {/* Create Job Form */}
             <div style={{ ...cardStyle, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Novi posao</h3>
               {err && <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: `1px solid ${t.urgent}`, padding: 12, marginBottom: 16, borderRadius: 10, color: t.urgent, fontSize: 14 }}>{err}</div>}
               <form onSubmit={createJob}>
                 <div style={{ marginBottom: 14 }}>
-                  <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Naslov posla" style={inputStyle} />
+                  <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Naslov posla</label>
+                  <input 
+                    type="text" 
+                    value={title} 
+                    onChange={e => setTitle(e.target.value)} 
+                    placeholder="Naslov posla (min. 5 znakova)" 
+                    style={{ ...inputStyle, borderColor: fieldErrors.title ? t.urgent : t.border }} 
+                  />
+                  {fieldErrors.title && <p style={{ color: t.urgent, fontSize: 12, margin: '6px 0 0 0' }}>{fieldErrors.title}</p>}
                 </div>
                 
                 {/* Location Input */}
@@ -627,20 +733,34 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                     type="text" 
                     value={location} 
                     onChange={e => setLocation(e.target.value)} 
-                    required 
-                    placeholder="Unesite adresu (npr. Zagreb, Ilica 10)" 
-                    style={inputStyle} 
+                    placeholder="Unesite adresu (min. 5 znakova)" 
+                    style={{ ...inputStyle, borderColor: fieldErrors.location ? t.urgent : t.border }} 
                   />
+                  {fieldErrors.location && <p style={{ color: t.urgent, fontSize: 12, margin: '6px 0 0 0' }}>{fieldErrors.location}</p>}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} required placeholder="Cijena (EUR)" min="1" style={inputStyle} />
-                  <select value={propertyType} onChange={e => setPropertyType(e.target.value)} style={selectStyle}>
-                    <option value="stan">Stan</option>
-                    <option value="kuca">Kuća</option>
-                    <option value="ured">Ured</option>
-                    <option value="poslovni">Poslovni prostor</option>
-                  </select>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Cijena i tip</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div>
+                      <input 
+                        type="number" 
+                        value={price} 
+                        onChange={e => setPrice(e.target.value)} 
+                        placeholder="Cijena (1-9999 EUR)" 
+                        min="1" 
+                        max="9999"
+                        style={{ ...inputStyle, borderColor: fieldErrors.price ? t.urgent : t.border }} 
+                      />
+                      {fieldErrors.price && <p style={{ color: t.urgent, fontSize: 12, margin: '6px 0 0 0' }}>{fieldErrors.price}</p>}
+                    </div>
+                    <select value={propertyType} onChange={e => setPropertyType(e.target.value)} style={selectStyle}>
+                      <option value="stan">Stan</option>
+                      <option value="kuca">Kuca</option>
+                      <option value="ured">Ured</option>
+                      <option value="poslovni">Poslovni prostor</option>
+                    </select>
+                  </div>
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Grad</label>
@@ -649,14 +769,22 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                   </select>
                 </div>
                 <div style={{ marginBottom: 14 }}>
-                  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                  <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Opis (opcionalno, min. 10 znakova)</label>
+                  <textarea 
+                    value={desc} 
+                    onChange={e => setDesc(e.target.value)} 
+                    placeholder="Detaljniji opis posla..." 
+                    rows={3} 
+                    style={{ ...inputStyle, resize: 'vertical', borderColor: fieldErrors.description ? t.urgent : t.border }} 
+                  />
+                  {fieldErrors.description && <p style={{ color: t.urgent, fontSize: 12, margin: '6px 0 0 0' }}>{fieldErrors.description}</p>}
                 </div>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, cursor: 'pointer' }}>
                   <input type="checkbox" checked={isUrgent} onChange={e => setIsUrgent(e.target.checked)} style={{ width: 20, height: 20, accentColor: t.accent }} />
                   <span style={{ color: t.text, fontWeight: 500 }}>Hitno (+50%)</span>
                   {isUrgent && price && <span style={{ color: t.accent, fontSize: 13 }}>= {(Number(price) * 1.5).toFixed(2)} EUR</span>}
                 </label>
-                <button type="submit" disabled={submitting || !location} style={{ ...btnPrimary, width: '100%', opacity: (!location || submitting) ? 0.6 : 1 }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
+                <button type="submit" disabled={submitting} style={{ ...btnPrimary, width: '100%', opacity: submitting ? 0.6 : 1 }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
               </form>
             </div>
 
@@ -1055,35 +1183,58 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
   const [filterCity, setFilterCity] = useState('')
   const [completingId, setCompletingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const JOBS_PER_PAGE = 9
 
-  useEffect(() => {
-    loadJobs()
-    loadMyApplications()
-    fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
-  }, [uid])
-
-  const loadMyApplications = () => {
-    fetch(`/api/applications?cleanerId=${uid}`).then(r => r.json()).then(d => setMyApplications(d.applications || []))
-  }
-
-  const loadJobs = () => {
+  // Wrap loadJobs in useCallback to prevent recreation on every render
+  const loadJobs = useCallback(() => {
     let url = '/api/jobs?role=cleaner'
     if (filterUrgent) url += '&urgent=true'
     if (filterType) url += `&propertyType=${filterType}`
     fetch(url).then(r => r.json()).then(d => setJobs(d.jobs || []))
-  }
+  }, [filterUrgent, filterType])
 
-  useEffect(() => { loadJobs() }, [filterUrgent, filterType])
+  // Wrap loadMyApplications in useCallback
+  const loadMyApplications = useCallback(() => {
+    fetch(`/api/applications?cleanerId=${uid}`).then(r => r.json()).then(d => setMyApplications(d.applications || []))
+  }, [uid])
+
+  // Single useEffect with all dependencies
+  useEffect(() => {
+    loadJobs()
+    loadMyApplications()
+    fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
+  }, [uid, filterUrgent, filterType, loadJobs, loadMyApplications])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterCity, filterUrgent, filterType])
 
   // Client-side city filtering using useMemo to avoid API calls on every dropdown change
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => filterCity ? job.city === filterCity : true)
   }, [jobs, filterCity])
 
+  // Paginated jobs
+  const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE)
+  const paginatedJobs = useMemo(() => {
+    const start = (currentPage - 1) * JOBS_PER_PAGE
+    return filteredJobs.slice(start, start + JOBS_PER_PAGE)
+  }, [filteredJobs, currentPage])
+
   const applyToJob = async (jobId: number, message: string) => {
+    // Confirm before applying
+    if (!window.confirm('Jeste li sigurni da se zelite prijaviti za ovaj posao?')) {
+      return
+    }
     await fetch('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, cleanerId: uid, message }) })
     loadMyApplications()
     loadJobs()
+    setToast({ message: 'Uspjesno ste se prijavili za posao!', type: 'success' })
+    setTimeout(() => setToast(null), 3000)
   }
 
   const completeJob = async (jobId: number) => {
@@ -1123,15 +1274,15 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
             <span style={{ fontWeight: 800, fontSize: 20, color: t.text }}>sjaj.hr</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
-            <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
+            <span className="hide-on-mobile" style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+            <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13, whiteSpace: 'nowrap' }}>Odjava</button>
           </div>
         </div>
       </header>
 
       {/* Tabs */}
       <div style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4, overflowX: 'auto' }}>
           {[{ k: 'available', l: 'Dostupni poslovi' }, { k: 'my', l: 'Moje prijave' }, { k: 'profile', l: 'Profil' }].map(x => (
             <button key={x.k} onClick={() => setTab(x.k as 'available' | 'my' | 'profile')} style={{ 
               padding: '16px 20px', 
@@ -1142,7 +1293,8 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
               fontWeight: 600, 
               fontSize: 14, 
               cursor: 'pointer',
-              marginBottom: -1
+              marginBottom: -1,
+              whiteSpace: 'nowrap'
             }}>{x.l}</button>
           ))}
         </div>
@@ -1151,28 +1303,54 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
         {tab === 'available' && (
           <>
-            {/* Filters */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+            {/* Mobile Filter Toggle */}
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className="filter-toggle"
+              style={{ 
+                display: 'none', 
+                width: '100%', 
+                padding: '12px 16px', 
+                marginBottom: 16,
+                background: t.card, 
+                border: `1px solid ${t.border}`, 
+                borderRadius: 10, 
+                color: t.text, 
+                fontWeight: 600, 
+                fontSize: 14, 
+                cursor: 'pointer',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <span>Filtri {(filterUrgent || filterType || filterCity) && `(${[filterUrgent && 'Hitno', filterType, filterCity].filter(Boolean).length} aktivno)`}</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </button>
+
+            {/* Filters - collapsible on mobile */}
+            <div className="filters-container" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: filterUrgent ? t.accentGlow : t.card, border: `1px solid ${filterUrgent ? t.accent : t.border}`, borderRadius: 10, cursor: 'pointer' }}>
                 <input type="checkbox" checked={filterUrgent} onChange={e => setFilterUrgent(e.target.checked)} style={{ display: 'none' }} />
                 <span style={{ color: filterUrgent ? t.accent : t.textMuted, fontWeight: 500, fontSize: 14 }}>Samo hitno</span>
               </label>
-              <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ ...selectStyle, width: 'auto' }}>
+              <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ ...selectStyle, width: 'auto', minWidth: 120 }}>
                 <option value="">Svi tipovi</option>
                 <option value="stan">Stan</option>
-                <option value="kuca">Kuća</option>
+                <option value="kuca">Kuca</option>
                 <option value="ured">Ured</option>
                 <option value="poslovni">Poslovni prostor</option>
               </select>
-              <select value={filterCity} onChange={e => setFilterCity(e.target.value)} style={{ ...selectStyle, width: 'auto' }}>
+              <select value={filterCity} onChange={e => setFilterCity(e.target.value)} style={{ ...selectStyle, width: 'auto', minWidth: 120 }}>
                 <option value="">Svi gradovi</option>
                 {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
-            {/* Jobs Grid */}
+            {/* Jobs Grid - 3x3 max per page */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-              {filteredJobs.map(job => {
+              {paginatedJobs.map(job => {
                 const alreadyApplied = myApplications.some(a => a.job_id === job.id)
                 return (
                   <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
@@ -1208,11 +1386,53 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
                 )
               })}
             </div>
-            {jobs.length === 0 && (
+
+            {/* Pagination Controls */}
+            {filteredJobs.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 24 }}>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{ 
+                    ...btnSecondary, 
+                    padding: '10px 20px', 
+                    opacity: currentPage === 1 ? 0.5 : 1,
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Prethodna
+                </button>
+                <span style={{ color: t.textMuted, fontSize: 14, fontWeight: 500 }}>
+                  Stranica {currentPage} od {totalPages || 1}
+                </span>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  style={{ 
+                    ...btnSecondary, 
+                    padding: '10px 20px', 
+                    opacity: currentPage >= totalPages ? 0.5 : 1,
+                    cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  Sljedeca
+                </button>
+              </div>
+            )}
+
+            {filteredJobs.length === 0 && (
               <div style={{ ...cardStyle, padding: 60, textAlign: 'center' }}>
                 <p style={{ color: t.textMuted, margin: 0, fontSize: 16 }}>Nema dostupnih poslova s ovim filterima</p>
               </div>
             )}
+
+            {/* Mobile filter styles */}
+            <style>{`
+              @media (max-width: 768px) {
+                .filter-toggle { display: flex !important; }
+                .filters-container { display: ${showFilters ? 'flex' : 'none'} !important; flex-direction: column; }
+              }
+            `}</style>
           </>
         )}
 

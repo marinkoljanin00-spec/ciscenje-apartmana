@@ -141,8 +141,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Niste prijavljeni." }, { status: 401 })
     }
 
-    if (!title || !location || isNaN(price)) {
-      return NextResponse.json({ success: false, error: "Sva polja su obavezna." }, { status: 400 })
+    // Server-side validation
+    if (!title || typeof title !== 'string' || title.trim().length < 5) {
+      return NextResponse.json({ success: false, error: "Naslov mora imati najmanje 5 znakova." }, { status: 400 })
+    }
+
+    if (!location || typeof location !== 'string' || location.trim().length < 5) {
+      return NextResponse.json({ success: false, error: "Lokacija mora imati najmanje 5 znakova." }, { status: 400 })
+    }
+
+    if (isNaN(price) || price <= 0 || price > 9999) {
+      return NextResponse.json({ success: false, error: "Cijena mora biti izmedu 1 i 9999 EUR." }, { status: 400 })
     }
 
     // Calculate final price (1.5x for urgent)

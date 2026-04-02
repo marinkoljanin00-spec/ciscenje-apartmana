@@ -195,3 +195,9 @@
     @apply w-full;
   }
 }
+
+/* App mobile styles */
+@media (max-width: 768px) {
+  .hide-on-mobile { display: none !important; }
+  .filter-toggle { display: flex !important; }
+}
