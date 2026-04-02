@@ -22,7 +22,7 @@ function generateSessionToken(): string {
 
 export async function POST(request: Request) {
   try {
-    const { email, password, fullName, role } = await request.json()
+    const { email, password, fullName, role, phone, city } = await request.json()
 
     if (!email || !password || !fullName || !role) {
       return NextResponse.json({ success: false, error: "Sva polja su obavezna." }, { status: 400 })
@@ -48,8 +48,8 @@ export async function POST(request: Request) {
     const passwordHash = await bcrypt.hash(password, 10)
     
     const result = await sql`
-      INSERT INTO users (email, password_hash, full_name, role, created_at)
-      VALUES (${email}, ${passwordHash}, ${fullName}, ${role}, NOW())
+      INSERT INTO users (email, password_hash, full_name, role, phone, city, created_at)
+      VALUES (${email}, ${passwordHash}, ${fullName}, ${role}, ${phone || null}, ${city || null}, NOW())
       RETURNING id
     `
 

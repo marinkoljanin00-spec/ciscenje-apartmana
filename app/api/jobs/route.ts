@@ -52,6 +52,7 @@ export async function GET(request: Request) {
     const userId = searchParams.get("userId")
     const filterUrgent = searchParams.get("urgent")
     const filterType = searchParams.get("propertyType")
+    const filterCity = searchParams.get("city")
 
     // Try to get user from cookie first, then fall back to userId param
     let clientId: number | null = null
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
       // Return client's own jobs with application count
       const jobs = await sql`
         SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.cleaner_id,
-               j.property_type, j.is_urgent, j.description,
+               j.property_type, j.is_urgent, j.description, j.city,
                u.full_name as cleaner_name, u.phone as cleaner_phone, u.email as cleaner_email,
                (SELECT COUNT(*) FROM applications WHERE job_id = j.id) as application_count
         FROM jobs j
@@ -79,40 +80,71 @@ export async function GET(request: Request) {
       return NextResponse.json({ jobs })
     } else {
       // Return all open jobs for cleaners with filters
+      // Build dynamic conditions
+      const isUrgentFilter = filterUrgent === 'true'
+      
       let jobs;
-      if (filterUrgent === 'true' && filterType) {
+      if (isUrgentFilter && filterType && filterCity) {
         jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.latitude, j.longitude,
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
                  u.full_name as client_name
-          FROM jobs j
-          JOIN users u ON j.client_id = u.id
+          FROM jobs j JOIN users u ON j.client_id = u.id
+          WHERE j.status = 'open' AND j.is_urgent = true AND j.property_type = ${filterType} AND j.city = ${filterCity}
+          ORDER BY j.created_at DESC
+        `
+      } else if (isUrgentFilter && filterType) {
+        jobs = await sql`
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
+                 u.full_name as client_name
+          FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.is_urgent = true AND j.property_type = ${filterType}
+          ORDER BY j.created_at DESC
+        `
+      } else if (isUrgentFilter && filterCity) {
+        jobs = await sql`
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
+                 u.full_name as client_name
+          FROM jobs j JOIN users u ON j.client_id = u.id
+          WHERE j.status = 'open' AND j.is_urgent = true AND j.city = ${filterCity}
+          ORDER BY j.created_at DESC
+        `
+      } else if (filterType && filterCity) {
+        jobs = await sql`
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
+                 u.full_name as client_name
+          FROM jobs j JOIN users u ON j.client_id = u.id
+          WHERE j.status = 'open' AND j.property_type = ${filterType} AND j.city = ${filterCity}
           ORDER BY j.is_urgent DESC, j.created_at DESC
         `
-      } else if (filterUrgent === 'true') {
+      } else if (isUrgentFilter) {
         jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.latitude, j.longitude,
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
                  u.full_name as client_name
-          FROM jobs j
-          JOIN users u ON j.client_id = u.id
+          FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.is_urgent = true
           ORDER BY j.created_at DESC
         `
       } else if (filterType) {
         jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.latitude, j.longitude,
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
                  u.full_name as client_name
-          FROM jobs j
-          JOIN users u ON j.client_id = u.id
+          FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.property_type = ${filterType}
+          ORDER BY j.is_urgent DESC, j.created_at DESC
+        `
+      } else if (filterCity) {
+        jobs = await sql`
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
+                 u.full_name as client_name
+          FROM jobs j JOIN users u ON j.client_id = u.id
+          WHERE j.status = 'open' AND j.city = ${filterCity}
           ORDER BY j.is_urgent DESC, j.created_at DESC
         `
       } else {
         jobs = await sql`
-          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.latitude, j.longitude,
+          SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
                  u.full_name as client_name
-          FROM jobs j
-          JOIN users u ON j.client_id = u.id
+          FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open'
           ORDER BY j.is_urgent DESC, j.created_at DESC
         `
@@ -127,7 +159,7 @@ export async function GET(request: Request) {
 // Create a new job
 export async function POST(request: Request) {
   try {
-    const { title, location, price, userId, propertyType, isUrgent, description, latitude, longitude } = await request.json()
+    const { title, location, price, userId, propertyType, isUrgent, description, latitude, longitude, city } = await request.json()
 
     // Try to get user from cookie first, then fall back to userId from body
     let clientId: number | null = null
@@ -151,9 +183,9 @@ export async function POST(request: Request) {
 
     const sql = getSQL()
     const result = await sql`
-      INSERT INTO jobs (title, location, price, status, client_id, property_type, is_urgent, description, latitude, longitude, created_at)
-      VALUES (${title}, ${location}, ${finalPrice}, 'open', ${clientId}, ${propertyType || 'stan'}, ${isUrgent || false}, ${description || null}, ${latitude || null}, ${longitude || null}, NOW())
-      RETURNING id, title, location, price, status, property_type, is_urgent, created_at
+      INSERT INTO jobs (title, location, price, status, client_id, property_type, is_urgent, description, latitude, longitude, city, created_at)
+      VALUES (${title}, ${location}, ${finalPrice}, 'open', ${clientId}, ${propertyType || 'stan'}, ${isUrgent || false}, ${description || null}, ${latitude || null}, ${longitude || null}, ${city || null}, NOW())
+      RETURNING id, title, location, price, status, property_type, is_urgent, city, created_at
     `
 
     // Update client's total_spent

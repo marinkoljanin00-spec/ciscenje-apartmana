@@ -1052,6 +1052,7 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
   const [stats, setStats] = useState<Stats>({})
   const [filterUrgent, setFilterUrgent] = useState(false)
   const [filterType, setFilterType] = useState('')
+  const [filterCity, setFilterCity] = useState('')
   const [completingId, setCompletingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
@@ -1069,10 +1070,11 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
     let url = '/api/jobs?role=cleaner'
     if (filterUrgent) url += '&urgent=true'
     if (filterType) url += `&propertyType=${filterType}`
+    if (filterCity) url += `&city=${encodeURIComponent(filterCity)}`
     fetch(url).then(r => r.json()).then(d => setJobs(d.jobs || []))
   }
 
-  useEffect(() => { loadJobs() }, [filterUrgent, filterType])
+  useEffect(() => { loadJobs() }, [filterUrgent, filterType, filterCity])
 
   const applyToJob = async (jobId: number, message: string) => {
     await fetch('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, cleanerId: uid, message }) })
@@ -1154,9 +1156,13 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
               <select value={filterType} onChange={e => setFilterType(e.target.value)} style={{ ...selectStyle, width: 'auto' }}>
                 <option value="">Svi tipovi</option>
                 <option value="stan">Stan</option>
-                <option value="kuca">Kuca</option>
+                <option value="kuca">Kuća</option>
                 <option value="ured">Ured</option>
                 <option value="poslovni">Poslovni prostor</option>
+              </select>
+              <select value={filterCity} onChange={e => setFilterCity(e.target.value)} style={{ ...selectStyle, width: 'auto' }}>
+                <option value="">Svi gradovi</option>
+                {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
@@ -1168,9 +1174,10 @@ function CleanerDash({ logout, name, uid }: { logout: () => void; name: string; 
                   <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                           <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: 0 }}>{job.title}</h4>
                           {job.is_urgent && <span style={{ background: t.urgent, color: '#fff', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100 }}>HITNO</span>}
+                          {job.city && <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100 }}>{job.city}</span>}
                         </div>
                         <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
                         <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{job.client_name}</p>
