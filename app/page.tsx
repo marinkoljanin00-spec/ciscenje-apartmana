@@ -1,7 +1,6 @@
 'use client'
-// sjaj.hr v4 - cache rebuilt
+// sjaj.hr v5 - clean rebuild without external map dependencies
 import React, { useState, useEffect } from 'react'
-import MapPicker from '@/components/MapPicker'
 
 type User = { id: number; email: string; role: 'client' | 'cleaner' }
 type Job = { 
@@ -474,14 +473,7 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
-  const [latitude, setLatitude] = useState<number | null>(null); const [longitude, setLongitude] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
-
-  const handleLocationSelect = (address: string, lat: number, lng: number) => {
-    setLocation(address)
-    setLatitude(lat)
-    setLongitude(lng)
-  }
 
   useEffect(() => {
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
@@ -580,14 +572,13 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' }, 
       body: JSON.stringify({ 
-        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid,
-        latitude, longitude
+        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid
       }) 
     })
     const data = await res.json()
     if (data.success) {
       setJobs([{ ...data.job, price: finalPrice }, ...jobs])
-      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setLatitude(null); setLongitude(null)
+      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false)
       fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
     } else { setErr(data.error) }
     setSubmitting(false)
@@ -642,20 +633,17 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Naslov posla" style={inputStyle} />
                 </div>
                 
-                {/* Location with Map */}
+                {/* Location Input */}
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Lokacija</label>
-                  <MapPicker onLocationSelect={handleLocationSelect} theme={t} />
-                  {location && (
-                    <div style={{ marginTop: 10, padding: 12, background: t.accentGlow, borderRadius: 8, border: `1px solid ${t.accent}` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                        </svg>
-                        <span style={{ color: t.text, fontSize: 14, fontWeight: 500 }}>{location}</span>
-                      </div>
-                    </div>
-                  )}
+                  <input 
+                    type="text" 
+                    value={location} 
+                    onChange={e => setLocation(e.target.value)} 
+                    required 
+                    placeholder="Unesite adresu (npr. Zagreb, Ilica 10)" 
+                    style={inputStyle} 
+                  />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
