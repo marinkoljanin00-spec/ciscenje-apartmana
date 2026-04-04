@@ -38,8 +38,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Posao nije pronaden" }, { status: 404 })
     }
     
-    if (job[0].status !== 'completed') {
+    if (reviewer_type === 'client' && job[0].status !== 'completed') {
       return NextResponse.json({ success: false, error: "Mozete ocijeniti samo zavrsene poslove" }, { status: 400 })
+    }
+    if (reviewer_type === 'cleaner' && !['completed', 'reviewed'].includes(job[0].status)) {
+      return NextResponse.json({ success: false, error: "Posao mora biti zavrsen da biste ostavili recenziju" }, { status: 400 })
     }
 
     if (reviewer_type === 'client') {
