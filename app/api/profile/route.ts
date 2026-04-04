@@ -22,17 +22,32 @@ export async function GET(request: Request) {
     }
 
     const sql = getSQL()
+    const parsedUserId = parseInt(userId, 10)
+
     const users = await sql`
-      SELECT id, email, full_name, phone, gender, description, role
+      SELECT id, email, full_name, phone, gender, description, role, rating, created_at
       FROM users 
-      WHERE id = ${parseInt(userId, 10)}
+      WHERE id = ${parsedUserId}
     `
 
     if (users.length === 0) {
       return NextResponse.json({ user: null }, { status: 404 })
     }
 
-    return NextResponse.json({ user: users[0] })
+    // Get completed jobs count (applications with status='accepted')
+    const completedJobsResult = await sql`
+      SELECT COUNT(*)::int as count
+      FROM applications
+      WHERE user_id = ${parsedUserId} AND status = 'accepted'
+    `
+    const completed_jobs = completedJobsResult[0]?.count || 0
+
+    return NextResponse.json({ 
+      user: {
+        ...users[0],
+        completed_jobs
+      }
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error"
     return NextResponse.json({ error: message }, { status: 500 })
