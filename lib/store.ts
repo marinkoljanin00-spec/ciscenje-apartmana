@@ -1,5 +1,4 @@
 import { create } from "zustand"
-import { persist } from "zustand/middleware"
 
 export type UserType = "vlasnik" | "cistacica"
 export type DevicePreference = "desktop" | "mobile" | null
@@ -576,8 +575,7 @@ const initialUsers: (User & { lozinka: string })[] = [
   ]
 
 export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       user: null,
       users: initialUsers,
       isAuthenticated: false,
@@ -861,9 +859,5 @@ getAverageRating: (email) => {
     const user = get().user
     return user?.savedProperties || []
   },
-  }),
-    {
-      name: "cleanup-storage",
-    }
-  )
+  })
 )
