@@ -34,6 +34,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
   // Client ratings for accepted jobs
   const [clientRatings, setClientRatings] = useState<Record<number, number>>({})
+  const [expandedMonthsCleaner, setExpandedMonthsCleaner] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     return () => {
@@ -138,6 +139,21 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
         return groups
       }, {} as Record<string, typeof myApplications>)
   }, [myApplications])
+
+  // Set first month as default expanded
+  useEffect(() => {
+    const firstMonth = Object.keys(groupedMyJobs)[0]
+    if (firstMonth) setExpandedMonthsCleaner(new Set([firstMonth]))
+  }, [myApplications])
+
+  const toggleMonthCleaner = (month: string) => {
+    setExpandedMonthsCleaner(prev => {
+      const next = new Set(prev)
+      if (next.has(month)) next.delete(month)
+      else next.add(month)
+      return next
+    })
+  }
 
   const clearAllFilters = () => {
     setFilterCity('')
@@ -476,7 +492,10 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 <div>
                   {Object.entries(groupedMyJobs).map(([month, monthApps]) => (
                     <div key={month} style={{ marginBottom: 32 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                      <div 
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, cursor: 'pointer' }}
+                        onClick={() => toggleMonthCleaner(month)}
+                      >
                         <h4 style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
                           {month}
                         </h4>
@@ -484,7 +503,11 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         <span style={{ fontSize: 12, color: t.textDim }}>
                           {monthApps.length} {monthApps.length === 1 ? 'posao' : 'poslova'}
                         </span>
+                        <span style={{ color: t.textMuted, fontSize: 12 }}>
+                          {expandedMonthsCleaner.has(month) ? '\u25B2' : '\u25BC'}
+                        </span>
                       </div>
+                      {expandedMonthsCleaner.has(month) && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {monthApps.map(app => (
                           <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
@@ -515,6 +538,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           </div>
                         ))}
                       </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -38,6 +38,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [cleanerProfileCache] = useState<Map<number, { user: { id: number; full_name: string; rating: number; completed_jobs: number; created_at: string }; reviews: { id: number; rating: number; comment: string; created_at: string }[] }>>(new Map())
   const [loadingCleanerProfile, setLoadingCleanerProfile] = useState(false)
   const [applicationSort, setApplicationSort] = useState<'rating' | 'newest'>('rating')
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
@@ -208,6 +209,21 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         return groups
       }, {} as Record<string, typeof jobs>)
   }, [jobs])
+
+  // Set first month as default expanded
+  useEffect(() => {
+    const firstMonth = Object.keys(groupedCompletedJobs)[0]
+    if (firstMonth) setExpandedMonths(new Set([firstMonth]))
+  }, [jobs])
+
+  const toggleMonth = (month: string) => {
+    setExpandedMonths(prev => {
+      const next = new Set(prev)
+      if (next.has(month)) next.delete(month)
+      else next.add(month)
+      return next
+    })
+  }
 
   const createJob = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setSubmitting(true)
@@ -469,7 +485,10 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
               <div>
                 {Object.entries(groupedCompletedJobs).map(([month, monthJobs]) => (
                   <div key={month} style={{ marginBottom: 32 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                    <div 
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, cursor: 'pointer' }}
+                      onClick={() => toggleMonth(month)}
+                    >
                       <h4 style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
                         {month}
                       </h4>
@@ -477,7 +496,11 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                       <span style={{ fontSize: 12, color: t.textDim }}>
                         {monthJobs.length} {monthJobs.length === 1 ? 'posao' : 'poslova'}
                       </span>
+                      <span style={{ color: t.textMuted, fontSize: 12 }}>
+                        {expandedMonths.has(month) ? '\u25B2' : '\u25BC'}
+                      </span>
                     </div>
+                    {expandedMonths.has(month) && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                       {monthJobs.map(job => (
                         <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
@@ -499,6 +522,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                         </div>
                       ))}
                     </div>
+                    )}
                   </div>
                 ))}
               </div>
