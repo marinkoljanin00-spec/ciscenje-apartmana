@@ -302,7 +302,9 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     justifyContent: 'space-between'
                   }}>
                     <span style={{ color: '#eab308', fontWeight: 600 }}>
-                      {String.fromCodePoint(0x2B50)} Imate {unreviewedCount} završen{unreviewedCount === 1 ? 'i' : 'ih'} posao koji čeka recenziju
+                      {unreviewedCount === 1 
+                        ? '\u2B50 Imate 1 završeni posao koji čeka recenziju'
+                        : `\u2B50 Imate ${unreviewedCount} završenih poslova koji čekaju recenziju`}
                     </span>
                   </div>
                 ) : null

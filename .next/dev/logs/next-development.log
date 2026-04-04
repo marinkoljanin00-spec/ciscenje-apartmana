@@ -93,3 +93,5 @@
 {"timestamp":"00:18:30.787","source":"Server","level":"LOG","message":"✓ Compiled in 56ms"}
 {"timestamp":"00:18:43.002","source":"Server","level":"LOG","message":"✓ Compiled in 47ms"}
 {"timestamp":"00:18:51.292","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:19:51.726","source":"Server","level":"LOG","message":"✓ Compiled in 53ms"}
+{"timestamp":"00:20:05.663","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
