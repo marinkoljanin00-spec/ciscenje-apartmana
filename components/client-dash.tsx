@@ -21,6 +21,10 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
 
+  // Client profile tab state
+  const [profileData, setProfileData] = useState<{ created_at?: string } | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
+
   // Cleaner profile modal state
   const [cleanerProfile, setCleanerProfile] = useState<{ 
     user: { id: number; full_name: string; rating: number; completed_jobs: number; created_at: string }; 
@@ -40,6 +44,15 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
     fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
   }, [uid])
+
+  // Lazy load profile data when profile tab opens
+  useEffect(() => {
+    if (tab === 'profile' && !profileLoaded) {
+      fetch(`/api/profile?userId=${uid}`)
+        .then(r => r.json())
+        .then(d => { setProfileData(d.user); setProfileLoaded(true) })
+    }
+  }, [tab, profileLoaded, uid])
 
   const loadApplications = async (job: Job) => {
     setSelectedJob(job)
@@ -272,6 +285,28 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
             {/* Jobs List - Active only */}
             <div>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni poslovi ({jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length})</h3>
+              
+              {/* Unreviewed jobs banner */}
+              {(() => {
+                const unreviewedCount = jobs.filter(j => j.status === 'completed').length
+                return unreviewedCount > 0 ? (
+                  <div style={{ 
+                    background: 'rgba(234, 179, 8, 0.1)', 
+                    border: '1px solid #eab308',
+                    borderRadius: 12, 
+                    padding: '14px 20px',
+                    marginBottom: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{ color: '#eab308', fontWeight: 600 }}>
+                      {String.fromCodePoint(0x2B50)} Imate {unreviewedCount} završen{unreviewedCount === 1 ? 'i' : 'ih'} posao koji čeka recenziju
+                    </span>
+                  </div>
+                ) : null
+              })()}
+              
               {jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length === 0 ? (
                 <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
                   <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih poslova</p>
@@ -330,7 +365,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                               </span>
                             </div>
                             {job.status === 'completed' && (
-                              <button onClick={() => setReviewJob(job)} style={{ ...btnPrimary, padding: '8px 16px', fontSize: 12, background: '#eab308' }}>
+                              <button onClick={() => setReviewJob(job)} style={{ ...btnPrimary, padding: '10px 20px', fontSize: 14, fontWeight: 700, background: '#eab308' }}>
                                 Ocijeni
                               </button>
                             )}
@@ -394,25 +429,59 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         )}
 
         {tab === 'profile' && (
-          <div style={{ ...cardStyle, padding: 32, maxWidth: 500 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moj profil</h3>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Email</label>
-              <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>{name}</div>
+          <div style={{ maxWidth: 500 }}>
+            {/* Account Info Card */}
+            <div style={{ ...cardStyle, padding: 32, marginBottom: 20 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moj profil</h3>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Email</label>
+                <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>{name}</div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Uloga</label>
+                <div style={{ fontSize: 16, color: t.accent, fontWeight: 600 }}>Klijent</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Član od</label>
+                <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>
+                  {profileData?.created_at 
+                    ? new Date(profileData.created_at).toLocaleDateString('hr-HR', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : profileLoaded ? 'N/A' : 'Učitavam...'}
+                </div>
+              </div>
             </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Uloga</label>
-              <div style={{ fontSize: 16, color: t.accent, fontWeight: 600 }}>Klijent</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+
+            {/* Statistics Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+              <div style={{ ...cardStyle, padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: t.text }}>{stats.totalJobs || 0}</div>
                 <div style={{ fontSize: 13, color: t.textMuted }}>Ukupno poslova</div>
               </div>
-              <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+              <div style={{ ...cardStyle, padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalSpent || 0).toFixed(0)} EUR</div>
-                <div style={{ fontSize: 13, color: t.textMuted }}>Potroseno</div>
+                <div style={{ fontSize: 13, color: t.textMuted }}>Potrošeno</div>
               </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div style={{ ...cardStyle, padding: 24, border: '1px solid rgba(239,68,68,0.3)' }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, color: '#ef4444', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>Zona opasnosti</h4>
+              <button 
+                onClick={logout} 
+                style={{ 
+                  width: '100%',
+                  padding: '12px 20px', 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  border: '1px solid rgba(239,68,68,0.3)', 
+                  borderRadius: 10, 
+                  color: '#ef4444', 
+                  fontSize: 14, 
+                  fontWeight: 600, 
+                  cursor: 'pointer' 
+                }}
+              >
+                Odjavi se
+              </button>
             </div>
           </div>
         )}
