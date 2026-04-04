@@ -414,7 +414,8 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                               Zavrseno
                             </span>
                           </div>
-                          {!reviewedJobIds.has(app.job_id) && app.job_status === 'completed' && (
+                          {!reviewedJobIds.has(app.job_id) && 
+                           (app.job_status === 'completed' || app.job_status === 'reviewed') && (
                             <button
                               onClick={() => setClientReviewModal({ jobId: app.job_id, clientId: app.client_id!, clientName: app.client_name || 'Klijent' })}
                               style={{ ...btnSecondary, padding: '10px 16px', fontSize: 13 }}
