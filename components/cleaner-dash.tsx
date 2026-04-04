@@ -126,6 +126,19 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
   const hasActiveFilters = filterCity || filterUrgent || filterType || minPrice || maxPrice || searchQuery
 
+  // Group completed jobs by month
+  const groupedMyJobs = useMemo(() => {
+    return myApplications
+      .filter(a => a.job_status === 'completed' || a.job_status === 'reviewed')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .reduce((groups, app) => {
+        const key = new Date(app.created_at).toLocaleDateString('hr-HR', { month: 'long', year: 'numeric' })
+        if (!groups[key]) groups[key] = []
+        groups[key].push(app)
+        return groups
+      }, {} as Record<string, typeof myApplications>)
+  }, [myApplications])
+
   const clearAllFilters = () => {
     setFilterCity('')
     setFilterUrgent(false)
@@ -460,32 +473,47 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
                   Zavrseni poslovi ({myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').length})
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                  {myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').map(app => (
-                    <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{app.title}</h4>
-                          <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
-                          <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{app.client_name}</p>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
-                            <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
-                              Zavrseno
-                            </span>
+                <div>
+                  {Object.entries(groupedMyJobs).map(([month, monthApps]) => (
+                    <div key={month} style={{ marginBottom: 32 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                        <h4 style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
+                          {month}
+                        </h4>
+                        <div style={{ flex: 1, height: 1, background: t.border }} />
+                        <span style={{ fontSize: 12, color: t.textDim }}>
+                          {monthApps.length} {monthApps.length === 1 ? 'posao' : 'poslova'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {monthApps.map(app => (
+                          <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{app.title}</h4>
+                                <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
+                                <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{app.client_name}</p>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
+                                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
+                                    Zavrseno
+                                  </span>
+                                </div>
+                                {!reviewedJobIds.has(app.job_id) &&
+                                 (app.job_status === 'completed' || app.job_status === 'reviewed') && (
+                                  <button
+                                    onClick={() => setClientReviewModal({ jobId: app.job_id, clientId: app.client_id!, clientName: app.client_name || 'Klijent' })}
+                                    style={{ ...btnSecondary, padding: '10px 16px', fontSize: 13 }}
+                                  >
+                                    Ocijeni klijenta
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          {!reviewedJobIds.has(app.job_id) && 
-                           (app.job_status === 'completed' || app.job_status === 'reviewed') && (
-                            <button
-                              onClick={() => setClientReviewModal({ jobId: app.job_id, clientId: app.client_id!, clientName: app.client_name || 'Klijent' })}
-                              style={{ ...btnSecondary, padding: '10px 16px', fontSize: 13 }}
-                            >
-                              Ocijeni klijenta
-                            </button>
-                          )}
-                        </div>
+                        ))}
                       </div>
                     </div>
                   ))}

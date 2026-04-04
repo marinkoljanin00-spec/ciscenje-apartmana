@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary, inputStyle, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
@@ -195,6 +195,19 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     }
     setSubmittingReview(false)
   }
+
+  // Group completed jobs by month
+  const groupedCompletedJobs = useMemo(() => {
+    return jobs
+      .filter(j => j.status === 'reviewed')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .reduce((groups, job) => {
+        const key = new Date(job.created_at).toLocaleDateString('hr-HR', { month: 'long', year: 'numeric' })
+        if (!groups[key]) groups[key] = []
+        groups[key].push(job)
+        return groups
+      }, {} as Record<string, typeof jobs>)
+  }, [jobs])
 
   const createJob = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setSubmitting(true)
@@ -453,23 +466,38 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 <p style={{ color: t.textMuted, margin: 0 }}>Nemate zavrsenih poslova</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                {jobs.filter(j => j.status === 'reviewed').map(job => (
-                  <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                      <div>
-                        <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{job.title}</h4>
-                        <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
-                        <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: t.accentGlow, color: t.accent }}>
-                          Zavrseno
-                        </span>
-                      </div>
+              <div>
+                {Object.entries(groupedCompletedJobs).map(([month, monthJobs]) => (
+                  <div key={month} style={{ marginBottom: 32 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                      <h4 style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
+                        {month}
+                      </h4>
+                      <div style={{ flex: 1, height: 1, background: t.border }} />
+                      <span style={{ fontSize: 12, color: t.textDim }}>
+                        {monthJobs.length} {monthJobs.length === 1 ? 'posao' : 'poslova'}
+                      </span>
                     </div>
-                    <div style={{ padding: 12, background: t.bgCard, borderRadius: 10 }}>
-                      <div style={{ color: t.textMuted, fontSize: 13 }}>Cistac: <span style={{ color: t.text, fontWeight: 600 }}>{job.cleaner_name}</span></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                      {monthJobs.map(job => (
+                        <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                            <div>
+                              <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{job.title}</h4>
+                              <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
+                              <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: t.accentGlow, color: t.accent }}>
+                                Zavrseno
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ padding: 12, background: t.bgCard, borderRadius: 10 }}>
+                            <div style={{ color: t.textMuted, fontSize: 13 }}>Cistac: <span style={{ color: t.text, fontWeight: 600 }}>{job.cleaner_name}</span></div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
