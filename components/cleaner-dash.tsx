@@ -279,7 +279,11 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                     </div>
                     {job.description && <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 12px 0', lineHeight: 1.5 }}>{job.description}</p>}
                     <button 
-                      onClick={() => !alreadyApplied && applyToJob(job.id, '')} 
+                      onClick={() => {
+                        if (!alreadyApplied && confirm('Jeste li sigurni da se želite prijaviti za ovaj posao?')) {
+                          applyToJob(job.id, '')
+                        }
+                      }} 
                       disabled={alreadyApplied}
                       style={{ 
                         ...btnPrimary, 
@@ -480,14 +484,24 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                   <div style={{ fontSize: 28, fontWeight: 800, color: t.text }}>{stats.completedJobs || 0}</div>
                   <div style={{ fontSize: 12, color: t.textMuted }}>Zavrseno</div>
                 </div>
-                <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalEarned || 0).toFixed(0)} EUR</div>
-                  <div style={{ fontSize: 12, color: t.textMuted }}>Zarada</div>
+<div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalEarned || 0).toFixed(0)} EUR</div>
+                <div style={{ fontSize: 12, color: t.textMuted }}>Zarada</div>
+              </div>
+<div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: '#eab308' }}>{stats.rating || 5.0}</div>
+                <div style={{ fontSize: 12, color: t.textMuted }}>Ocjena</div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 4 }}>
+                  {[1,2,3,4,5].map(star => (
+                    <svg key={star} width="12" height="12" viewBox="0 0 24 24" 
+                      fill={star <= Math.round(stats.rating || 0) ? '#eab308' : 'transparent'} 
+                      stroke={star <= Math.round(stats.rating || 0) ? '#eab308' : t.textDim} 
+                      strokeWidth="1.5">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  ))}
                 </div>
-                <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: '#eab308' }}>{stats.rating || 5.0}</div>
-                  <div style={{ fontSize: 12, color: t.textMuted }}>Ocjena</div>
-                </div>
+              </div>
               </div>
             </div>
 
