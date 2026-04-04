@@ -191,8 +191,8 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
               flexWrap: 'wrap'
             }}>
               {[
-                { n: platformStats.totalClients ? (platformStats.totalClients + 20) + '+' : '-', l: 'Klijenata' }, 
-                { n: platformStats.totalCleaners ? (platformStats.totalCleaners + 20) + '+' : '-', l: 'Čistača' }, 
+                { n: platformStats.totalClients ? (parseInt(String(platformStats.totalClients)) + 20) + '+' : '-', l: 'Klijenata' }, 
+                { n: platformStats.totalCleaners ? (parseInt(String(platformStats.totalCleaners)) + 20) + '+' : '-', l: 'Čistača' }, 
                 { n: platformStats.avgRating > 0 ? platformStats.avgRating : '5.0', l: 'Ocjena' }
               ].map((s, i) => (
                 <div key={i} style={{ textAlign: 'center' }}>

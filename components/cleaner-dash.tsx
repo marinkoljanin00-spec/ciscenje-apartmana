@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary, selectStyle, inputStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
@@ -18,6 +18,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [maxPrice, setMaxPrice] = useState('')
   const [completingId, setCompletingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Client review state
   const [reviewedJobIds] = useState<Set<number>>(new Set())
@@ -30,6 +31,12 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [myReviews, setMyReviews] = useState<{ id: number; rating: number; comment: string; client_name: string }[]>([])
   const [reviewsLoaded, setReviewsLoaded] = useState(false)
   const [loadingReviews, setLoadingReviews] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     loadMyApplications()
@@ -112,16 +119,19 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       const data = await res.json()
       if (data.success) {
         setToast({ message: 'Posao je oznacen kao zavrsen! Cestitamo!', type: 'success' })
-        setTimeout(() => setToast(null), 5000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 5000)
         loadMyApplications()
         fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
       } else {
         setToast({ message: data.error || 'Greska', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setCompletingId(null)
   }
@@ -146,17 +156,20 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       if (data.success) {
         reviewedJobIds.add(clientReviewModal.jobId)
         setToast({ message: 'Recenzija uspjesno poslana!', type: 'success' })
-        setTimeout(() => setToast(null), 4000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 4000)
         setClientReviewModal(null)
         setClientReviewRating(5)
         setClientReviewComment('')
       } else {
         setToast({ message: data.error || 'Greska pri slanju recenzije', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setSubmittingClientReview(false)
   }

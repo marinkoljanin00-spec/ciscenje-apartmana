@@ -40,3 +40,14 @@
 {"timestamp":"00:06:21.462","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] [view] https://vm-u7bbfzzuresukblbuihncs.vusercontent.net/ {\\n  dp: '/',\\n  f: undefined,\\n  o: 'https://vm-u7bbfzzuresukblbuihncs.vusercontent.net/',\\n  r: 'https://v0.app/',\\n  sdkn: '@vercel/analytics/next',\\n  sdkv: '1.6.1',\\n  sv: '0.1.3',\\n  ts: 1775315752316\\n} /_vercel/insights/view\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
 {"timestamp":"00:06:21.462","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] [view] https://vm-u7bbfzzuresukblbuihncs.vusercontent.net/ {\n  dp: '/',\n  f: undefined,\n  o: 'https://vm-u7bbfzzuresukblbuihncs.vusercontent.net/',\n  r: 'https://v0.app/',\n  sdkn: '@vercel/analytics/next',\n  sdkv: '1.6.1',\n  sv: '0.1.3',\n  ts: 1775315752316\n} /_vercel/insights/view"}
 {"timestamp":"00:11:05.277","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:11:37.851","source":"Server","level":"LOG","message":"✓ Compiled in 96ms"}
+{"timestamp":"00:11:45.454","source":"Server","level":"LOG","message":"✓ Compiled in 77ms"}
+{"timestamp":"00:11:54.726","source":"Server","level":"LOG","message":"✓ Compiled in 82ms"}
+{"timestamp":"00:12:10.156","source":"Server","level":"LOG","message":"✓ Compiled in 52ms"}
+{"timestamp":"00:12:10.496","source":"Server","level":"LOG","message":"✓ Compiled in 48ms"}
+{"timestamp":"00:12:10.881","source":"Server","level":"LOG","message":"✓ Compiled in 64ms"}
+{"timestamp":"00:12:11.271","source":"Server","level":"LOG","message":"✓ Compiled in 42ms"}
+{"timestamp":"00:12:26.342","source":"Server","level":"LOG","message":"✓ Compiled in 48ms"}
+{"timestamp":"00:12:26.746","source":"Server","level":"LOG","message":"✓ Compiled in 52ms"}
+{"timestamp":"00:12:27.042","source":"Server","level":"LOG","message":"✓ Compiled in 40ms"}
+{"timestamp":"00:12:27.604","source":"Server","level":"LOG","message":"✓ Compiled in 42ms"}

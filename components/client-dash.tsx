@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary, inputStyle, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
@@ -13,6 +13,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [applications, setApplications] = useState<Application[]>([])
   const [acceptingId, setAcceptingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [acceptedCleaner, setAcceptedCleaner] = useState<{ name: string; email: string; phone: string; rating: number } | null>(null)
   
   // Review modal state
@@ -39,6 +40,12 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
   const [jobCity, setJobCity] = useState('Zagreb')
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
@@ -118,15 +125,18 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         
         // Show toast
         setToast({ message: `Uspjesno ste prihvatili cistaca ${result.cleaner.name}!`, type: 'success' })
-        setTimeout(() => setToast(null), 5000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 5000)
       } else {
         setToast({ message: result.error || 'Doslo je do greske', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
         setSelectedJob(null)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setAcceptingId(null)
   }
@@ -156,7 +166,8 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       const data = await res.json()
       if (data.success) {
         setToast({ message: 'Hvala na recenziji!', type: 'success' })
-        setTimeout(() => setToast(null), 5000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 5000)
         // Refresh jobs
         const jobsRes = await fetch(`/api/jobs?role=client&userId=${uid}`)
         const jobsData = await jobsRes.json()
@@ -166,11 +177,13 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         setReviewComment('')
       } else {
         setToast({ message: data.error || 'Greska pri slanju recenzije', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setSubmittingReview(false)
   }
