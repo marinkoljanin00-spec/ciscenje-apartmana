@@ -119,6 +119,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepoznata greska"
+    if (message.toLowerCase().includes('unique') || 
+        message.toLowerCase().includes('duplicate')) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Vec ste ocijenili ovaj posao" 
+      }, { status: 400 })
+    }
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
