@@ -285,7 +285,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
 
             {/* Jobs List - Active only */}
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni poslovi ({jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length})</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni poslovi ({jobs.filter(j => !['reviewed'].includes(j.status)).length})</h3>
               
               {/* Unreviewed jobs banner */}
               {(() => {
@@ -310,13 +310,13 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 ) : null
               })()}
               
-              {jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length === 0 ? (
+              {jobs.filter(j => !['reviewed'].includes(j.status)).length === 0 ? (
                 <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
                   <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih poslova</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).map(job => (
+                  {jobs.filter(j => !['reviewed'].includes(j.status)).map(job => (
                     <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                         <div>
@@ -390,7 +390,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                           </div>
                           {job.status === 'completed' && (
                             <button onClick={() => setReviewJob(job)} style={{ width: '100%', marginTop: 12, padding: '10px 20px', background: '#eab308', color: '#000', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                              Ocijeni čistača
+                              {'\u2B50'} Ocijeni čistača
                             </button>
                           )}
                         </div>
