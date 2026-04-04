@@ -85,11 +85,11 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         fetch(`/api/profile?userId=${cleanerId}`),
         fetch(`/api/reviews?cleanerId=${cleanerId}`)
       ])
-      const profileData = await profileRes.json()
+      const cleanerProfileRes = await profileRes.json()
       const reviewsData = await reviewsRes.json()
       
       const data = {
-        user: profileData.user || { id: cleanerId, full_name: app.cleaner_name || 'Nepoznato', rating: app.rating || 0, completed_jobs: 0, created_at: '' },
+        user: cleanerProfileRes.user || { id: cleanerId, full_name: app.cleaner_name || 'Nepoznato', rating: app.rating || 0, completed_jobs: 0, created_at: '' },
         reviews: (reviewsData.reviews || []).slice(0, 5)
       }
       
