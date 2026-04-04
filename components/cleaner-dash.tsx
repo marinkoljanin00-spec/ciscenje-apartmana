@@ -41,13 +41,12 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   }
 
   const loadJobs = () => {
-    let url = '/api/jobs?role=cleaner'
-    if (filterUrgent) url += '&urgent=true'
-    if (filterType) url += `&propertyType=${filterType}`
-    fetch(url).then(r => r.json()).then(d => setJobs(d.jobs || []))
+    fetch('/api/jobs?role=cleaner')
+      .then(r => r.json())
+      .then(d => setJobs(d.jobs || []))
   }
 
-  useEffect(() => { loadJobs() }, [filterUrgent, filterType])
+  useEffect(() => { loadJobs() }, [])
 
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
@@ -305,6 +304,17 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
         {tab === 'my' && (
           <div>
+            {myApplications.length === 0 ? (
+              <div style={{ ...cardStyle, padding: 60, textAlign: 'center' }}>
+                <p style={{ color: t.textMuted, fontSize: 16, margin: '0 0 8px 0' }}>
+                  Nemate jos prijava
+                </p>
+                <p style={{ color: t.textDim, fontSize: 14, margin: 0 }}>
+                  Prijavite se na dostupne poslove u prvom tabu
+                </p>
+              </div>
+            ) : (
+              <>
             {/* Accepted Jobs - In Progress */}
             <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
               Prihvaceni poslovi ({myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').length})
@@ -445,6 +455,8 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                   </div>
                 ))}
               </div>
+            )}
+              </>
             )}
           </div>
         )}

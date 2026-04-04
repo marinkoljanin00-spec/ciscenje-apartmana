@@ -13,6 +13,16 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setLoading(true)
+    if (mode === 'register' && pass.length < 6) {
+      setErr('Lozinka mora imati najmanje 6 znakova.')
+      setLoading(false)
+      return
+    }
+    if (mode === 'register' && !name.trim()) {
+      setErr('Ime i prezime su obavezni.')
+      setLoading(false)
+      return
+    }
     const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
     const body = mode === 'login' ? { email, password: pass } : { email, password: pass, fullName: name, role, phone, city: role === 'client' ? city : null }
     try {
