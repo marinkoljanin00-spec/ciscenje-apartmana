@@ -16,7 +16,7 @@ function getSQL() {
 }
 
 // Session token name
-const SESSION_COOKIE = "sjaj_session"
+const SESSION_COOKIE = "marketplace_session"
 
 export interface AuthResult {
   success: boolean
