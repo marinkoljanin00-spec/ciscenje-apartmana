@@ -316,7 +316,14 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           {job.city && <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100 }}>{job.city}</span>}
                         </div>
                         <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
-                        <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{job.client_name}</p>
+                        <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {job.client_name}
+                          {job.client_rating && job.client_rating > 0 && (
+                            <span style={{ color: '#eab308', fontWeight: 600 }}>
+                              {'\u2B50'} {Number(job.client_rating).toFixed(1)}
+                            </span>
+                          )}
+                        </p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
