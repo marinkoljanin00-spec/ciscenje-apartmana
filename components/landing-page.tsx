@@ -1,10 +1,24 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
 // LANDING PAGE - Dark Emerald with Background Image - Single Screen
 // ═══════════════════════════════════════════════════════════════
 export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
+  const [platformStats, setPlatformStats] = useState({
+    totalClients: 0,
+    totalCleaners: 0,
+    avgRating: 5.0
+  })
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(r => r.json())
+      .then(d => setPlatformStats(d))
+      .catch(() => {})
+  }, [])
+
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -177,9 +191,9 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
               flexWrap: 'wrap'
             }}>
               {[
-                { n: '500+', l: 'Klijenata' }, 
-                { n: '100+', l: 'Čistača' }, 
-                { n: '4.9', l: 'Ocjena' }
+                { n: platformStats.totalClients ? (platformStats.totalClients + 20) + '+' : '-', l: 'Klijenata' }, 
+                { n: platformStats.totalCleaners ? (platformStats.totalCleaners + 20) + '+' : '-', l: 'Čistača' }, 
+                { n: platformStats.avgRating > 0 ? platformStats.avgRating : '5.0', l: 'Ocjena' }
               ].map((s, i) => (
                 <div key={i} style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 36, fontWeight: 800, color: t.accent, marginBottom: 4 }}>{s.n}</div>

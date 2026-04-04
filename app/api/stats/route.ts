@@ -13,11 +13,25 @@ export async function GET(request: Request) {
     const userId = searchParams.get("userId")
     const role = searchParams.get("role")
     
-    if (!userId) {
-      return NextResponse.json({ error: "userId je obavezan" }, { status: 400 })
-    }
-
     const sql = getSQL()
+
+    if (!userId) {
+      const totalClients = await sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'client'
+      `
+      const totalCleaners = await sql`
+        SELECT COUNT(*) as count FROM users WHERE role = 'cleaner'
+      `
+      const avgRating = await sql`
+        SELECT AVG(rating)::numeric(2,1) as avg FROM reviews 
+        WHERE reviewer_type = 'client'
+      `
+      return NextResponse.json({
+        totalClients: totalClients[0]?.count || 0,
+        totalCleaners: totalCleaners[0]?.count || 0,
+        avgRating: avgRating[0]?.avg || 5.0
+      })
+    }
     
     if (role === "client") {
       // Client stats
