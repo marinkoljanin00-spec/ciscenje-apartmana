@@ -457,6 +457,16 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
 
+  // Cleaner profile modal state
+  const [cleanerProfile, setCleanerProfile] = useState<{ 
+    user: { id: number; full_name: string; rating: number; completed_jobs: number; created_at: string }; 
+    reviews: { id: number; rating: number; comment: string; created_at: string }[];
+    applicationToAccept?: Application;
+  } | null>(null)
+  const [cleanerProfileCache] = useState<Map<number, { user: { id: number; full_name: string; rating: number; completed_jobs: number; created_at: string }; reviews: { id: number; rating: number; comment: string; created_at: string }[] }>>(new Map())
+  const [loadingCleanerProfile, setLoadingCleanerProfile] = useState(false)
+  const [applicationSort, setApplicationSort] = useState<'rating' | 'newest'>('rating')
+
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
   const [jobCity, setJobCity] = useState('Zagreb')
@@ -472,6 +482,41 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
     const res = await fetch(`/api/applications?jobId=${job.id}`)
     const data = await res.json()
     setApplications(data.applications || [])
+  }
+
+  const fetchCleanerProfile = async (cleanerId: number, app: Application) => {
+    // Check cache first
+    if (cleanerProfileCache.has(cleanerId)) {
+      const cached = cleanerProfileCache.get(cleanerId)!
+      setCleanerProfile({ ...cached, applicationToAccept: app })
+      return
+    }
+    
+    setLoadingCleanerProfile(true)
+    try {
+      const [profileRes, reviewsRes] = await Promise.all([
+        fetch(`/api/profile?userId=${cleanerId}`),
+        fetch(`/api/reviews?cleanerId=${cleanerId}`)
+      ])
+      const profileData = await profileRes.json()
+      const reviewsData = await reviewsRes.json()
+      
+      const data = {
+        user: profileData.user || { id: cleanerId, full_name: app.cleaner_name || 'Nepoznato', rating: app.rating || 0, completed_jobs: 0, created_at: '' },
+        reviews: (reviewsData.reviews || []).slice(0, 5)
+      }
+      
+      // Cache the result
+      cleanerProfileCache.set(cleanerId, data)
+      setCleanerProfile({ ...data, applicationToAccept: app })
+    } catch {
+      setCleanerProfile({ 
+        user: { id: cleanerId, full_name: app.cleaner_name || 'Nepoznato', rating: app.rating || 0, completed_jobs: 0, created_at: '' }, 
+        reviews: [],
+        applicationToAccept: app
+      })
+    }
+    setLoadingCleanerProfile(false)
   }
 
   const acceptApplication = async (app: Application) => {
@@ -912,17 +957,51 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
               </>
             ) : (
               <>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Prijave za: {selectedJob.title}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Prijave za: {selectedJob.title}</h3>
+                {applications.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <select 
+                      value={applicationSort} 
+                      onChange={e => setApplicationSort(e.target.value as 'rating' | 'newest')} 
+                      style={{ ...selectStyle, padding: '10px 14px', fontSize: 13 }}
+                    >
+                      <option value="rating">Najbolja ocjena</option>
+                      <option value="newest">Najnovije</option>
+                    </select>
+                  </div>
+                )}
                 {applications.length === 0 ? (
                   <p style={{ color: t.textMuted }}>Nema prijava za ovaj posao.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {applications.map(app => (
+                    {[...applications]
+                      .sort((a, b) => applicationSort === 'rating' 
+                        ? (b.rating || 0) - (a.rating || 0) 
+                        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                      )
+                      .map(app => (
                       <div key={app.id} style={{ background: t.bgCard, borderRadius: 12, padding: 16 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                           <div>
-                            <div style={{ fontWeight: 600, color: t.text }}>{app.cleaner_name}</div>
-                            <div style={{ fontSize: 13, color: t.accent }}>Ocjena: {app.rating || 5.0}</div>
+                            <button 
+                              onClick={() => fetchCleanerProfile(app.cleaner_id, app)}
+                              style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                padding: 0, 
+                                fontWeight: 600, 
+                                color: t.accent, 
+                                fontSize: 15,
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                textUnderlineOffset: 3
+                              }}
+                            >
+                              {app.cleaner_name}
+                            </button>
+                            <div style={{ fontSize: 13, color: t.textMuted, marginTop: 4 }}>
+                              Ocjena: <span style={{ color: t.accent, fontWeight: 600 }}>{app.rating || 5.0}</span>
+                            </div>
                           </div>
                           <button 
                             onClick={() => acceptApplication(app)} 
@@ -951,6 +1030,128 @@ function ClientDash({ logout, name, uid }: { logout: () => void; name: string; u
                   </div>
                 )}
                 <button onClick={() => { setSelectedJob(null); setAcceptedCleaner(null) }} style={{ ...btnSecondary, width: '100%', marginTop: 20 }}>Zatvori</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Cleaner Profile Modal */}
+      {cleanerProfile && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 150 }} onClick={() => setCleanerProfile(null)}>
+          <div style={{ ...cardStyle, padding: 28, maxWidth: 480, width: '100%', maxHeight: '85vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+            {loadingCleanerProfile ? (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10"/></svg>
+                <p style={{ color: t.textMuted, marginTop: 16 }}>Ucitavam profil...</p>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0', textAlign: 'center' }}>Profil cistaca</h3>
+                
+                {/* Profile Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                  <div style={{ 
+                    width: 64, 
+                    height: 64, 
+                    background: `linear-gradient(135deg, ${t.accent} 0%, #059669 100%)`, 
+                    borderRadius: '50%', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 26
+                  }}>
+                    {cleanerProfile.user.full_name?.charAt(0).toUpperCase() || '?'}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 18, color: t.text, marginBottom: 6 }}>{cleanerProfile.user.full_name}</div>
+                    {/* Visual star rating */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <svg key={star} width="18" height="18" viewBox="0 0 24 24" fill={star <= Math.round(cleanerProfile.user.rating || 0) ? '#eab308' : 'transparent'} stroke={star <= Math.round(cleanerProfile.user.rating || 0) ? '#eab308' : t.textDim} strokeWidth="1.5">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                      ))}
+                      <span style={{ marginLeft: 6, color: t.textMuted, fontSize: 14 }}>({cleanerProfile.user.rating?.toFixed(1) || '0.0'})</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+                  <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: t.accent }}>{cleanerProfile.user.completed_jobs || 0}</div>
+                    <div style={{ fontSize: 12, color: t.textMuted }}>Zavrsenih poslova</div>
+                  </div>
+                  <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>
+                      {cleanerProfile.user.created_at 
+                        ? new Date(cleanerProfile.user.created_at).toLocaleDateString('hr-HR', { month: 'short', year: 'numeric' })
+                        : 'N/A'
+                      }
+                    </div>
+                    <div style={{ fontSize: 12, color: t.textMuted }}>Clan od</div>
+                  </div>
+                </div>
+
+                {/* Reviews Section */}
+                <div style={{ marginBottom: 24 }}>
+                  <h4 style={{ fontSize: 14, fontWeight: 600, color: t.textMuted, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Recenzije ({cleanerProfile.reviews.length})
+                  </h4>
+                  {cleanerProfile.reviews.length === 0 ? (
+                    <div style={{ background: t.bgCard, borderRadius: 12, padding: 20, textAlign: 'center' }}>
+                      <p style={{ color: t.textDim, fontSize: 14, margin: 0 }}>Nema recenzija</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {cleanerProfile.reviews.map(review => (
+                        <div key={review.id} style={{ background: t.bgCard, borderRadius: 12, padding: 14 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <svg key={star} width="14" height="14" viewBox="0 0 24 24" fill={star <= review.rating ? '#eab308' : 'transparent'} stroke={star <= review.rating ? '#eab308' : t.textDim} strokeWidth="1.5">
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                              ))}
+                            </div>
+                            <span style={{ fontSize: 12, color: t.textDim }}>
+                              {new Date(review.created_at).toLocaleDateString('hr-HR')}
+                            </span>
+                          </div>
+                          {review.comment && (
+                            <p style={{ color: t.textMuted, fontSize: 13, margin: 0, lineHeight: 1.5 }}>{review.comment}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button onClick={() => setCleanerProfile(null)} style={{ ...btnSecondary, flex: 1 }}>Zatvori</button>
+                  {cleanerProfile.applicationToAccept && (
+                    <button 
+                      onClick={() => {
+                        if (cleanerProfile.applicationToAccept) {
+                          acceptApplication(cleanerProfile.applicationToAccept)
+                          setCleanerProfile(null)
+                        }
+                      }} 
+                      disabled={acceptingId === cleanerProfile.applicationToAccept.id}
+                      style={{ 
+                        ...btnPrimary, 
+                        flex: 1,
+                        opacity: acceptingId === cleanerProfile.applicationToAccept.id ? 0.7 : 1
+                      }}
+                    >
+                      {acceptingId === cleanerProfile.applicationToAccept.id ? 'Prihvacam...' : 'Prihvati ovog cistaca'}
+                    </button>
+                  )}
+                </div>
               </>
             )}
           </div>
