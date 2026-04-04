@@ -52,7 +52,12 @@ export async function GET(request: Request) {
     } else {
       // Cleaner stats
       const completedJobs = await sql`
-        SELECT COUNT(*) as count FROM applications WHERE cleaner_id = ${parseInt(userId)} AND status = 'accepted'
+        SELECT COUNT(*) as count 
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.id
+        WHERE a.cleaner_id = ${parseInt(userId)} 
+        AND a.status = 'accepted'
+        AND j.status IN ('completed', 'reviewed')
       `
       const pendingApplications = await sql`
         SELECT COUNT(*) as count FROM applications WHERE cleaner_id = ${parseInt(userId)} AND status = 'pending'

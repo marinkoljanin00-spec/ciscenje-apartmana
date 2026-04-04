@@ -76,6 +76,7 @@ export async function GET(request: Request) {
         LEFT JOIN users u ON j.cleaner_id = u.id
         WHERE j.client_id = ${clientId}
         ORDER BY j.is_urgent DESC, j.created_at DESC
+        LIMIT 50
       `
       return NextResponse.json({ jobs })
     } else {
@@ -90,6 +91,7 @@ export async function GET(request: Request) {
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.is_urgent = true AND j.property_type = ${filterType}
           ORDER BY j.created_at DESC
+          LIMIT 50
         `
       } else if (isUrgentFilter) {
         jobs = await sql`
@@ -98,6 +100,7 @@ export async function GET(request: Request) {
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.is_urgent = true
           ORDER BY j.created_at DESC
+          LIMIT 50
         `
       } else if (filterType) {
         jobs = await sql`
@@ -106,6 +109,7 @@ export async function GET(request: Request) {
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.property_type = ${filterType}
           ORDER BY j.is_urgent DESC, j.created_at DESC
+          LIMIT 50
         `
       } else {
         jobs = await sql`
@@ -114,6 +118,7 @@ export async function GET(request: Request) {
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open'
           ORDER BY j.is_urgent DESC, j.created_at DESC
+          LIMIT 50
         `
       }
       return NextResponse.json({ jobs })

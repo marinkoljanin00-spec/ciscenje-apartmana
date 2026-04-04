@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         JOIN users u ON a.cleaner_id = u.id
         WHERE a.job_id = ${parseInt(jobId)}
         ORDER BY a.created_at DESC
+        LIMIT 100
       `
       return NextResponse.json({ applications })
     } else if (cleanerId) {
@@ -37,6 +38,7 @@ export async function GET(request: Request) {
         JOIN users u ON j.client_id = u.id
         WHERE a.cleaner_id = ${parseInt(cleanerId)}
         ORDER BY a.created_at DESC
+        LIMIT 100
       `
       return NextResponse.json({ applications })
     }
