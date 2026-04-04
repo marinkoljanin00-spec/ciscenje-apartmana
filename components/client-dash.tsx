@@ -146,10 +146,11 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jobId: reviewJob.id,
-          clientId: uid,
+          clientId: parseInt(uid),
           cleanerId: reviewJob.cleaner_id,
           rating: reviewRating,
-          comment: reviewComment
+          comment: reviewComment || null,
+          reviewer_type: 'client'
         })
       })
       const data = await res.json()
@@ -365,7 +366,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                               </span>
                             </div>
                             {job.status === 'completed' && (
-                              <button onClick={() => setReviewJob(job)} style={{ ...btnPrimary, padding: '10px 20px', fontSize: 14, fontWeight: 700, background: '#eab308' }}>
+                              <button onClick={() => setReviewJob(job)} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 700, background: '#eab308', color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
                                 Ocijeni
                               </button>
                             )}
@@ -385,6 +386,11 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                               </a>
                             )}
                           </div>
+                          {job.status === 'completed' && (
+                            <button onClick={() => setReviewJob(job)} style={{ width: '100%', marginTop: 12, padding: '10px 20px', background: '#eab308', color: '#000', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                              Ocijeni čistača
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
