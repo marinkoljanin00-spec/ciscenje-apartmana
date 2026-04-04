@@ -8,7 +8,7 @@ export default function TermsPage() {
   return (
     <div style={{ minHeight: '100vh', background: t.bg, color: t.text }}>
       <header style={{ padding: '20px 32px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ fontWeight: 800, fontSize: 24, color: t.text, textDecoration: 'none' }}>sjaj.hr</Link>
+        <Link href="/" style={{ fontWeight: 800, fontSize: 24, color: t.text, textDecoration: 'none' }}>TvojČistač</Link>
         <Link href="/" style={{ color: t.accent, textDecoration: 'none', fontSize: 14 }}>← Povratak</Link>
       </header>
       
@@ -18,7 +18,7 @@ export default function TermsPage() {
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: t.accent, marginBottom: 16 }}>1. Opće odredbe</h2>
           <p style={{ color: t.textMuted, lineHeight: 1.8 }}>
-            sjaj.hr je platforma koja povezuje klijente s profesionalnim čistačima. Korištenjem naše platforme prihvaćate ove uvjete u cijelosti.
+            TvojČistač je platforma koja povezuje klijente s profesionalnim čistačima. Korištenjem naše platforme prihvaćate ove uvjete u cijelosti.
           </p>
         </section>
 
@@ -35,14 +35,14 @@ export default function TermsPage() {
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: t.accent, marginBottom: 16 }}>3. Plaćanje i provizija</h2>
           <p style={{ color: t.textMuted, lineHeight: 1.8 }}>
-            Platforma uzima proviziju od 10% na svaki završeni posao. Plaćanje se vrši direktno između klijenta i čistača. sjaj.hr ne odgovara za eventualne nesporazume oko plaćanja.
+            Platforma uzima proviziju od 10% na svaki završeni posao. Plaćanje se vrši direktno između klijenta i čistača. TvojČistač ne odgovara za eventualne nesporazume oko plaćanja.
           </p>
         </section>
 
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: t.accent, marginBottom: 16 }}>4. Odgovornost</h2>
           <p style={{ color: t.textMuted, lineHeight: 1.8 }}>
-            sjaj.hr djeluje isključivo kao posrednik. Ne snosimo odgovornost za kvalitetu usluge, štetu nastalu tijekom čišćenja ili bilo kakve sporove između korisnika.
+            TvojČistač djeluje isključivo kao posrednik. Ne snosimo odgovornost za kvalitetu usluge, štetu nastalu tijekom čišćenja ili bilo kakve sporove između korisnika.
           </p>
         </section>
 
@@ -63,7 +63,7 @@ export default function TermsPage() {
           <Link href="/conduct" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Pravila ponašanja</Link>
           <Link href="/podrska" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Podrška</Link>
         </div>
-        <p style={{ color: '#737373', fontSize: 12, margin: 0 }}>© 2026 sjaj.hr. Sva prava pridržana.</p>
+        <p style={{ color: '#737373', fontSize: 12, margin: 0 }}>© 2026 TvojČistač. Sva prava pridržana.</p>
       </footer>
     </div>
   )

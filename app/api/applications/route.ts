@@ -24,18 +24,21 @@ export async function GET(request: Request) {
         JOIN users u ON a.cleaner_id = u.id
         WHERE a.job_id = ${parseInt(jobId)}
         ORDER BY a.created_at DESC
+        LIMIT 100
       `
       return NextResponse.json({ applications })
     } else if (cleanerId) {
       // Get all applications by a cleaner (for cleaner view)
       const applications = await sql`
         SELECT a.*, j.title, j.location, j.price, j.status as job_status, j.is_urgent,
+               j.client_id,
                u.full_name as client_name, u.phone as client_phone, u.email as client_email
         FROM applications a
         JOIN jobs j ON a.job_id = j.id
         JOIN users u ON j.client_id = u.id
         WHERE a.cleaner_id = ${parseInt(cleanerId)}
         ORDER BY a.created_at DESC
+        LIMIT 100
       `
       return NextResponse.json({ applications })
     }

@@ -15,21 +15,34 @@ export default function Home() {
   const [userId, setUserId] = useState('')
 
   useEffect(() => {
-    const role = localStorage.getItem('user_role') as 'client' | 'cleaner' | null
-    const name = localStorage.getItem('user_email') || ''
-    const id = localStorage.getItem('user_id') || ''
-    if (role && id) { setUserRole(role); setUserName(name); setUserId(id); setView('dashboard') }
-    setMounted(true)
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(data => {
+        if (data.user) {
+          setUserRole(data.user.role)
+          setUserName(data.user.email)
+          setUserId(data.user.id.toString())
+          setView('dashboard')
+        }
+      })
+      .catch(() => {})
+      .finally(() => setMounted(true))
   }, [])
 
   const login = (u: User) => {
-    localStorage.setItem('user_role', u.role)
-    localStorage.setItem('user_id', u.id.toString())
-    localStorage.setItem('user_email', u.email)
-    setUserRole(u.role); setUserName(u.email); setUserId(u.id.toString()); setView('dashboard')
+    setUserRole(u.role)
+    setUserName(u.email)
+    setUserId(u.id.toString())
+    setView('dashboard')
   }
 
-  const logout = () => { localStorage.clear(); setUserRole(null); setUserName(''); setUserId(''); setView('landing') }
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    setUserRole(null)
+    setUserName('')
+    setUserId('')
+    setView('landing')
+  }
 
   if (!mounted) return <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: t.accent, fontSize: 20, fontWeight: 600 }}>Učitavanje...</div></div>
   if (view === 'landing') return <LandingPage onLogin={() => { setAuthMode('login'); setView('auth') }} onRegister={() => { setAuthMode('register'); setView('auth') }} />

@@ -8,7 +8,7 @@ export default function PrivacyPage() {
   return (
     <div style={{ minHeight: '100vh', background: t.bg, color: t.text }}>
       <header style={{ padding: '20px 32px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ fontWeight: 800, fontSize: 24, color: t.text, textDecoration: 'none' }}>sjaj.hr</Link>
+        <Link href="/" style={{ fontWeight: 800, fontSize: 24, color: t.text, textDecoration: 'none' }}>TvojČistač</Link>
         <Link href="/" style={{ color: t.accent, textDecoration: 'none', fontSize: 14 }}>← Povratak</Link>
       </header>
       
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
           <Link href="/conduct" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Pravila ponašanja</Link>
           <Link href="/podrska" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Podrška</Link>
         </div>
-        <p style={{ color: '#737373', fontSize: 12, margin: 0 }}>© 2026 sjaj.hr. Sva prava pridržana.</p>
+        <p style={{ color: '#737373', fontSize: 12, margin: 0 }}>© 2026 TvojČistač. Sva prava pridržana.</p>
       </footer>
     </div>
   )

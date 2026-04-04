@@ -13,6 +13,16 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setLoading(true)
+    if (mode === 'register' && pass.length < 6) {
+      setErr('Lozinka mora imati najmanje 6 znakova.')
+      setLoading(false)
+      return
+    }
+    if (mode === 'register' && !name.trim()) {
+      setErr('Ime i prezime su obavezni.')
+      setLoading(false)
+      return
+    }
     const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register'
     const body = mode === 'login' ? { email, password: pass } : { email, password: pass, fullName: name, role, phone, city: role === 'client' ? city : null }
     try {
@@ -30,7 +40,7 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center', 
-      padding: 24,
+      padding: 'clamp(16px, 4vw, 24px)',
       position: 'relative'
     }}>
       {/* Background glow */}
@@ -78,7 +88,7 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
               <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/>
             </svg>
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: t.text, margin: '0 0 8px 0' }}>sjaj.hr</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: t.text, margin: '0 0 8px 0' }}>TvojČistač</h1>
           <p style={{ color: t.textMuted, fontSize: 15, margin: 0 }}>{mode === 'login' ? 'Dobrodosli natrag!' : 'Kreirajte novi racun'}</p>
         </div>
 

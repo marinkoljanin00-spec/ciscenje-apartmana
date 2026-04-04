@@ -76,6 +76,7 @@ export async function GET(request: Request) {
         LEFT JOIN users u ON j.cleaner_id = u.id
         WHERE j.client_id = ${clientId}
         ORDER BY j.is_urgent DESC, j.created_at DESC
+        LIMIT 50
       `
       return NextResponse.json({ jobs })
     } else {
@@ -86,34 +87,38 @@ export async function GET(request: Request) {
       if (isUrgentFilter && filterType) {
         jobs = await sql`
           SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
+                 u.full_name as client_name, u.client_rating
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.is_urgent = true AND j.property_type = ${filterType}
           ORDER BY j.created_at DESC
+          LIMIT 50
         `
       } else if (isUrgentFilter) {
         jobs = await sql`
           SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
+                 u.full_name as client_name, u.client_rating
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.is_urgent = true
           ORDER BY j.created_at DESC
+          LIMIT 50
         `
       } else if (filterType) {
         jobs = await sql`
           SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
+                 u.full_name as client_name, u.client_rating
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open' AND j.property_type = ${filterType}
           ORDER BY j.is_urgent DESC, j.created_at DESC
+          LIMIT 50
         `
       } else {
         jobs = await sql`
           SELECT j.id, j.title, j.location, j.price, j.status, j.created_at, j.property_type, j.is_urgent, j.description, j.city,
-                 u.full_name as client_name
+                 u.full_name as client_name, u.client_rating
           FROM jobs j JOIN users u ON j.client_id = u.id
           WHERE j.status = 'open'
           ORDER BY j.is_urgent DESC, j.created_at DESC
+          LIMIT 50
         `
       }
       return NextResponse.json({ jobs })

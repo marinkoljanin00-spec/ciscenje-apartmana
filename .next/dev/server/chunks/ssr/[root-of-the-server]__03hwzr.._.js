@@ -56,7 +56,7 @@ const __TURBOPACK__default__export__ = fontData;
 "[project]/app/layout.tsx [app-rsc] (ecmascript)", ((__turbopack_context__) => {
 "use strict";
 
-// sjaj.hr - main layout - clean v3
+// TvojČistač - main layout - clean v3
 __turbopack_context__.s([
     "default",
     ()=>RootLayout,
@@ -73,8 +73,8 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f40$
 ;
 ;
 const metadata = {
-    title: 'sjaj.hr - Rezerviraj čišćenje u 30 sekundi',
-    description: 'Rezerviraj profesionalno čišćenje apartmana i kuća. Brzo, pouzdano i transparentno. Sjaj.hr - gdje čistoća postaje sjaj.',
+    title: 'TvojČistač - Rezerviraj čišćenje u 30 sekundi',
+    description: 'Rezerviraj profesionalno čišćenje apartmana i kuća. Brzo, pouzdano i transparentno. TvojČistač - tvoj dom, naša briga.',
     generator: 'v0.app',
     icons: {
         icon: [

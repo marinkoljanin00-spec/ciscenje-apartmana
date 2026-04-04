@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary, inputStyle, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
@@ -13,6 +13,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [applications, setApplications] = useState<Application[]>([])
   const [acceptingId, setAcceptingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [acceptedCleaner, setAcceptedCleaner] = useState<{ name: string; email: string; phone: string; rating: number } | null>(null)
   
   // Review modal state
@@ -20,6 +21,13 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
+
+  // Client profile tab state
+  const [profileData, setProfileData] = useState<{ 
+    created_at?: string; 
+    client_rating?: number 
+  } | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   // Cleaner profile modal state
   const [cleanerProfile, setCleanerProfile] = useState<{ 
@@ -30,6 +38,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [cleanerProfileCache] = useState<Map<number, { user: { id: number; full_name: string; rating: number; completed_jobs: number; created_at: string }; reviews: { id: number; rating: number; comment: string; created_at: string }[] }>>(new Map())
   const [loadingCleanerProfile, setLoadingCleanerProfile] = useState(false)
   const [applicationSort, setApplicationSort] = useState<'rating' | 'newest'>('rating')
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set())
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
@@ -37,9 +46,29 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
 
   useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
     fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
   }, [uid])
+
+  // Lazy load profile data when profile tab opens
+  useEffect(() => {
+    if (tab === 'profile' && !profileLoaded) {
+      fetch(`/api/profile?userId=${uid}`)
+        .then(r => r.json())
+        .then(d => { 
+          console.log('Profile data received:', d)
+          console.log('client_rating:', d.user?.client_rating)
+          setProfileData(d.user)
+          setProfileLoaded(true) 
+        })
+    }
+  }, [tab, profileLoaded, uid])
 
   const loadApplications = async (job: Job) => {
     setSelectedJob(job)
@@ -62,11 +91,11 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         fetch(`/api/profile?userId=${cleanerId}`),
         fetch(`/api/reviews?cleanerId=${cleanerId}`)
       ])
-      const profileData = await profileRes.json()
+      const cleanerProfileRes = await profileRes.json()
       const reviewsData = await reviewsRes.json()
       
       const data = {
-        user: profileData.user || { id: cleanerId, full_name: app.cleaner_name || 'Nepoznato', rating: app.rating || 0, completed_jobs: 0, created_at: '' },
+        user: cleanerProfileRes.user || { id: cleanerId, full_name: app.cleaner_name || 'Nepoznato', rating: app.rating || 0, completed_jobs: 0, created_at: '' },
         reviews: (reviewsData.reviews || []).slice(0, 5)
       }
       
@@ -105,15 +134,18 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         
         // Show toast
         setToast({ message: `Uspjesno ste prihvatili cistaca ${result.cleaner.name}!`, type: 'success' })
-        setTimeout(() => setToast(null), 5000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 5000)
       } else {
         setToast({ message: result.error || 'Doslo je do greske', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
         setSelectedJob(null)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setAcceptingId(null)
   }
@@ -133,16 +165,18 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jobId: reviewJob.id,
-          clientId: uid,
+          clientId: parseInt(uid),
           cleanerId: reviewJob.cleaner_id,
           rating: reviewRating,
-          comment: reviewComment
+          comment: reviewComment || null,
+          reviewer_type: 'client'
         })
       })
       const data = await res.json()
       if (data.success) {
         setToast({ message: 'Hvala na recenziji!', type: 'success' })
-        setTimeout(() => setToast(null), 5000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 5000)
         // Refresh jobs
         const jobsRes = await fetch(`/api/jobs?role=client&userId=${uid}`)
         const jobsData = await jobsRes.json()
@@ -152,13 +186,43 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         setReviewComment('')
       } else {
         setToast({ message: data.error || 'Greska pri slanju recenzije', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setSubmittingReview(false)
+  }
+
+  // Group completed jobs by month
+  const groupedCompletedJobs = useMemo(() => {
+    return jobs
+      .filter(j => j.status === 'reviewed')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .reduce((groups, job) => {
+        const key = new Date(job.created_at).toLocaleDateString('hr-HR', { month: 'long', year: 'numeric' })
+        if (!groups[key]) groups[key] = []
+        groups[key].push(job)
+        return groups
+      }, {} as Record<string, typeof jobs>)
+  }, [jobs])
+
+  // Set first month as default expanded
+  useEffect(() => {
+    const firstMonth = Object.keys(groupedCompletedJobs)[0]
+    if (firstMonth) setExpandedMonths(new Set([firstMonth]))
+  }, [jobs])
+
+  const toggleMonth = (month: string) => {
+    setExpandedMonths(prev => {
+      const next = new Set(prev)
+      if (next.has(month)) next.delete(month)
+      else next.add(month)
+      return next
+    })
   }
 
   const createJob = async (e: React.FormEvent) => {
@@ -184,15 +248,15 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     <div style={{ minHeight: '100vh', background: t.bg }}>
       {/* Header */}
       <header style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(12px, 4vw, 16px) clamp(12px, 4vw, 24px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 38, height: 38, background: `linear-gradient(135deg, ${t.accent} 0%, #059669 100%)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
             </div>
-            <span style={{ fontWeight: 800, fontSize: 20, color: t.text }}>sjaj.hr</span>
+            <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 4vw, 20px)', color: t.text }}>TvojČistač</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)' }}>
+            <span style={{ color: t.textMuted, fontSize: 14 }} className="hide-on-mobile">{name}</span>
             <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
           </div>
         </div>
@@ -217,9 +281,9 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         </div>
       </div>
 
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(12px, 4vw, 24px)' }}>
         {tab === 'active' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column-reverse', gap: 24 }} className="client-dash-grid">
             {/* Create Job Form */}
             <div style={{ ...cardStyle, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Novi posao</h3>
@@ -260,25 +324,75 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 <div style={{ marginBottom: 14 }}>
                   <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={isUrgent} onChange={e => setIsUrgent(e.target.checked)} style={{ width: 20, height: 20, accentColor: t.accent }} />
-                  <span style={{ color: t.text, fontWeight: 500 }}>Hitno (+50%)</span>
-                  {isUrgent && price && <span style={{ color: t.accent, fontSize: 13 }}>= {(Number(price) * 1.5).toFixed(2)} EUR</span>}
-                </label>
+                <div style={{ 
+                  marginBottom: 20, 
+                  padding: 16, 
+                  borderRadius: 12,
+                  border: `1px solid ${isUrgent ? t.accent : t.border}`,
+                  background: isUrgent ? t.accentGlow : 'transparent',
+                  cursor: 'pointer'
+                }} onClick={() => setIsUrgent(!isUrgent)}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <input type="checkbox" checked={isUrgent} 
+                        onChange={e => setIsUrgent(e.target.checked)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ width: 18, height: 18, accentColor: t.accent }} />
+                      <span style={{ color: t.text, fontWeight: 700, fontSize: 15 }}>
+                        {'\u26A1'} Hitno oglašavanje
+                      </span>
+                    </div>
+                    {isUrgent && price && (
+                      <span style={{ color: t.accent, fontWeight: 700, fontSize: 15 }}>
+                        {(Number(price) * 1.5).toFixed(2)} EUR
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color: t.textMuted, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+                    Vaš oglas se ističe i prikazuje prvi čistačima. 
+                    Cijena je <strong style={{ color: t.accent }}>50% viša</strong> od osnovne, 
+                    ali imate <strong style={{ color: t.text }}>znatno veće šanse</strong> za 
+                    brzi pronalazak čistača — idealno za hitne situacije.
+                  </p>
+                </div>
                 <button type="submit" disabled={submitting || !location} style={{ ...btnPrimary, width: '100%', opacity: (!location || submitting) ? 0.6 : 1 }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
               </form>
             </div>
 
             {/* Jobs List - Active only */}
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni poslovi ({jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length})</h3>
-              {jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).length === 0 ? (
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni poslovi ({jobs.filter(j => !['reviewed'].includes(j.status)).length})</h3>
+              
+              {/* Unreviewed jobs banner */}
+              {(() => {
+                const unreviewedCount = jobs.filter(j => j.status === 'completed').length
+                return unreviewedCount > 0 ? (
+                  <div style={{ 
+                    background: 'rgba(234, 179, 8, 0.1)', 
+                    border: '1px solid #eab308',
+                    borderRadius: 12, 
+                    padding: '14px 20px',
+                    marginBottom: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <span style={{ color: '#eab308', fontWeight: 600 }}>
+                      {unreviewedCount === 1 
+                        ? '\u2B50 Imate 1 završeni posao koji čeka recenziju'
+                        : `\u2B50 Imate ${unreviewedCount} završenih poslova koji čekaju recenziju`}
+                    </span>
+                  </div>
+                ) : null
+              })()}
+              
+              {jobs.filter(j => !['reviewed'].includes(j.status)).length === 0 ? (
                 <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
                   <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih poslova</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {jobs.filter(j => !['completed', 'reviewed'].includes(j.status)).map(job => (
+                  {jobs.filter(j => !['reviewed'].includes(j.status)).map(job => (
                     <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                         <div>
@@ -330,7 +444,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                               </span>
                             </div>
                             {job.status === 'completed' && (
-                              <button onClick={() => setReviewJob(job)} style={{ ...btnPrimary, padding: '8px 16px', fontSize: 12, background: '#eab308' }}>
+                              <button onClick={() => setReviewJob(job)} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 700, background: '#eab308', color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer' }}>
                                 Ocijeni
                               </button>
                             )}
@@ -368,24 +482,88 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 <p style={{ color: t.textMuted, margin: 0 }}>Nemate zavrsenih poslova</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                {jobs.filter(j => j.status === 'reviewed').map(job => (
-                  <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                      <div>
-                        <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{job.title}</h4>
-                        <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
-                        <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: t.accentGlow, color: t.accent }}>
-                          Zavrseno
+              <div>
+                {Object.entries(groupedCompletedJobs).map(([month, monthJobs]) => (
+                  <div key={month} style={{ marginBottom: 32 }}>
+                    <div 
+                      onClick={() => toggleMonth(month)}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        padding: '14px 20px',
+                        marginBottom: 16, 
+                        cursor: 'pointer',
+                        background: t.card,
+                        border: `1px solid ${t.border}`,
+                        borderRadius: 12,
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = t.bgCard}
+                      onMouseOut={e => e.currentTarget.style.background = t.card}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: 20 }}>{'\uD83D\uDCC5'}</span>
+                        <h4 style={{ 
+                          fontSize: 16, 
+                          fontWeight: 700, 
+                          color: t.text, 
+                          margin: 0,
+                          textTransform: 'capitalize'
+                        }}>
+                          {month}
+                        </h4>
+                        <span style={{ 
+                          fontSize: 13, 
+                          color: t.textMuted,
+                          background: t.bgCard,
+                          border: `1px solid ${t.border}`,
+                          borderRadius: 100,
+                          padding: '2px 10px'
+                        }}>
+                          {monthJobs.length} {monthJobs.length === 1 ? 'posao' : 'poslova'}
                         </span>
                       </div>
+                      <div style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: t.accentGlow,
+                        border: `1px solid ${t.accent}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: t.accent,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        flexShrink: 0
+                      }}>
+                        {expandedMonths.has(month) ? '\u25B2' : '\u25BC'}
+                      </div>
                     </div>
-                    <div style={{ padding: 12, background: t.bgCard, borderRadius: 10 }}>
-                      <div style={{ color: t.textMuted, fontSize: 13 }}>Cistac: <span style={{ color: t.text, fontWeight: 600 }}>{job.cleaner_name}</span></div>
+                    {expandedMonths.has(month) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                      {monthJobs.map(job => (
+                        <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                            <div>
+                              <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{job.title}</h4>
+                              <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
+                              <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: t.accentGlow, color: t.accent }}>
+                                Zavrseno
+                              </span>
+                            </div>
+                          </div>
+                          <div style={{ padding: 12, background: t.bgCard, borderRadius: 10 }}>
+                            <div style={{ color: t.textMuted, fontSize: 13 }}>Cistac: <span style={{ color: t.text, fontWeight: 600 }}>{job.cleaner_name}</span></div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -394,25 +572,84 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         )}
 
         {tab === 'profile' && (
-          <div style={{ ...cardStyle, padding: 32, maxWidth: 500 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moj profil</h3>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Email</label>
-              <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>{name}</div>
+          <div style={{ maxWidth: 500 }}>
+            {/* Account Info Card */}
+            <div style={{ ...cardStyle, padding: 32, marginBottom: 20 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moj profil</h3>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Email</label>
+                <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>{name}</div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Uloga</label>
+                <div style={{ fontSize: 16, color: t.accent, fontWeight: 600 }}>Klijent</div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Član od</label>
+                <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>
+                  {profileData?.created_at 
+                    ? new Date(profileData.created_at).toLocaleDateString('hr-HR', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : profileLoaded ? 'N/A' : 'Učitavam...'}
+                </div>
+              </div>
             </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Uloga</label>
-              <div style={{ fontSize: 16, color: t.accent, fontWeight: 600 }}>Klijent</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+
+            {/* Statistics Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+              <div style={{ ...cardStyle, padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: t.text }}>{stats.totalJobs || 0}</div>
                 <div style={{ fontSize: 13, color: t.textMuted }}>Ukupno poslova</div>
               </div>
-              <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+              <div style={{ ...cardStyle, padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalSpent || 0).toFixed(0)} EUR</div>
-                <div style={{ fontSize: 13, color: t.textMuted }}>Potroseno</div>
+                <div style={{ fontSize: 13, color: t.textMuted }}>Potrošeno</div>
               </div>
+            </div>
+
+            {/* Client Rating Card */}
+            {profileData?.client_rating && profileData.client_rating > 0 && (
+              <div style={{ ...cardStyle, padding: 20, marginBottom: 20, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: t.textMuted, marginBottom: 8 }}>
+                  Vaša ocjena kao klijent
+                </div>
+                <div style={{ fontSize: 36, fontWeight: 800, color: '#eab308', marginBottom: 8 }}>
+                  {Number(profileData.client_rating).toFixed(1)}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
+                  {[1,2,3,4,5].map(star => (
+                    <svg key={star} width="20" height="20" viewBox="0 0 24 24"
+                      fill={star <= Math.round(profileData.client_rating!) ? '#eab308' : 'transparent'}
+                      stroke={star <= Math.round(profileData.client_rating!) ? '#eab308' : t.textDim}
+                      strokeWidth="1.5">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, color: t.textDim, marginTop: 8 }}>
+                  Ocjena od čistača
+                </div>
+              </div>
+            )}
+
+            {/* Danger Zone */}
+            <div style={{ ...cardStyle, padding: 24, border: '1px solid rgba(239,68,68,0.3)' }}>
+              <h4 style={{ fontSize: 14, fontWeight: 600, color: '#ef4444', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>Zona opasnosti</h4>
+              <button 
+                onClick={logout} 
+                style={{ 
+                  width: '100%',
+                  padding: '12px 20px', 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  border: '1px solid rgba(239,68,68,0.3)', 
+                  borderRadius: 10, 
+                  color: '#ef4444', 
+                  fontSize: 14, 
+                  fontWeight: 600, 
+                  cursor: 'pointer' 
+                }}
+              >
+                Odjavi se
+              </button>
             </div>
           </div>
         )}
@@ -448,15 +685,15 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       {/* Applications Modal */}
       {selectedJob && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 }} onClick={() => { setSelectedJob(null); setAcceptedCleaner(null) }}>
-          <div style={{ ...cardStyle, padding: 28, maxWidth: 500, width: '100%', maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...cardStyle, padding: 20, maxWidth: 500, width: '100%', maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
             
             {/* Show accepted cleaner contact info */}
             {acceptedCleaner ? (
               <>
                 <div style={{ textAlign: 'center', marginBottom: 24 }}>
                   <div style={{ 
-                    width: 64, 
-                    height: 64, 
+                    width: 48, 
+                    height: 48, 
                     background: t.accentGlow, 
                     borderRadius: '50%', 
                     display: 'flex', 
@@ -464,17 +701,17 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     justifyContent: 'center',
                     margin: '0 auto 16px'
                   }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   </div>
-                  <h3 style={{ fontSize: 22, fontWeight: 700, color: t.text, margin: '0 0 8px 0' }}>Cestitamo!</h3>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 8px 0' }}>Cestitamo!</h3>
                   <p style={{ color: t.textMuted, fontSize: 15, margin: 0 }}>Uspjesno ste odabrali cistaca</p>
                 </div>
 
-                <div style={{ background: t.bgCard, borderRadius: 16, padding: 24, marginBottom: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                <div style={{ background: t.bgCard, borderRadius: 16, padding: 16, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                     <div style={{ 
-                      width: 56, 
-                      height: 56, 
+                      width: 44, 
+                      height: 44, 
                       background: `linear-gradient(135deg, ${t.accent} 0%, #059669 100%)`, 
                       borderRadius: '50%', 
                       display: 'flex', 
@@ -482,36 +719,36 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                       justifyContent: 'center',
                       color: '#fff',
                       fontWeight: 700,
-                      fontSize: 22
+                      fontSize: 18
                     }}>
                       {acceptedCleaner.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 18, color: t.text }}>{acceptedCleaner.name}</div>
-                      <div style={{ color: t.accent, fontSize: 14, fontWeight: 600 }}>Ocjena: {acceptedCleaner.rating || 5.0}</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: t.text }}>{acceptedCleaner.name}</div>
+                      <div style={{ color: t.accent, fontSize: 13, fontWeight: 600 }}>Ocjena: {acceptedCleaner.rating || 5.0}</div>
                     </div>
                   </div>
 
-                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 20 }}>
-                    <h4 style={{ fontSize: 13, fontWeight: 600, color: t.textMuted, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Kontakt podaci</h4>
+                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 16 }}>
+                    <h4 style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Kontakt podaci</h4>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                      <div style={{ width: 40, height: 40, background: t.accentGlow, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 32, height: 32, background: t.accentGlow, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, color: t.textMuted }}>Email</div>
-                        <a href={`mailto:${acceptedCleaner.email}`} style={{ color: t.text, fontWeight: 600, fontSize: 15, textDecoration: 'none' }}>{acceptedCleaner.email}</a>
+                        <div style={{ fontSize: 11, color: t.textMuted }}>Email</div>
+                        <a href={`mailto:${acceptedCleaner.email}`} style={{ color: t.text, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>{acceptedCleaner.email}</a>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 40, height: 40, background: t.accentGlow, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 32, height: 32, background: t.accentGlow, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, color: t.textMuted }}>Telefon</div>
-                        <a href={`tel:${acceptedCleaner.phone}`} style={{ color: t.text, fontWeight: 600, fontSize: 15, textDecoration: 'none' }}>{acceptedCleaner.phone || 'Nije dostupan'}</a>
+                        <div style={{ fontSize: 11, color: t.textMuted }}>Telefon</div>
+                        <a href={`tel:${acceptedCleaner.phone}`} style={{ color: t.text, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>{acceptedCleaner.phone || 'Nije dostupan'}</a>
                       </div>
                     </div>
                   </div>

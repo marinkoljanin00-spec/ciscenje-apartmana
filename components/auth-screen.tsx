@@ -196,14 +196,14 @@ export function AuthScreen() {
               <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-primary/30">
                 <Image
                   src="/images/cleanup-logo.jpg"
-                  alt="sjaj.hr Logo"
+                  alt="TvojČistač Logo"
                   fill
                   className="object-cover"
                 />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">sjaj.hr</h2>
-                <p className="text-sm text-muted-foreground">Vaš apartman zaslužuje sjaj</p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">TvojČistač</h2>
+                <p className="text-sm text-muted-foreground">Tvoj dom zaslužuje čistoću</p>
               </div>
             </div>
 
@@ -259,13 +259,13 @@ export function AuthScreen() {
             <div className="relative inline-flex w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary/30 mb-4">
               <Image
                 src="/images/cleanup-logo.jpg"
-                alt="sjaj.hr Logo"
+                alt="TvojČistač Logo"
                 fill
                 className="object-cover"
               />
             </div>
             <h2 className="text-3xl font-bold text-foreground tracking-tight">
-              sjaj.hr
+              TvojČistač
             </h2>
             <p className="text-muted-foreground mt-1">
               Rezerviraj čišćenje u 30 sekundi
@@ -289,7 +289,7 @@ export function AuthScreen() {
                 <CardHeader>
                   <CardTitle>Dobrodošli natrag</CardTitle>
                   <CardDescription>
-                    Prijavite se u svoj sjaj.hr račun
+                    Prijavite se u svoj TvojČistač račun
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -370,7 +370,7 @@ export function AuthScreen() {
                 <CardHeader>
                   <CardTitle>Kreiraj račun</CardTitle>
                   <CardDescription>
-                    Pridružite se sjaj.hr zajednici
+                    Pridružite se TvojČistač zajednici
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

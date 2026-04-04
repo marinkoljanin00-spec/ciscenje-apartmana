@@ -38,8 +38,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Posao nije pronaden" }, { status: 404 })
     }
     
-    if (job[0].status !== 'completed') {
+    if (reviewer_type === 'client' && job[0].status !== 'completed') {
       return NextResponse.json({ success: false, error: "Mozete ocijeniti samo zavrsene poslove" }, { status: 400 })
+    }
+    if (reviewer_type === 'cleaner' && !['completed', 'reviewed'].includes(job[0].status)) {
+      return NextResponse.json({ success: false, error: "Posao mora biti zavrsen da biste ostavili recenziju" }, { status: 400 })
     }
 
     if (reviewer_type === 'client') {
@@ -116,6 +119,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepoznata greska"
+    if (message.toLowerCase().includes('unique') || 
+        message.toLowerCase().includes('duplicate')) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "Vec ste ocijenili ovaj posao" 
+      }, { status: 400 })
+    }
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
@@ -126,6 +136,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const cleanerId = searchParams.get("cleanerId")
     const clientId = searchParams.get("clientId")
+    const reviewerType = searchParams.get("reviewer_type")
 
     if (!cleanerId && !clientId) {
       return NextResponse.json({ reviews: [] })
@@ -142,6 +153,19 @@ export async function GET(request: Request) {
         WHERE r.client_id = ${parseInt(clientId)} AND r.reviewer_type = 'cleaner'
         ORDER BY r.created_at DESC
         LIMIT 10
+      `
+      return NextResponse.json({ reviews })
+    }
+
+    // If reviewer_type=cleaner, get reviews BY this cleaner (not about them)
+    if (reviewerType === 'cleaner') {
+      const reviews = await sql`
+        SELECT r.job_id, r.rating, r.comment, r.created_at, u.full_name as client_name
+        FROM reviews r
+        JOIN users u ON r.client_id = u.id
+        WHERE r.cleaner_id = ${parseInt(cleanerId!)} AND r.reviewer_type = 'cleaner'
+        ORDER BY r.created_at DESC
+        LIMIT 50
       `
       return NextResponse.json({ reviews })
     }

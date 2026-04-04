@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect, useMemo } from 'react'
-import { t, cardStyle, btnPrimary, btnSecondary, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { t, cardStyle, btnPrimary, btnSecondary, selectStyle, inputStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
 // CLEANER DASHBOARD - Dark Emerald Theme
@@ -13,11 +13,15 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [filterUrgent, setFilterUrgent] = useState(false)
   const [filterType, setFilterType] = useState('')
   const [filterCity, setFilterCity] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [completingId, setCompletingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Client review state
-  const [reviewedJobIds] = useState<Set<number>>(new Set())
+  const [reviewedJobIds, setReviewedJobIds] = useState<Set<number>>(new Set())
   const [clientReviewModal, setClientReviewModal] = useState<{ jobId: number; clientId: number; clientName: string } | null>(null)
   const [clientReviewRating, setClientReviewRating] = useState(5)
   const [clientReviewComment, setClientReviewComment] = useState('')
@@ -28,10 +32,28 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [reviewsLoaded, setReviewsLoaded] = useState(false)
   const [loadingReviews, setLoadingReviews] = useState(false)
 
+  // Client ratings for accepted jobs
+  const [clientRatings, setClientRatings] = useState<Record<number, number>>({})
+  const [expandedMonthsCleaner, setExpandedMonthsCleaner] = useState<Set<string>>(new Set())
+
   useEffect(() => {
-    loadJobs()
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
     loadMyApplications()
     fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
+    fetch(`/api/reviews?cleanerId=${uid}&reviewer_type=cleaner`)
+      .then(r => r.json())
+      .then(d => {
+        const reviewed = new Set<number>(
+          (d.reviews || []).map((r: { job_id: number }) => r.job_id)
+        )
+        setReviewedJobIds(reviewed)
+      })
+      .catch(() => {})
   }, [uid])
 
   const loadMyApplications = () => {
@@ -39,13 +61,33 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   }
 
   const loadJobs = () => {
-    let url = '/api/jobs?role=cleaner'
-    if (filterUrgent) url += '&urgent=true'
-    if (filterType) url += `&propertyType=${filterType}`
-    fetch(url).then(r => r.json()).then(d => setJobs(d.jobs || []))
+    fetch('/api/jobs?role=cleaner')
+      .then(r => r.json())
+      .then(d => setJobs(d.jobs || []))
   }
 
-  useEffect(() => { loadJobs() }, [filterUrgent, filterType])
+  useEffect(() => { loadJobs() }, [])
+
+  // Fetch client ratings for accepted jobs
+  useEffect(() => {
+    myApplications
+      .filter(a => a.status === 'accepted' && a.client_id)
+      .forEach(a => {
+        if (a.client_id && !clientRatings[a.client_id]) {
+          fetch(`/api/profile?userId=${a.client_id}`)
+            .then(r => r.json())
+            .then(d => {
+              if (d.user?.client_rating) {
+                setClientRatings(prev => ({ 
+                  ...prev, 
+                  [a.client_id!]: d.user.client_rating 
+                }))
+              }
+            })
+            .catch(() => {})
+        }
+      })
+  }, [myApplications])
 
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
@@ -61,10 +103,66 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
     }
   }, [tab, reviewsLoaded, loadingReviews, uid])
 
-  // Client-side city filtering using useMemo to avoid API calls on every dropdown change
+  // Client-side filtering using useMemo to avoid API calls on every filter change
   const filteredJobs = useMemo(() => {
-    return jobs.filter(job => filterCity ? job.city === filterCity : true)
-  }, [jobs, filterCity])
+    return jobs.filter(job => {
+      if (filterCity && job.city !== filterCity) return false
+      if (filterUrgent && !job.is_urgent) return false
+      if (filterType && job.property_type !== filterType) return false
+      if (minPrice && job.price < parseFloat(minPrice)) return false
+      if (maxPrice && job.price > parseFloat(maxPrice)) return false
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const matches = 
+          job.title?.toLowerCase().includes(q) ||
+          job.location?.toLowerCase().includes(q) ||
+          job.city?.toLowerCase().includes(q) ||
+          job.description?.toLowerCase().includes(q) ||
+          job.property_type?.toLowerCase().includes(q)
+        if (!matches) return false
+      }
+      return true
+    })
+  }, [jobs, filterCity, filterUrgent, filterType, minPrice, maxPrice, searchQuery])
+
+  const hasActiveFilters = filterCity || filterUrgent || filterType || minPrice || maxPrice || searchQuery
+
+  // Group completed jobs by month
+  const groupedMyJobs = useMemo(() => {
+    return myApplications
+      .filter(a => a.job_status === 'completed' || a.job_status === 'reviewed')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .reduce((groups, app) => {
+        const key = new Date(app.created_at).toLocaleDateString('hr-HR', { month: 'long', year: 'numeric' })
+        if (!groups[key]) groups[key] = []
+        groups[key].push(app)
+        return groups
+      }, {} as Record<string, typeof myApplications>)
+  }, [myApplications])
+
+  // Set first month as default expanded
+  useEffect(() => {
+    const firstMonth = Object.keys(groupedMyJobs)[0]
+    if (firstMonth) setExpandedMonthsCleaner(new Set([firstMonth]))
+  }, [myApplications])
+
+  const toggleMonthCleaner = (month: string) => {
+    setExpandedMonthsCleaner(prev => {
+      const next = new Set(prev)
+      if (next.has(month)) next.delete(month)
+      else next.add(month)
+      return next
+    })
+  }
+
+  const clearAllFilters = () => {
+    setFilterCity('')
+    setFilterUrgent(false)
+    setFilterType('')
+    setMinPrice('')
+    setMaxPrice('')
+    setSearchQuery('')
+  }
 
   const applyToJob = async (jobId: number, message: string) => {
     await fetch('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, cleanerId: uid, message }) })
@@ -83,16 +181,19 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       const data = await res.json()
       if (data.success) {
         setToast({ message: 'Posao je oznacen kao zavrsen! Cestitamo!', type: 'success' })
-        setTimeout(() => setToast(null), 5000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 5000)
         loadMyApplications()
         fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
       } else {
         setToast({ message: data.error || 'Greska', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setCompletingId(null)
   }
@@ -115,19 +216,22 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       })
       const data = await res.json()
       if (data.success) {
-        reviewedJobIds.add(clientReviewModal.jobId)
+        setReviewedJobIds(prev => new Set([...prev, clientReviewModal.jobId]))
         setToast({ message: 'Recenzija uspjesno poslana!', type: 'success' })
-        setTimeout(() => setToast(null), 4000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 4000)
         setClientReviewModal(null)
         setClientReviewRating(5)
         setClientReviewComment('')
       } else {
         setToast({ message: data.error || 'Greska pri slanju recenzije', type: 'error' })
-        setTimeout(() => setToast(null), 3000)
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
       }
     } catch {
       setToast({ message: 'Mrezna greska', type: 'error' })
-      setTimeout(() => setToast(null), 3000)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setSubmittingClientReview(false)
   }
@@ -136,15 +240,15 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
     <div style={{ minHeight: '100vh', background: t.bg }}>
       {/* Header */}
       <header style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(12px, 4vw, 16px) clamp(12px, 4vw, 24px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 38, height: 38, background: `linear-gradient(135deg, ${t.accent} 0%, #059669 100%)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
             </div>
-            <span style={{ fontWeight: 800, fontSize: 20, color: t.text }}>sjaj.hr</span>
+            <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 4vw, 20px)', color: t.text }}>TvojČistač</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)' }}>
+            <span style={{ color: t.textMuted, fontSize: 14 }} className="hide-on-mobile">{name}</span>
             <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
           </div>
         </div>
@@ -169,11 +273,20 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
         </div>
       </div>
 
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(12px, 4vw, 24px)' }}>
         {tab === 'available' && (
           <>
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Pretrazi poslove (npr. stan, Zagreb, ciscenje...)"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ ...inputStyle, marginBottom: 12, width: '100%' }}
+            />
+
             {/* Filters */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: filterUrgent ? t.accentGlow : t.card, border: `1px solid ${filterUrgent ? t.accent : t.border}`, borderRadius: 10, cursor: 'pointer' }}>
                 <input type="checkbox" checked={filterUrgent} onChange={e => setFilterUrgent(e.target.checked)} style={{ display: 'none' }} />
                 <span style={{ color: filterUrgent ? t.accent : t.textMuted, fontWeight: 500, fontSize: 14 }}>Samo hitno</span>
@@ -189,10 +302,37 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 <option value="">Svi gradovi</option>
                 {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              <input
+                type="number"
+                placeholder="Min EUR"
+                value={minPrice}
+                onChange={e => setMinPrice(e.target.value)}
+                style={{ ...inputStyle, width: 100 }}
+              />
+              <input
+                type="number"
+                placeholder="Max EUR"
+                value={maxPrice}
+                onChange={e => setMaxPrice(e.target.value)}
+                style={{ ...inputStyle, width: 100 }}
+              />
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  style={{ background: 'none', border: `1px solid ${t.border}`, borderRadius: 8, padding: '8px 14px', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}
+                >
+                  Ocisti filtere
+                </button>
+              )}
             </div>
 
+            {/* Results count */}
+            <p style={{ color: t.textMuted, fontSize: 13, margin: '8px 0 16px 0' }}>
+              Pronadeno {filteredJobs.length} od {jobs.length} poslova
+            </p>
+
             {/* Jobs Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
               {filteredJobs.map(job => {
                 const alreadyApplied = myApplications.some(a => a.job_id === job.id)
                 return (
@@ -205,7 +345,14 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           {job.city && <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 100 }}>{job.city}</span>}
                         </div>
                         <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
-                        <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{job.client_name}</p>
+                        <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {job.client_name}
+                          {job.client_rating && job.client_rating > 0 && (
+                            <span style={{ color: '#eab308', fontWeight: 600 }}>
+                              {'\u2B50'} {Number(job.client_rating).toFixed(1)}
+                            </span>
+                          )}
+                        </p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
@@ -214,7 +361,11 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                     </div>
                     {job.description && <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 12px 0', lineHeight: 1.5 }}>{job.description}</p>}
                     <button 
-                      onClick={() => !alreadyApplied && applyToJob(job.id, '')} 
+                      onClick={() => {
+                        if (!alreadyApplied && confirm('Jeste li sigurni da se želite prijaviti za ovaj posao?')) {
+                          applyToJob(job.id, '')
+                        }
+                      }} 
                       disabled={alreadyApplied}
                       style={{ 
                         ...btnPrimary, 
@@ -229,7 +380,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 )
               })}
             </div>
-            {jobs.length === 0 && (
+            {filteredJobs.length === 0 && (
               <div style={{ ...cardStyle, padding: 60, textAlign: 'center' }}>
                 <p style={{ color: t.textMuted, margin: 0, fontSize: 16 }}>Nema dostupnih poslova s ovim filterima</p>
               </div>
@@ -239,6 +390,17 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
         {tab === 'my' && (
           <div>
+            {myApplications.length === 0 ? (
+              <div style={{ ...cardStyle, padding: 60, textAlign: 'center' }}>
+                <p style={{ color: t.textMuted, fontSize: 16, margin: '0 0 8px 0' }}>
+                  Nemate jos prijava
+                </p>
+                <p style={{ color: t.textDim, fontSize: 14, margin: 0 }}>
+                  Prijavite se na dostupne poslove u prvom tabu
+                </p>
+              </div>
+            ) : (
+              <>
             {/* Accepted Jobs - In Progress */}
             <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
               Prihvaceni poslovi ({myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').length})
@@ -268,6 +430,11 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                       <div style={{ fontWeight: 600, color: t.accent, marginBottom: 8, fontSize: 13 }}>Kontakt klijenta:</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <div style={{ color: t.text, fontSize: 14, fontWeight: 600 }}>{app.client_name}</div>
+                        {app.client_id && clientRatings[app.client_id] > 0 && (
+                          <div style={{ color: '#eab308', fontSize: 13, fontWeight: 600 }}>
+                            {'\u2B50'} Ocjena klijenta: {clientRatings[app.client_id].toFixed(1)}
+                          </div>
+                        )}
                         {app.client_email && (
                           <a href={`mailto:${app.client_email}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.textMuted, fontSize: 13, textDecoration: 'none' }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -322,32 +489,97 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
                   Zavrseni poslovi ({myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').length})
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-                  {myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').map(app => (
-                    <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{app.title}</h4>
-                          <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
-                          <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{app.client_name}</p>
-                        </div>
+                <div>
+                  {Object.entries(groupedMyJobs).map(([month, monthApps]) => (
+                    <div key={month} style={{ marginBottom: 32 }}>
+                      <div 
+                        onClick={() => toggleMonthCleaner(month)}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between',
+                          padding: '14px 20px',
+                          marginBottom: 16, 
+                          cursor: 'pointer',
+                          background: t.card,
+                          border: `1px solid ${t.border}`,
+                          borderRadius: 12,
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = t.bgCard}
+                        onMouseOut={e => e.currentTarget.style.background = t.card}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
-                            <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
-                              Zavrseno
-                            </span>
-                          </div>
-                          {!reviewedJobIds.has(app.job_id) && app.job_status === 'completed' && (
-                            <button
-                              onClick={() => setClientReviewModal({ jobId: app.job_id, clientId: app.client_id!, clientName: app.client_name || 'Klijent' })}
-                              style={{ ...btnSecondary, padding: '10px 16px', fontSize: 13 }}
-                            >
-                              Ocijeni klijenta
-                            </button>
-                          )}
+                          <span style={{ fontSize: 20 }}>{'\uD83D\uDCC5'}</span>
+                          <h4 style={{ 
+                            fontSize: 16, 
+                            fontWeight: 700, 
+                            color: t.text, 
+                            margin: 0,
+                            textTransform: 'capitalize'
+                          }}>
+                            {month}
+                          </h4>
+                          <span style={{ 
+                            fontSize: 13, 
+                            color: t.textMuted,
+                            background: t.bgCard,
+                            border: `1px solid ${t.border}`,
+                            borderRadius: 100,
+                            padding: '2px 10px'
+                          }}>
+                            {monthApps.length} {monthApps.length === 1 ? 'posao' : 'poslova'}
+                          </span>
+                        </div>
+                        <div style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: t.accentGlow,
+                          border: `1px solid ${t.accent}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: t.accent,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          flexShrink: 0
+                        }}>
+                          {expandedMonthsCleaner.has(month) ? '\u25B2' : '\u25BC'}
                         </div>
                       </div>
+                      {expandedMonthsCleaner.has(month) && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {monthApps.map(app => (
+                          <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{app.title}</h4>
+                                <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
+                                <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{app.client_name}</p>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
+                                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
+                                    Zavrseno
+                                  </span>
+                                </div>
+                                {!reviewedJobIds.has(app.job_id) &&
+                                 (app.job_status === 'completed' || app.job_status === 'reviewed') && (
+                                  <button
+                                    onClick={() => setClientReviewModal({ jobId: app.job_id, clientId: app.client_id!, clientName: app.client_name || 'Klijent' })}
+                                    style={{ ...btnSecondary, padding: '10px 16px', fontSize: 13 }}
+                                  >
+                                    Ocijeni klijenta
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -380,6 +612,8 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 ))}
               </div>
             )}
+              </>
+            )}
           </div>
         )}
 
@@ -401,14 +635,24 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                   <div style={{ fontSize: 28, fontWeight: 800, color: t.text }}>{stats.completedJobs || 0}</div>
                   <div style={{ fontSize: 12, color: t.textMuted }}>Zavrseno</div>
                 </div>
-                <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalEarned || 0).toFixed(0)} EUR</div>
-                  <div style={{ fontSize: 12, color: t.textMuted }}>Zarada</div>
+<div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalEarned || 0).toFixed(0)} EUR</div>
+                <div style={{ fontSize: 12, color: t.textMuted }}>Zarada</div>
+              </div>
+<div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: '#eab308' }}>{stats.rating || 5.0}</div>
+                <div style={{ fontSize: 12, color: t.textMuted }}>Ocjena</div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 4 }}>
+                  {[1,2,3,4,5].map(star => (
+                    <svg key={star} width="12" height="12" viewBox="0 0 24 24" 
+                      fill={star <= Math.round(stats.rating || 0) ? '#eab308' : 'transparent'} 
+                      stroke={star <= Math.round(stats.rating || 0) ? '#eab308' : t.textDim} 
+                      strokeWidth="1.5">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  ))}
                 </div>
-                <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: '#eab308' }}>{stats.rating || 5.0}</div>
-                  <div style={{ fontSize: 12, color: t.textMuted }}>Ocjena</div>
-                </div>
+              </div>
               </div>
             </div>
 

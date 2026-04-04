@@ -28,7 +28,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
             <section className="space-y-2">
               <h3 className="text-lg font-semibold text-foreground">1. Uvod</h3>
               <p>
-                sjaj.hr ("mi", "nas", "naša") posvećena je zaštiti vaše privatnosti. Ova politika objašnjava kako prikupljamo, koristimo, dijeljenje i štitimo vaše osobne podatke u skladu s GDPR-om i lokalnim zakonima.
+                TvojČistač ("mi", "nas", "naša") posvećena je zaštiti vaše privatnosti. Ova politika objašnjava kako prikupljamo, koristimo, dijeljenje i štitimo vaše osobne podatke u skladu s GDPR-om i lokalnim zakonima.
               </p>
             </section>
 
@@ -95,7 +95,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
                 <li><strong>Prenosivost:</strong> Zahtijevati prenos podataka drugoj organizaciji</li>
                 <li><strong>Prigovor:</strong> Prigovoriti obradi podataka</li>
               </ul>
-              <p>Za ostvarivanje ovih prava, kontaktirajte nas na: <span className="font-semibold">info.sjaj.hr@gmail.com</span></p>
+              <p>Za ostvarivanje ovih prava, kontaktirajte nas na: <span className="font-semibold">tvojcistac.info@gmail.com</span></p>
             </section>
 
             {/* 7. Cookies */}
@@ -124,7 +124,7 @@ export function PrivacyPolicy({ onBack }: PrivacyPolicyProps) {
             <section className="space-y-2">
               <h3 className="text-lg font-semibold text-foreground">9. Kontakt</h3>
               <p>
-                Za pitanja vezana uz vašu privatnost ili da prijavite kršenje, kontaktirajte nas na: <span className="font-semibold">info.sjaj.hr@gmail.com</span>
+                Za pitanja vezana uz vašu privatnost ili da prijavite kršenje, kontaktirajte nas na: <span className="font-semibold">tvojcistac.info@gmail.com</span>
               </p>
             </section>
 
