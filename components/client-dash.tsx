@@ -23,7 +23,10 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [submittingReview, setSubmittingReview] = useState(false)
 
   // Client profile tab state
-  const [profileData, setProfileData] = useState<{ created_at?: string } | null>(null)
+  const [profileData, setProfileData] = useState<{ 
+    created_at?: string; 
+    client_rating?: number 
+  } | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
 
   // Cleaner profile modal state
@@ -478,6 +481,31 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 <div style={{ fontSize: 13, color: t.textMuted }}>Potrošeno</div>
               </div>
             </div>
+
+            {/* Client Rating Card */}
+            {profileData?.client_rating && profileData.client_rating > 0 && (
+              <div style={{ ...cardStyle, padding: 20, marginBottom: 20, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, color: t.textMuted, marginBottom: 8 }}>
+                  Vaša ocjena kao klijent
+                </div>
+                <div style={{ fontSize: 36, fontWeight: 800, color: '#eab308', marginBottom: 8 }}>
+                  {Number(profileData.client_rating).toFixed(1)}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
+                  {[1,2,3,4,5].map(star => (
+                    <svg key={star} width="20" height="20" viewBox="0 0 24 24"
+                      fill={star <= Math.round(profileData.client_rating!) ? '#eab308' : 'transparent'}
+                      stroke={star <= Math.round(profileData.client_rating!) ? '#eab308' : t.textDim}
+                      strokeWidth="1.5">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, color: t.textDim, marginTop: 8 }}>
+                  Ocjena od čistača
+                </div>
+              </div>
+            )}
 
             {/* Danger Zone */}
             <div style={{ ...cardStyle, padding: 24, border: '1px solid rgba(239,68,68,0.3)' }}>

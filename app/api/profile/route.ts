@@ -25,7 +25,8 @@ export async function GET(request: Request) {
     const parsedUserId = parseInt(userId, 10)
 
     const users = await sql`
-      SELECT id, email, full_name, phone, gender, description, role, rating, created_at
+      SELECT id, email, full_name, phone, gender, description, role, 
+             rating, client_rating, created_at
       FROM users 
       WHERE id = ${parsedUserId}
     `
