@@ -28,3 +28,20 @@
 {"timestamp":"00:22:58.549","source":"Server","level":"LOG","message":"✓ Compiled in 62ms"}
 {"timestamp":"00:23:10.581","source":"Server","level":"LOG","message":"✓ Compiled in 47ms"}
 {"timestamp":"00:23:21.026","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:25:05.578","source":"Browser","level":"INFO","message":"%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"}
+{"timestamp":"00:25:05.579","source":"Server","level":"INFO","message":"[browser] \"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools\""}
+{"timestamp":"00:25:05.579","source":"Browser","level":"INFO","message":"Download the React DevTools for a better development experience: https://react.dev/link/react-devtools"}
+{"timestamp":"00:25:05.616","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit"}
+{"timestamp":"00:25:05.616","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {\"path\":\"/\",\"route\":\"/\"}"}
+{"timestamp":"00:25:05.616","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c [view] https://vm-qr6cs30uyp44ka07h0nba0.vusercontent.net/ color: rgb(120, 120, 120) color: inherit {\"dp\":\"/\",\"o\":\"https://vm-qr6cs30uyp44ka07h0nba0.vusercontent.net/\",\"r\":\"https://v0.app/\",\"sdkn\":\"@vercel/analytics/next\",\"sdkv\":\"1.6.1\",\"sv\":\"0.1.3\",\"ts\":1775305242506} /_vercel/insights/view"}
+{"timestamp":"00:25:05.616","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server.\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:25:05.616","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server."}
+{"timestamp":"00:25:05.617","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Running queued event pageview { path: '/', route: '/' }\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:25:05.617","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Running queued event pageview { path: '/', route: '/' }"}
+{"timestamp":"00:25:05.617","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] [view] https://vm-qr6cs30uyp44ka07h0nba0.vusercontent.net/ {\\n  dp: '/',\\n  f: undefined,\\n  o: 'https://vm-qr6cs30uyp44ka07h0nba0.vusercontent.net/',\\n  r: 'https://v0.app/',\\n  sdkn: '@vercel/analytics/next',\\n  sdkv: '1.6.1',\\n  sv: '0.1.3',\\n  ts: 1775305242506\\n} /_vercel/insights/view\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:25:05.617","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] [view] https://vm-qr6cs30uyp44ka07h0nba0.vusercontent.net/ {\n  dp: '/',\n  f: undefined,\n  o: 'https://vm-qr6cs30uyp44ka07h0nba0.vusercontent.net/',\n  r: 'https://v0.app/',\n  sdkn: '@vercel/analytics/next',\n  sdkv: '1.6.1',\n  sv: '0.1.3',\n  ts: 1775305242506\n} /_vercel/insights/view"}
+{"timestamp":"00:29:50.335","source":"Server","level":"LOG","message":"✓ Compiled in 56ms"}
+{"timestamp":"00:29:58.263","source":"Server","level":"LOG","message":"✓ Compiled in 99ms"}
+{"timestamp":"00:30:14.979","source":"Server","level":"LOG","message":"✓ Compiled in 64ms"}
+{"timestamp":"00:30:21.072","source":"Server","level":"LOG","message":"✓ Compiled in 49ms"}
+{"timestamp":"00:30:31.075","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}

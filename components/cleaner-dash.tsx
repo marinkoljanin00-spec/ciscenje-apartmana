@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { t, cardStyle, btnPrimary, btnSecondary, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
+import { t, cardStyle, btnPrimary, btnSecondary, selectStyle, inputStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
 // CLEANER DASHBOARD - Dark Emerald Theme
@@ -13,6 +13,9 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [filterUrgent, setFilterUrgent] = useState(false)
   const [filterType, setFilterType] = useState('')
   const [filterCity, setFilterCity] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [completingId, setCompletingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
@@ -61,10 +64,38 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
     }
   }, [tab, reviewsLoaded, loadingReviews, uid])
 
-  // Client-side city filtering using useMemo to avoid API calls on every dropdown change
+  // Client-side filtering using useMemo to avoid API calls on every filter change
   const filteredJobs = useMemo(() => {
-    return jobs.filter(job => filterCity ? job.city === filterCity : true)
-  }, [jobs, filterCity])
+    return jobs.filter(job => {
+      if (filterCity && job.city !== filterCity) return false
+      if (filterUrgent && !job.is_urgent) return false
+      if (filterType && job.property_type !== filterType) return false
+      if (minPrice && job.price < parseFloat(minPrice)) return false
+      if (maxPrice && job.price > parseFloat(maxPrice)) return false
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const matches = 
+          job.title?.toLowerCase().includes(q) ||
+          job.location?.toLowerCase().includes(q) ||
+          job.city?.toLowerCase().includes(q) ||
+          job.description?.toLowerCase().includes(q) ||
+          job.property_type?.toLowerCase().includes(q)
+        if (!matches) return false
+      }
+      return true
+    })
+  }, [jobs, filterCity, filterUrgent, filterType, minPrice, maxPrice, searchQuery])
+
+  const hasActiveFilters = filterCity || filterUrgent || filterType || minPrice || maxPrice || searchQuery
+
+  const clearAllFilters = () => {
+    setFilterCity('')
+    setFilterUrgent(false)
+    setFilterType('')
+    setMinPrice('')
+    setMaxPrice('')
+    setSearchQuery('')
+  }
 
   const applyToJob = async (jobId: number, message: string) => {
     await fetch('/api/applications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId, cleanerId: uid, message }) })
@@ -172,8 +203,17 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(12px, 4vw, 24px)' }}>
         {tab === 'available' && (
           <>
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Pretrazi poslove (npr. stan, Zagreb, ciscenje...)"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{ ...inputStyle, marginBottom: 12, width: '100%' }}
+            />
+
             {/* Filters */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: filterUrgent ? t.accentGlow : t.card, border: `1px solid ${filterUrgent ? t.accent : t.border}`, borderRadius: 10, cursor: 'pointer' }}>
                 <input type="checkbox" checked={filterUrgent} onChange={e => setFilterUrgent(e.target.checked)} style={{ display: 'none' }} />
                 <span style={{ color: filterUrgent ? t.accent : t.textMuted, fontWeight: 500, fontSize: 14 }}>Samo hitno</span>
@@ -189,7 +229,34 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 <option value="">Svi gradovi</option>
                 {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              <input
+                type="number"
+                placeholder="Min EUR"
+                value={minPrice}
+                onChange={e => setMinPrice(e.target.value)}
+                style={{ ...inputStyle, width: 100 }}
+              />
+              <input
+                type="number"
+                placeholder="Max EUR"
+                value={maxPrice}
+                onChange={e => setMaxPrice(e.target.value)}
+                style={{ ...inputStyle, width: 100 }}
+              />
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  style={{ background: 'none', border: `1px solid ${t.border}`, borderRadius: 8, padding: '8px 14px', color: t.textMuted, fontSize: 13, cursor: 'pointer' }}
+                >
+                  Ocisti filtere
+                </button>
+              )}
             </div>
+
+            {/* Results count */}
+            <p style={{ color: t.textMuted, fontSize: 13, margin: '8px 0 16px 0' }}>
+              Pronadeno {filteredJobs.length} od {jobs.length} poslova
+            </p>
 
             {/* Jobs Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
@@ -229,7 +296,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 )
               })}
             </div>
-            {jobs.length === 0 && (
+            {filteredJobs.length === 0 && (
               <div style={{ ...cardStyle, padding: 60, textAlign: 'center' }}>
                 <p style={{ color: t.textMuted, margin: 0, fontSize: 16 }}>Nema dostupnih poslova s ovim filterima</p>
               </div>
