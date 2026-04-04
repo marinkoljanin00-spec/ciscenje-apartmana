@@ -3009,6 +3009,10 @@
     color: var(--color-white);
   }
 
+  .capitalize {
+    text-transform: capitalize;
+  }
+
   .uppercase {
     text-transform: uppercase;
   }

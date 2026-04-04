@@ -493,19 +493,60 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                   {Object.entries(groupedMyJobs).map(([month, monthApps]) => (
                     <div key={month} style={{ marginBottom: 32 }}>
                       <div 
-                        style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, cursor: 'pointer' }}
                         onClick={() => toggleMonthCleaner(month)}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between',
+                          padding: '14px 20px',
+                          marginBottom: 16, 
+                          cursor: 'pointer',
+                          background: t.card,
+                          border: `1px solid ${t.border}`,
+                          borderRadius: 12,
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = t.bgCard}
+                        onMouseOut={e => e.currentTarget.style.background = t.card}
                       >
-                        <h4 style={{ fontSize: 13, fontWeight: 700, color: t.textMuted, margin: 0, textTransform: 'uppercase', letterSpacing: 1 }}>
-                          {month}
-                        </h4>
-                        <div style={{ flex: 1, height: 1, background: t.border }} />
-                        <span style={{ fontSize: 12, color: t.textDim }}>
-                          {monthApps.length} {monthApps.length === 1 ? 'posao' : 'poslova'}
-                        </span>
-                        <span style={{ color: t.textMuted, fontSize: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span style={{ fontSize: 20 }}>{'\uD83D\uDCC5'}</span>
+                          <h4 style={{ 
+                            fontSize: 16, 
+                            fontWeight: 700, 
+                            color: t.text, 
+                            margin: 0,
+                            textTransform: 'capitalize'
+                          }}>
+                            {month}
+                          </h4>
+                          <span style={{ 
+                            fontSize: 13, 
+                            color: t.textMuted,
+                            background: t.bgCard,
+                            border: `1px solid ${t.border}`,
+                            borderRadius: 100,
+                            padding: '2px 10px'
+                          }}>
+                            {monthApps.length} {monthApps.length === 1 ? 'posao' : 'poslova'}
+                          </span>
+                        </div>
+                        <div style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: t.accentGlow,
+                          border: `1px solid ${t.accent}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: t.accent,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          flexShrink: 0
+                        }}>
                           {expandedMonthsCleaner.has(month) ? '\u25B2' : '\u25BC'}
-                        </span>
+                        </div>
                       </div>
                       {expandedMonthsCleaner.has(month) && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
