@@ -60,7 +60,12 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     if (tab === 'profile' && !profileLoaded) {
       fetch(`/api/profile?userId=${uid}`)
         .then(r => r.json())
-        .then(d => { setProfileData(d.user); setProfileLoaded(true) })
+        .then(d => { 
+          console.log('Profile data received:', d)
+          console.log('client_rating:', d.user?.client_rating)
+          setProfileData(d.user)
+          setProfileLoaded(true) 
+        })
     }
   }, [tab, profileLoaded, uid])
 
