@@ -38,8 +38,11 @@ export async function GET(request: Request) {
     // Get completed jobs count (applications with status='accepted')
     const completedJobsResult = await sql`
       SELECT COUNT(*)::int as count
-      FROM applications
-      WHERE user_id = ${parsedUserId} AND status = 'accepted'
+      FROM applications a
+      JOIN jobs j ON a.job_id = j.id
+      WHERE a.cleaner_id = ${parsedUserId} 
+      AND a.status = 'accepted'
+      AND j.status IN ('completed', 'reviewed')
     `
     const completed_jobs = completedJobsResult[0]?.count || 0
 
