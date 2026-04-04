@@ -295,11 +295,37 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 <div style={{ marginBottom: 14 }}>
                   <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
                 </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={isUrgent} onChange={e => setIsUrgent(e.target.checked)} style={{ width: 20, height: 20, accentColor: t.accent }} />
-                  <span style={{ color: t.text, fontWeight: 500 }}>Hitno (+50%)</span>
-                  {isUrgent && price && <span style={{ color: t.accent, fontSize: 13 }}>= {(Number(price) * 1.5).toFixed(2)} EUR</span>}
-                </label>
+                <div style={{ 
+                  marginBottom: 20, 
+                  padding: 16, 
+                  borderRadius: 12,
+                  border: `1px solid ${isUrgent ? t.accent : t.border}`,
+                  background: isUrgent ? t.accentGlow : 'transparent',
+                  cursor: 'pointer'
+                }} onClick={() => setIsUrgent(!isUrgent)}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <input type="checkbox" checked={isUrgent} 
+                        onChange={e => setIsUrgent(e.target.checked)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ width: 18, height: 18, accentColor: t.accent }} />
+                      <span style={{ color: t.text, fontWeight: 700, fontSize: 15 }}>
+                        {'\u26A1'} Hitno oglašavanje
+                      </span>
+                    </div>
+                    {isUrgent && price && (
+                      <span style={{ color: t.accent, fontWeight: 700, fontSize: 15 }}>
+                        {(Number(price) * 1.5).toFixed(2)} EUR
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color: t.textMuted, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+                    Vaš oglas se ističe i prikazuje prvi čistačima. 
+                    Cijena je <strong style={{ color: t.accent }}>50% viša</strong> od osnovne, 
+                    ali imate <strong style={{ color: t.text }}>znatno veće šanse</strong> za 
+                    brzi pronalazak čistača — idealno za hitne situacije.
+                  </p>
+                </div>
                 <button type="submit" disabled={submitting || !location} style={{ ...btnPrimary, width: '100%', opacity: (!location || submitting) ? 0.6 : 1 }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
               </form>
             </div>
