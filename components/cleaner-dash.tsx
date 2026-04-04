@@ -32,6 +32,9 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [reviewsLoaded, setReviewsLoaded] = useState(false)
   const [loadingReviews, setLoadingReviews] = useState(false)
 
+  // Client ratings for accepted jobs
+  const [clientRatings, setClientRatings] = useState<Record<number, number>>({})
+
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -63,6 +66,27 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   }
 
   useEffect(() => { loadJobs() }, [])
+
+  // Fetch client ratings for accepted jobs
+  useEffect(() => {
+    myApplications
+      .filter(a => a.status === 'accepted' && a.client_id)
+      .forEach(a => {
+        if (a.client_id && !clientRatings[a.client_id]) {
+          fetch(`/api/profile?userId=${a.client_id}`)
+            .then(r => r.json())
+            .then(d => {
+              if (d.user?.client_rating) {
+                setClientRatings(prev => ({ 
+                  ...prev, 
+                  [a.client_id!]: d.user.client_rating 
+                }))
+              }
+            })
+            .catch(() => {})
+        }
+      })
+  }, [myApplications])
 
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
@@ -370,6 +394,11 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                       <div style={{ fontWeight: 600, color: t.accent, marginBottom: 8, fontSize: 13 }}>Kontakt klijenta:</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <div style={{ color: t.text, fontSize: 14, fontWeight: 600 }}>{app.client_name}</div>
+                        {app.client_id && clientRatings[app.client_id] > 0 && (
+                          <div style={{ color: '#eab308', fontSize: 13, fontWeight: 600 }}>
+                            {'\u2B50'} Ocjena klijenta: {clientRatings[app.client_id].toFixed(1)}
+                          </div>
+                        )}
                         {app.client_email && (
                           <a href={`mailto:${app.client_email}`} style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.textMuted, fontSize: 13, textDecoration: 'none' }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
