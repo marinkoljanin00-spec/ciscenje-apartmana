@@ -102,7 +102,7 @@ export default function AdminDashboard() {
     <div style={{ minHeight: '100vh', background: t.bg, color: t.text }}>
       <header style={{ padding: '16px 24px', borderBottom: `1px solid ${t.border}`, background: t.bgCard, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontWeight: 800, fontSize: 20, color: t.accent }}>sjaj.hr</span>
+          <span style={{ fontWeight: 800, fontSize: 20, color: t.accent }}>TvojČistač</span>
           <span style={{ color: t.textDim, fontSize: 14 }}>Admin Dashboard</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -221,7 +221,7 @@ export default function AdminDashboard() {
                       ) : (
                         <button onClick={() => updateTicketStatus(ticket.id, 'open')} style={{ padding: '10px 20px', background: 'transparent', border: `1px solid ${t.border}`, borderRadius: 8, color: t.textMuted, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Ponovo otvori</button>
                       )}
-                      <a href={`mailto:${ticket.email}?subject=Re: Vaša prijava na sjaj.hr`} style={{ padding: '10px 20px', background: 'transparent', border: `1px solid ${t.border}`, borderRadius: 8, color: t.textMuted, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Odgovori</a>
+                      <a href={`mailto:${ticket.email}?subject=Re: Vaša prijava na TvojČistač`} style={{ padding: '10px 20px', background: 'transparent', border: `1px solid ${t.border}`, borderRadius: 8, color: t.textMuted, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Odgovori</a>
                     </div>
                   </div>
                 ))}

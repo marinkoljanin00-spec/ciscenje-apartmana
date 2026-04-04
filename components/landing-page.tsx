@@ -90,7 +90,7 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/>
               </svg>
             </div>
-            <span style={{ fontWeight: 800, fontSize: 24, color: t.text, letterSpacing: -0.5 }}>sjaj.hr</span>
+            <span style={{ fontWeight: 800, fontSize: 24, color: t.text, letterSpacing: -0.5 }}>TvojČistač</span>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={onLogin} style={btnSecondary}>Prijava</button>
@@ -212,8 +212,8 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
         }}>
           <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: t.accent }}>sjaj.hr</div>
-              <div style={{ color: t.textDim, fontSize: 12 }}>Vaš dom, naš sjaj.</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: t.accent }}>TvojČistač</div>
+              <div style={{ color: t.textDim, fontSize: 12 }}>Tvoj dom, naša briga.</div>
             </div>
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
               <a href="/terms" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Uvjeti korištenja</a>
@@ -223,8 +223,8 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
             </div>
           </div>
           <div style={{ maxWidth: 1200, margin: '16px auto 0', paddingTop: 16, borderTop: `1px solid ${t.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-            <a href="mailto:info.sjaj.hr@gmail.com" style={{ color: t.accent, textDecoration: 'none', fontSize: 13 }}>info.sjaj.hr@gmail.com</a>
-            <span style={{ color: t.textDim, fontSize: 12 }}>© 2026 sjaj.hr. Sva prava pridržana.</span>
+            <a href="mailto:tvojcistac.info@gmail.com" style={{ color: t.accent, textDecoration: 'none', fontSize: 13 }}>tvojcistac.info@gmail.com</a>
+            <span style={{ color: t.textDim, fontSize: 12 }}>© 2026 TvojČistač. Sva prava pridržana.</span>
           </div>
         </footer>
       </div>

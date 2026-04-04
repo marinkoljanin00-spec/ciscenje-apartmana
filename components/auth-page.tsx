@@ -88,7 +88,7 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
               <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/>
             </svg>
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: t.text, margin: '0 0 8px 0' }}>sjaj.hr</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: t.text, margin: '0 0 8px 0' }}>TvojČistač</h1>
           <p style={{ color: t.textMuted, fontSize: 15, margin: 0 }}>{mode === 'login' ? 'Dobrodosli natrag!' : 'Kreirajte novi racun'}</p>
         </div>
 

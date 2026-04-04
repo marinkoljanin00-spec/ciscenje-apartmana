@@ -44,7 +44,7 @@ export default function PodrskaPage() {
   return (
     <div style={{ minHeight: '100vh', background: t.bg, color: t.text }}>
       <header style={{ padding: '20px 32px', borderBottom: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ fontWeight: 800, fontSize: 24, color: t.text, textDecoration: 'none' }}>sjaj.hr</Link>
+        <Link href="/" style={{ fontWeight: 800, fontSize: 24, color: t.text, textDecoration: 'none' }}>TvojČistač</Link>
         <Link href="/" style={{ color: t.accent, textDecoration: 'none', fontSize: 14 }}>← Povratak</Link>
       </header>
       
@@ -56,7 +56,7 @@ export default function PodrskaPage() {
           <div style={{ width: 48, height: 48, background: t.accent, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>✉</div>
           <div>
             <div style={{ fontWeight: 600, fontSize: 14, color: t.text, marginBottom: 4 }}>Kontaktirajte nas direktno</div>
-            <a href="mailto:info.sjaj.hr@gmail.com" style={{ color: t.accent, fontSize: 16, fontWeight: 700, textDecoration: 'none' }}>info.sjaj.hr@gmail.com</a>
+            <a href="mailto:tvojcistac.info@gmail.com" style={{ color: t.accent, fontSize: 16, fontWeight: 700, textDecoration: 'none' }}>tvojcistac.info@gmail.com</a>
           </div>
         </div>
         
@@ -112,9 +112,9 @@ export default function PodrskaPage() {
           <Link href="/podrska" style={{ color: t.textMuted, textDecoration: 'none', fontSize: 13 }}>Podrška</Link>
         </div>
         <div style={{ marginBottom: 12 }}>
-          <a href="mailto:info.sjaj.hr@gmail.com" style={{ color: t.accent, textDecoration: 'none', fontSize: 13 }}>info.sjaj.hr@gmail.com</a>
+          <a href="mailto:tvojcistac.info@gmail.com" style={{ color: t.accent, textDecoration: 'none', fontSize: 13 }}>tvojcistac.info@gmail.com</a>
         </div>
-        <p style={{ color: '#737373', fontSize: 12, margin: 0 }}>© 2026 sjaj.hr. Sva prava pridržana.</p>
+        <p style={{ color: '#737373', fontSize: 12, margin: 0 }}>© 2026 TvojČistač. Sva prava pridržana.</p>
       </footer>
     </div>
   )

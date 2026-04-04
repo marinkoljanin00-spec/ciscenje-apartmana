@@ -86,13 +86,13 @@ export function EmailVerification() {
           <div className="relative inline-flex w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary/30 mb-4">
             <Image
               src="/images/cleanup-logo.jpg"
-              alt="sjaj.hr Logo"
+              alt="TvojČistač Logo"
               fill
               className="object-cover"
             />
           </div>
           <h2 className="text-3xl font-bold text-foreground tracking-tight">
-            sjaj.hr
+            TvojČistač
           </h2>
           <p className="text-muted-foreground mt-1">
             Verifikacija email adrese

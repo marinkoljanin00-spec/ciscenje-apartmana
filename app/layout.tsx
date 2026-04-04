@@ -1,4 +1,4 @@
-// sjaj.hr - main layout - clean v3
+// TvojČistač - main layout - clean v3
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'sjaj.hr - Rezerviraj čišćenje u 30 sekundi',
-  description: 'Rezerviraj profesionalno čišćenje apartmana i kuća. Brzo, pouzdano i transparentno. Sjaj.hr - gdje čistoća postaje sjaj.',
+  title: 'TvojČistač - Rezerviraj čišćenje u 30 sekundi',
+  description: 'Rezerviraj profesionalno čišćenje apartmana i kuća. Brzo, pouzdano i transparentno. TvojČistač - tvoj dom, naša briga.',
   generator: 'v0.app',
   icons: {
     icon: [

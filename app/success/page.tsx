@@ -13,7 +13,7 @@ export default function SuccessPage() {
           </div>
           <CardTitle className="text-2xl">Registracija uspješna!</CardTitle>
           <CardDescription>
-            Vaš račun je uspješno kreiran. Sada možete pristupiti svim funkcijama sjaj.hr platforme.
+            Vaš račun je uspješno kreiran. Sada možete pristupiti svim funkcijama TvojČistač platforme.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

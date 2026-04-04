@@ -378,7 +378,7 @@ export function AdminPanel() {
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Admin Panel</h1>
           </div>
-          <p className="text-muted-foreground">Puni uvid u sve aktivnosti na platformi sjaj.hr</p>
+          <p className="text-muted-foreground">Puni uvid u sve aktivnosti na platformi TvojČistač</p>
         </div>
         <Badge variant="outline" className="gap-2 px-3 py-1.5 bg-primary/10 text-primary border-primary/30 self-start">
           <Activity className="w-4 h-4" />
