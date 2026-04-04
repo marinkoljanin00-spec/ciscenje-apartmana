@@ -194,4 +194,27 @@
   .mobile-full-btn {
     @apply w-full;
   }
+  
+  /* Hide username on mobile */
+  .hide-on-mobile {
+    display: none !important;
+  }
+  
+  /* Client dashboard grid: stacked on mobile */
+  .client-dash-grid {
+    flex-direction: column-reverse !important;
+  }
+}
+
+/* Desktop: show username and use side-by-side grid */
+@media (min-width: 768px) {
+  .hide-on-mobile {
+    display: inline !important;
+  }
+  
+  .client-dash-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    flex-direction: unset !important;
+  }
 }

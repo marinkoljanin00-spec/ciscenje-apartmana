@@ -53,11 +53,13 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
         
         {/* Navbar */}
         <nav style={{ 
-          padding: '20px 32px',
+          padding: 'clamp(12px, 4vw, 20px) clamp(16px, 4vw, 32px)',
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between',
-          borderBottom: `1px solid ${t.border}`
+          borderBottom: `1px solid ${t.border}`,
+          flexWrap: 'wrap',
+          gap: 12
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ 
@@ -83,7 +85,7 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
         </nav>
 
         {/* Main Content - All on one screen */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 32px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(20px, 5vw, 40px) clamp(16px, 4vw, 32px)' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
             
             {/* Hero Text */}
@@ -171,7 +173,7 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
             <div style={{ 
               display: 'flex', 
               justifyContent: 'center', 
-              gap: 48,
+              gap: 'clamp(24px, 6vw, 48px)',
               flexWrap: 'wrap'
             }}>
               {[
@@ -190,7 +192,7 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
 
         {/* Footer */}
         <footer style={{ 
-          padding: '24px 32px', 
+          padding: 'clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px)', 
           borderTop: `1px solid ${t.border}`,
           background: t.bgCard
         }}>

@@ -30,7 +30,7 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
       display: 'flex', 
       alignItems: 'center', 
       justifyContent: 'center', 
-      padding: 24,
+      padding: 'clamp(16px, 4vw, 24px)',
       position: 'relative'
     }}>
       {/* Background glow */}

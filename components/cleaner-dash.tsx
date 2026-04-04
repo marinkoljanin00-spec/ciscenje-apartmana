@@ -136,15 +136,15 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
     <div style={{ minHeight: '100vh', background: t.bg }}>
       {/* Header */}
       <header style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(12px, 4vw, 16px) clamp(12px, 4vw, 24px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 38, height: 38, background: `linear-gradient(135deg, ${t.accent} 0%, #059669 100%)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>
             </div>
-            <span style={{ fontWeight: 800, fontSize: 20, color: t.text }}>sjaj.hr</span>
+            <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 4vw, 20px)', color: t.text }}>sjaj.hr</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)' }}>
+            <span style={{ color: t.textMuted, fontSize: 14 }} className="hide-on-mobile">{name}</span>
             <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
           </div>
         </div>
@@ -169,11 +169,11 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
         </div>
       </div>
 
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: 'clamp(12px, 4vw, 24px)' }}>
         {tab === 'available' && (
           <>
             {/* Filters */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: filterUrgent ? t.accentGlow : t.card, border: `1px solid ${filterUrgent ? t.accent : t.border}`, borderRadius: 10, cursor: 'pointer' }}>
                 <input type="checkbox" checked={filterUrgent} onChange={e => setFilterUrgent(e.target.checked)} style={{ display: 'none' }} />
                 <span style={{ color: filterUrgent ? t.accent : t.textMuted, fontWeight: 500, fontSize: 14 }}>Samo hitno</span>
@@ -192,7 +192,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             </div>
 
             {/* Jobs Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
               {filteredJobs.map(job => {
                 const alreadyApplied = myApplications.some(a => a.job_id === job.id)
                 return (

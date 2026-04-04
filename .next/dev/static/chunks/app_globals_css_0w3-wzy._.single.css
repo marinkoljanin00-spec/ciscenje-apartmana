@@ -881,6 +881,10 @@
     display: none;
   }
 
+  .inline {
+    display: inline;
+  }
+
   .inline-block {
     display: inline-block;
   }
@@ -6617,6 +6621,26 @@
 
   .mobile-full-btn {
     width: 100%;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .client-dash-grid {
+    flex-direction: column-reverse !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .hide-on-mobile {
+    display: inline !important;
+  }
+
+  .client-dash-grid {
+    flex-direction: unset !important;
+    grid-template-columns: 1fr 1fr !important;
+    display: grid !important;
   }
 }
 
