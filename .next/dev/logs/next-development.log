@@ -62,3 +62,7 @@
 {"timestamp":"00:43:37.688","source":"Server","level":"LOG","message":"✓ Compiled in 46ms"}
 {"timestamp":"00:43:38.124","source":"Server","level":"LOG","message":"✓ Compiled in 44ms"}
 {"timestamp":"00:43:48.312","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:52:57.140","source":"Server","level":"LOG","message":"✓ Compiled in 57ms"}
+{"timestamp":"00:52:57.660","source":"Server","level":"LOG","message":"✓ Compiled in 65ms"}
+{"timestamp":"00:52:58.105","source":"Server","level":"LOG","message":"✓ Compiled in 43ms"}
+{"timestamp":"00:53:11.725","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}

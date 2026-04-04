@@ -520,15 +520,15 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       {/* Applications Modal */}
       {selectedJob && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 }} onClick={() => { setSelectedJob(null); setAcceptedCleaner(null) }}>
-          <div style={{ ...cardStyle, padding: 28, maxWidth: 500, width: '100%', maxHeight: '80vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
+          <div style={{ ...cardStyle, padding: 20, maxWidth: 500, width: '100%', maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
             
             {/* Show accepted cleaner contact info */}
             {acceptedCleaner ? (
               <>
                 <div style={{ textAlign: 'center', marginBottom: 24 }}>
                   <div style={{ 
-                    width: 64, 
-                    height: 64, 
+                    width: 48, 
+                    height: 48, 
                     background: t.accentGlow, 
                     borderRadius: '50%', 
                     display: 'flex', 
@@ -536,17 +536,17 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     justifyContent: 'center',
                     margin: '0 auto 16px'
                   }}>
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                   </div>
-                  <h3 style={{ fontSize: 22, fontWeight: 700, color: t.text, margin: '0 0 8px 0' }}>Cestitamo!</h3>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 8px 0' }}>Cestitamo!</h3>
                   <p style={{ color: t.textMuted, fontSize: 15, margin: 0 }}>Uspjesno ste odabrali cistaca</p>
                 </div>
 
-                <div style={{ background: t.bgCard, borderRadius: 16, padding: 24, marginBottom: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                <div style={{ background: t.bgCard, borderRadius: 16, padding: 16, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                     <div style={{ 
-                      width: 56, 
-                      height: 56, 
+                      width: 44, 
+                      height: 44, 
                       background: `linear-gradient(135deg, ${t.accent} 0%, #059669 100%)`, 
                       borderRadius: '50%', 
                       display: 'flex', 
@@ -554,36 +554,36 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                       justifyContent: 'center',
                       color: '#fff',
                       fontWeight: 700,
-                      fontSize: 22
+                      fontSize: 18
                     }}>
                       {acceptedCleaner.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 18, color: t.text }}>{acceptedCleaner.name}</div>
-                      <div style={{ color: t.accent, fontSize: 14, fontWeight: 600 }}>Ocjena: {acceptedCleaner.rating || 5.0}</div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: t.text }}>{acceptedCleaner.name}</div>
+                      <div style={{ color: t.accent, fontSize: 13, fontWeight: 600 }}>Ocjena: {acceptedCleaner.rating || 5.0}</div>
                     </div>
                   </div>
 
-                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 20 }}>
-                    <h4 style={{ fontSize: 13, fontWeight: 600, color: t.textMuted, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Kontakt podaci</h4>
+                  <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 16 }}>
+                    <h4 style={{ fontSize: 12, fontWeight: 600, color: t.textMuted, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Kontakt podaci</h4>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                      <div style={{ width: 40, height: 40, background: t.accentGlow, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                      <div style={{ width: 32, height: 32, background: t.accentGlow, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, color: t.textMuted }}>Email</div>
-                        <a href={`mailto:${acceptedCleaner.email}`} style={{ color: t.text, fontWeight: 600, fontSize: 15, textDecoration: 'none' }}>{acceptedCleaner.email}</a>
+                        <div style={{ fontSize: 11, color: t.textMuted }}>Email</div>
+                        <a href={`mailto:${acceptedCleaner.email}`} style={{ color: t.text, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>{acceptedCleaner.email}</a>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 40, height: 40, background: t.accentGlow, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 32, height: 32, background: t.accentGlow, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                       </div>
                       <div>
-                        <div style={{ fontSize: 12, color: t.textMuted }}>Telefon</div>
-                        <a href={`tel:${acceptedCleaner.phone}`} style={{ color: t.text, fontWeight: 600, fontSize: 15, textDecoration: 'none' }}>{acceptedCleaner.phone || 'Nije dostupan'}</a>
+                        <div style={{ fontSize: 11, color: t.textMuted }}>Telefon</div>
+                        <a href={`tel:${acceptedCleaner.phone}`} style={{ color: t.text, fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>{acceptedCleaner.phone || 'Nije dostupan'}</a>
                       </div>
                     </div>
                   </div>
