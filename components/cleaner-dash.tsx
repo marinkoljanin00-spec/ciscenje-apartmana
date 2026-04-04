@@ -579,7 +579,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           </div>
                         ))}
                       </div>
-                      )}
+                    )}
                     </div>
                   ))}
                 </div>

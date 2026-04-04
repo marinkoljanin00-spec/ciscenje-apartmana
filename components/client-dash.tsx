@@ -563,7 +563,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                         </div>
                       ))}
                     </div>
-                    )}
+                  )}
                   </div>
                 ))}
               </div>
