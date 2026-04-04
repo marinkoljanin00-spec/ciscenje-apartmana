@@ -45,3 +45,5 @@
 {"timestamp":"00:30:14.979","source":"Server","level":"LOG","message":"✓ Compiled in 64ms"}
 {"timestamp":"00:30:21.072","source":"Server","level":"LOG","message":"✓ Compiled in 49ms"}
 {"timestamp":"00:30:31.075","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:35:56.665","source":"Server","level":"LOG","message":"✓ Compiled in 52ms"}
+{"timestamp":"00:35:56.733","source":"Server","level":"LOG","message":"✓ Compiled in 54ms"}

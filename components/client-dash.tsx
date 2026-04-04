@@ -388,11 +388,6 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                               </a>
                             )}
                           </div>
-                          {job.status === 'completed' && (
-                            <button onClick={() => setReviewJob(job)} style={{ width: '100%', marginTop: 12, padding: '10px 20px', background: '#eab308', color: '#000', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                              {'\u2B50'} Ocijeni čistača
-                            </button>
-                          )}
                         </div>
                       )}
                     </div>

@@ -32,7 +32,6 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [loadingReviews, setLoadingReviews] = useState(false)
 
   useEffect(() => {
-    loadJobs()
     loadMyApplications()
     fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
   }, [uid])
