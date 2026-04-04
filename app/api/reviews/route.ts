@@ -129,6 +129,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const cleanerId = searchParams.get("cleanerId")
     const clientId = searchParams.get("clientId")
+    const reviewerType = searchParams.get("reviewer_type")
 
     if (!cleanerId && !clientId) {
       return NextResponse.json({ reviews: [] })
@@ -145,6 +146,19 @@ export async function GET(request: Request) {
         WHERE r.client_id = ${parseInt(clientId)} AND r.reviewer_type = 'cleaner'
         ORDER BY r.created_at DESC
         LIMIT 10
+      `
+      return NextResponse.json({ reviews })
+    }
+
+    // If reviewer_type=cleaner, get reviews BY this cleaner (not about them)
+    if (reviewerType === 'cleaner') {
+      const reviews = await sql`
+        SELECT r.job_id, r.rating, r.comment, r.created_at, u.full_name as client_name
+        FROM reviews r
+        JOIN users u ON r.client_id = u.id
+        WHERE r.cleaner_id = ${parseInt(cleanerId!)} AND r.reviewer_type = 'cleaner'
+        ORDER BY r.created_at DESC
+        LIMIT 50
       `
       return NextResponse.json({ reviews })
     }

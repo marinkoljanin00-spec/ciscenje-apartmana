@@ -21,7 +21,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Client review state
-  const [reviewedJobIds] = useState<Set<number>>(new Set())
+  const [reviewedJobIds, setReviewedJobIds] = useState<Set<number>>(new Set())
   const [clientReviewModal, setClientReviewModal] = useState<{ jobId: number; clientId: number; clientName: string } | null>(null)
   const [clientReviewRating, setClientReviewRating] = useState(5)
   const [clientReviewComment, setClientReviewComment] = useState('')
@@ -41,6 +41,15 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   useEffect(() => {
     loadMyApplications()
     fetch(`/api/stats?role=cleaner&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
+    fetch(`/api/reviews?cleanerId=${uid}&reviewer_type=cleaner`)
+      .then(r => r.json())
+      .then(d => {
+        const reviewed = new Set<number>(
+          (d.reviews || []).map((r: { job_id: number }) => r.job_id)
+        )
+        setReviewedJobIds(reviewed)
+      })
+      .catch(() => {})
   }, [uid])
 
   const loadMyApplications = () => {
@@ -154,7 +163,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       })
       const data = await res.json()
       if (data.success) {
-        reviewedJobIds.add(clientReviewModal.jobId)
+        setReviewedJobIds(prev => new Set([...prev, clientReviewModal.jobId]))
         setToast({ message: 'Recenzija uspjesno poslana!', type: 'success' })
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
         toastTimerRef.current = setTimeout(() => setToast(null), 4000)
