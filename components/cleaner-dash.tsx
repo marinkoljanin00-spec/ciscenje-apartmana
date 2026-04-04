@@ -16,6 +16,18 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [completingId, setCompletingId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
+  // Client review state
+  const [reviewedJobIds] = useState<Set<number>>(new Set())
+  const [clientReviewModal, setClientReviewModal] = useState<{ jobId: number; clientId: number; clientName: string } | null>(null)
+  const [clientReviewRating, setClientReviewRating] = useState(5)
+  const [clientReviewComment, setClientReviewComment] = useState('')
+  const [submittingClientReview, setSubmittingClientReview] = useState(false)
+
+  // My reviews state (lazy loaded)
+  const [myReviews, setMyReviews] = useState<{ id: number; rating: number; comment: string; client_name: string }[]>([])
+  const [reviewsLoaded, setReviewsLoaded] = useState(false)
+  const [loadingReviews, setLoadingReviews] = useState(false)
+
   useEffect(() => {
     loadJobs()
     loadMyApplications()
@@ -34,6 +46,20 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   }
 
   useEffect(() => { loadJobs() }, [filterUrgent, filterType])
+
+  // Lazy load reviews only when profile tab is visited
+  useEffect(() => {
+    if (tab === 'profile' && !reviewsLoaded && !loadingReviews) {
+      setLoadingReviews(true)
+      fetch(`/api/reviews?cleanerId=${uid}`)
+        .then(r => r.json())
+        .then(d => {
+          setMyReviews(d.reviews || [])
+          setReviewsLoaded(true)
+        })
+        .finally(() => setLoadingReviews(false))
+    }
+  }, [tab, reviewsLoaded, loadingReviews, uid])
 
   // Client-side city filtering using useMemo to avoid API calls on every dropdown change
   const filteredJobs = useMemo(() => {
@@ -69,6 +95,41 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       setTimeout(() => setToast(null), 3000)
     }
     setCompletingId(null)
+  }
+
+  const submitClientReview = async () => {
+    if (!clientReviewModal) return
+    setSubmittingClientReview(true)
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: clientReviewModal.jobId,
+          cleanerId: uid,
+          clientId: clientReviewModal.clientId,
+          rating: clientReviewRating,
+          comment: clientReviewComment || null,
+          reviewer_type: 'cleaner'
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        reviewedJobIds.add(clientReviewModal.jobId)
+        setToast({ message: 'Recenzija uspjesno poslana!', type: 'success' })
+        setTimeout(() => setToast(null), 4000)
+        setClientReviewModal(null)
+        setClientReviewRating(5)
+        setClientReviewComment('')
+      } else {
+        setToast({ message: data.error || 'Greska pri slanju recenzije', type: 'error' })
+        setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Mrezna greska', type: 'error' })
+      setTimeout(() => setToast(null), 3000)
+    }
+    setSubmittingClientReview(false)
   }
 
   return (
@@ -255,6 +316,44 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
               </div>
             )}
 
+            {/* Completed Jobs */}
+            {myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').length > 0 && (
+              <>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
+                  Zavrseni poslovi ({myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').length})
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                  {myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').map(app => (
+                    <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <h4 style={{ fontSize: 16, fontWeight: 700, color: t.text, margin: '0 0 4px 0' }}>{app.title}</h4>
+                          <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
+                          <p style={{ color: t.textDim, fontSize: 12, margin: '4px 0 0 0' }}>{app.client_name}</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
+                            <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
+                              Zavrseno
+                            </span>
+                          </div>
+                          {!reviewedJobIds.has(app.job_id) && app.job_status === 'completed' && (
+                            <button
+                              onClick={() => setClientReviewModal({ jobId: app.job_id, clientId: app.client_id!, clientName: app.client_name || 'Klijent' })}
+                              style={{ ...btnSecondary, padding: '10px 16px', fontSize: 13 }}
+                            >
+                              Ocijeni klijenta
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
             {/* Pending Applications */}
             <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Prijave na cekanju ({myApplications.filter(a => a.status === 'pending').length})</h3>
             {myApplications.filter(a => a.status === 'pending').length === 0 ? (
@@ -285,33 +384,190 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
         )}
 
         {tab === 'profile' && (
-          <div style={{ ...cardStyle, padding: 32, maxWidth: 500 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moj profil</h3>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Email</label>
-              <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>{name}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
+            {/* Profile Info Card */}
+            <div style={{ ...cardStyle, padding: 32 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moj profil</h3>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Email</label>
+                <div style={{ fontSize: 16, color: t.text, fontWeight: 500 }}>{name}</div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Uloga</label>
+                <div style={{ fontSize: 16, color: t.accent, fontWeight: 600 }}>Cistac</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: t.text }}>{stats.completedJobs || 0}</div>
+                  <div style={{ fontSize: 12, color: t.textMuted }}>Zavrseno</div>
+                </div>
+                <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalEarned || 0).toFixed(0)} EUR</div>
+                  <div style={{ fontSize: 12, color: t.textMuted }}>Zarada</div>
+                </div>
+                <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: '#eab308' }}>{stats.rating || 5.0}</div>
+                  <div style={{ fontSize: 12, color: t.textMuted }}>Ocjena</div>
+                </div>
+              </div>
             </div>
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 6 }}>Uloga</label>
-              <div style={{ fontSize: 16, color: t.accent, fontWeight: 600 }}>Cistac</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-              <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 800, color: t.text }}>{stats.completedJobs || 0}</div>
-                <div style={{ fontSize: 12, color: t.textMuted }}>Zavrseno</div>
-              </div>
-              <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalEarned || 0).toFixed(0)} EUR</div>
-                <div style={{ fontSize: 12, color: t.textMuted }}>Zarada</div>
-              </div>
-              <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 800, color: '#eab308' }}>{stats.rating || 5.0}</div>
-                <div style={{ fontSize: 12, color: t.textMuted }}>Ocjena</div>
-              </div>
+
+            {/* Reviews Section */}
+            <div style={{ ...cardStyle, padding: 32 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moje recenzije</h3>
+              
+              {loadingReviews ? (
+                <div style={{ textAlign: 'center', padding: 40 }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10"/></svg>
+                  <p style={{ color: t.textMuted, marginTop: 16 }}>Ucitavam recenzije...</p>
+                </div>
+              ) : myReviews.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 40 }}>
+                  <p style={{ color: t.textMuted, margin: 0 }}>Nemate jos recenzija</p>
+                </div>
+              ) : (
+                <>
+                  {/* Average Rating with Large Stars */}
+                  <div style={{ textAlign: 'center', marginBottom: 28, padding: 20, background: t.bgCard, borderRadius: 16 }}>
+                    <div style={{ fontSize: 48, fontWeight: 800, color: '#eab308', marginBottom: 8 }}>
+                      {(myReviews.reduce((sum, r) => sum + r.rating, 0) / myReviews.length).toFixed(1)}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 8 }}>
+                      {[1, 2, 3, 4, 5].map(star => {
+                        const avg = myReviews.reduce((sum, r) => sum + r.rating, 0) / myReviews.length
+                        return (
+                          <svg key={star} width="28" height="28" viewBox="0 0 24 24" fill={star <= Math.round(avg) ? '#eab308' : 'transparent'} stroke={star <= Math.round(avg) ? '#eab308' : t.textDim} strokeWidth="1.5">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+                        )
+                      })}
+                    </div>
+                    <div style={{ color: t.textMuted, fontSize: 14 }}>na temelju {myReviews.length} recenzija</div>
+                  </div>
+
+                  {/* Rating Breakdown */}
+                  <div style={{ marginBottom: 28 }}>
+                    {[5, 4, 3, 2, 1].map(star => {
+                      const count = myReviews.filter(r => r.rating === star).length
+                      const percentage = myReviews.length > 0 ? (count / myReviews.length) * 100 : 0
+                      return (
+                        <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                          <div style={{ width: 30, fontSize: 13, color: t.textMuted, fontWeight: 600 }}>{star}</div>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="1.5">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+                          <div style={{ flex: 1, height: 8, background: t.bgCard, borderRadius: 4, overflow: 'hidden' }}>
+                            <div style={{ width: `${percentage}%`, height: '100%', background: '#eab308', borderRadius: 4, transition: 'width 0.3s ease' }} />
+                          </div>
+                          <div style={{ width: 30, fontSize: 13, color: t.textMuted, textAlign: 'right' }}>{count}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Individual Reviews */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {myReviews.map(review => {
+                      // Format name as "Marko K."
+                      const nameParts = (review.client_name || 'Anonimno').split(' ')
+                      const formattedName = nameParts.length > 1 
+                        ? `${nameParts[0]} ${nameParts[nameParts.length - 1].charAt(0)}.`
+                        : nameParts[0]
+                      return (
+                        <div key={review.id} style={{ background: t.bgCard, borderRadius: 12, padding: 16 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <svg key={star} width="16" height="16" viewBox="0 0 24 24" fill={star <= review.rating ? '#eab308' : 'transparent'} stroke={star <= review.rating ? '#eab308' : t.textDim} strokeWidth="1.5">
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                              ))}
+                            </div>
+                            <span style={{ fontSize: 13, color: t.textMuted, fontWeight: 500 }}>{formattedName}</span>
+                          </div>
+                          {review.comment && (
+                            <p style={{ color: t.textMuted, fontSize: 14, margin: 0, lineHeight: 1.5 }}>{review.comment}</p>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
       </main>
+
+      {/* Client Review Modal */}
+      {clientReviewModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 }} onClick={() => setClientReviewModal(null)}>
+          <div style={{ ...cardStyle, padding: 28, maxWidth: 420, width: '100%' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 8px 0', textAlign: 'center' }}>Ocijeni klijenta</h3>
+            <p style={{ color: t.textMuted, fontSize: 14, margin: '0 0 24px 0', textAlign: 'center' }}>{clientReviewModal.clientName}</p>
+            
+            {/* Star Rating */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 24 }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  onClick={() => setClientReviewRating(star)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+                >
+                  <svg width="36" height="36" viewBox="0 0 24 24" fill={star <= clientReviewRating ? '#eab308' : 'transparent'} stroke={star <= clientReviewRating ? '#eab308' : t.textDim} strokeWidth="1.5" style={{ transition: 'all 0.15s ease' }}>
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+              ))}
+            </div>
+
+            {/* Comment */}
+            <textarea
+              value={clientReviewComment}
+              onChange={e => setClientReviewComment(e.target.value)}
+              placeholder="Dodaj komentar (opcionalno)..."
+              style={{
+                width: '100%',
+                minHeight: 100,
+                padding: 16,
+                background: t.bgCard,
+                border: `1px solid ${t.border}`,
+                borderRadius: 12,
+                color: t.text,
+                fontSize: 14,
+                resize: 'vertical',
+                marginBottom: 20,
+                outline: 'none'
+              }}
+            />
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setClientReviewModal(null)} style={{ ...btnSecondary, flex: 1 }}>Odustani</button>
+              <button 
+                onClick={submitClientReview} 
+                disabled={submittingClientReview}
+                style={{ 
+                  ...btnPrimary, 
+                  flex: 1, 
+                  opacity: submittingClientReview ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8
+                }}
+              >
+                {submittingClientReview ? (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}><circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10"/></svg>
+                    Saljem...
+                  </>
+                ) : 'Posalji recenziju'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toast && (
