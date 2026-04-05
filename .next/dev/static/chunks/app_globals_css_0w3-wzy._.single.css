@@ -936,6 +936,10 @@
     height: calc(var(--spacing) * 16);
   }
 
+  .h-20 {
+    height: calc(var(--spacing) * 20);
+  }
+
   .h-\[1\.15rem\] {
     height: 1.15rem;
   }
@@ -1082,6 +1086,10 @@
 
   .w-16 {
     width: calc(var(--spacing) * 16);
+  }
+
+  .w-20 {
+    width: calc(var(--spacing) * 20);
   }
 
   .w-64 {
@@ -1358,6 +1366,10 @@
 
   .grid-cols-5 {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .grid-cols-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .grid-cols-\[0_1fr\] {
@@ -1768,6 +1780,10 @@
     }
   }
 
+  .bg-chart-4 {
+    background-color: var(--chart-4);
+  }
+
   .bg-chart-4\/10 {
     background-color: var(--chart-4);
   }
@@ -1921,6 +1937,10 @@
     .stroke-border\/50 {
       stroke: color-mix(in oklab, var(--border) 50%, transparent);
     }
+  }
+
+  .object-cover {
+    object-fit: cover;
   }
 
   .p-0 {
