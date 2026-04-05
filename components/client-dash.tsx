@@ -44,6 +44,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageUploaded, setImageUploaded] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
@@ -231,26 +232,27 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     })
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
     if (file.size > 5 * 1024 * 1024) {
       setToast({ message: 'Slika ne smije biti veća od 5MB', type: 'error' })
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
       toastTimerRef.current = setTimeout(() => setToast(null), 3000)
       return
     }
-
-    setUploadingImage(true)
+    setSelectedFile(file)
     const reader = new FileReader()
     reader.onloadend = () => setImagePreview(reader.result as string)
     reader.readAsDataURL(file)
+  }
 
+  const handleImageUpload = async () => {
+    if (!selectedFile) return
+    setUploadingImage(true)
     const formData = new FormData()
-    formData.append('file', file)
+    formData.append('file', selectedFile)
     formData.append('userId', uid)
-
     try {
       const res = await fetch('/api/profile/upload-image', {
         method: 'POST',
@@ -259,6 +261,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       const data = await res.json()
       if (data.success) {
         setImageUploaded(true)
+        setSelectedFile(null)
         setToast({ message: 'Slika uspješno uploadana! Čeka odobrenje admina.', type: 'success' })
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
         toastTimerRef.current = setTimeout(() => setToast(null), 5000)
@@ -660,24 +663,53 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                         ref={fileInputRef}
                         type="file"
                         accept="image/*"
-                        onChange={handleImageUpload}
+                        onChange={handleFileSelect}
                         style={{ display: 'none' }}
                       />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={uploadingImage}
-                        style={{
-                          ...btnPrimary,
-                          padding: '10px 20px',
-                          fontSize: 14,
-                          opacity: uploadingImage ? 0.7 : 1
-                        }}
-                      >
-                        {uploadingImage ? 'Uploadam...' : 'Dodaj profilnu sliku'}
-                      </button>
-                      <p style={{ color: t.textDim, fontSize: 12, margin: '8px 0 0 0' }}>
-                        Max 5MB. Nakon odobrenja admina dobivate badge verifikacije.
-                      </p>
+                      {selectedFile ? (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            onClick={handleImageUpload}
+                            disabled={uploadingImage}
+                            style={{ ...btnPrimary, padding: '10px 20px', fontSize: 14,
+                              opacity: uploadingImage ? 0.7 : 1 }}
+                          >
+                            {uploadingImage ? 'Uploadam...' : '✓ Spremi promjene'}
+                          </button>
+                          <button
+                            onClick={() => { 
+                              setSelectedFile(null)
+                              setImagePreview(null)
+                              if (fileInputRef.current) fileInputRef.current.value = ''
+                            }}
+                            style={{ 
+                              background: 'none', border: `1px solid ${t.border}`,
+                              borderRadius: 10, padding: '10px 16px',
+                              color: t.textMuted, fontSize: 14, cursor: 'pointer'
+                            }}
+                          >
+                            Odaberi drugu
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingImage}
+                            style={{
+                              ...btnPrimary,
+                              padding: '10px 20px',
+                              fontSize: 14,
+                              opacity: uploadingImage ? 0.7 : 1
+                            }}
+                          >
+                            {uploadingImage ? 'Uploadam...' : 'Dodaj profilnu sliku'}
+                          </button>
+                          <p style={{ color: t.textDim, fontSize: 12, margin: '8px 0 0 0' }}>
+                            Max 5MB. Nakon odobrenja admina dobivate badge verifikacije.
+                          </p>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
