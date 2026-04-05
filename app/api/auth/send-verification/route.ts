@@ -16,6 +16,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Email je obavezan' }, { status: 400 })
     }
 
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'RESEND_API_KEY nije postavljen' 
+      }, { status: 500 })
+    }
+
     const sql = getSQL()
     const users = await sql`SELECT id, full_name FROM users WHERE email = ${email}`
     if (users.length === 0) {
