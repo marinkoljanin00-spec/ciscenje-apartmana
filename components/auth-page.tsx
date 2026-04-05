@@ -1,11 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { t, cardStyle, btnPrimary, inputStyle, selectStyle, CROATIAN_CITIES, User } from './shared'
 
 // ═══════════════════════════════════════════════════════════════
 // AUTH PAGE - Dark Emerald Theme
 // ═══════════════════════════════════════════════════════════════
-export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | 'register'; setMode: (m: 'login' | 'register') => void; onLogin: (u: User) => void; onBack: () => void }) {
+export function AuthPage({ mode, setMode, onLogin, onBack, initialEmail, showVerificationOnMount }: { mode: 'login' | 'register' | 'verify'; setMode: (m: 'login' | 'register' | 'verify') => void; onLogin: (u: User) => void; onBack: () => void; initialEmail?: string; showVerificationOnMount?: boolean }) {
   const [role, setRole] = useState<'client' | 'cleaner'>('client')
   const [email, setEmail] = useState(''); const [pass, setPass] = useState(''); const [name, setName] = useState(''); const [phone, setPhone] = useState('')
   const [city, setCity] = useState('Zagreb')
@@ -17,6 +17,13 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
   const [verifyLoading, setVerifyLoading] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
+
+  useEffect(() => {
+    if (showVerificationOnMount && initialEmail) {
+      setVerificationEmail(initialEmail)
+      setShowVerification(true)
+    }
+  }, [showVerificationOnMount, initialEmail])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setLoading(true)

@@ -9,20 +9,32 @@ import { t, User } from '@/components/shared'
 export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [view, setView] = useState<'landing' | 'auth' | 'dashboard'>('landing')
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'verify'>('login')
   const [userRole, setUserRole] = useState<'client' | 'cleaner' | null>(null)
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
+  const [verificationEmail, setVerificationEmail] = useState('')
 
   useEffect(() => {
     fetch('/api/auth/me')
       .then(r => r.json())
-      .then(data => {
+      .then(async data => {
         if (data.user) {
-          setUserRole(data.user.role)
-          setUserName(data.user.email)
-          setUserId(data.user.id.toString())
-          setView('dashboard')
+          if (!data.user.email_verified) {
+            await fetch('/api/auth/send-verification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: data.user.email })
+            })
+            setView('auth')
+            setAuthMode('verify')
+            setVerificationEmail(data.user.email)
+          } else {
+            setUserRole(data.user.role)
+            setUserName(data.user.email)
+            setUserId(data.user.id.toString())
+            setView('dashboard')
+          }
         }
       })
       .catch(() => {})
@@ -46,7 +58,7 @@ export default function Home() {
 
   if (!mounted) return <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><div style={{ color: t.accent, fontSize: 20, fontWeight: 600 }}>Učitavanje...</div></div>
   if (view === 'landing') return <LandingPage onLogin={() => { setAuthMode('login'); setView('auth') }} onRegister={() => { setAuthMode('register'); setView('auth') }} />
-  if (view === 'auth') return <AuthPage mode={authMode} setMode={setAuthMode} onLogin={login} onBack={() => setView('landing')} />
+  if (view === 'auth') return <AuthPage mode={authMode} setMode={setAuthMode} onLogin={login} onBack={() => setView('landing')} initialEmail={verificationEmail} showVerificationOnMount={authMode === 'verify'} />
   if (userRole === 'client') return <ClientDash logout={logout} name={userName} uid={userId} />
   if (userRole === 'cleaner') return <CleanerDash logout={logout} name={userName} uid={userId} />
   return null
