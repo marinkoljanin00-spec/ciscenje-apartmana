@@ -34,8 +34,11 @@ export default function TermsPage() {
 
         <section style={{ marginBottom: 32 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: t.accent, marginBottom: 16 }}>3. Plaćanje i provizija</h2>
+          <p style={{ color: t.textMuted, lineHeight: 1.8, marginBottom: 12 }}>
+            Korištenje platforme TvojČistač trenutno je <strong style={{ color: t.text }}>potpuno besplatno</strong> za sve korisnike — kako za klijente tako i za čistače.
+          </p>
           <p style={{ color: t.textMuted, lineHeight: 1.8 }}>
-            Platforma uzima proviziju od 10% na svaki završeni posao. Plaćanje se vrši direktno između klijenta i čistača. TvojČistač ne odgovara za eventualne nesporazume oko plaćanja.
+            U slučaju uvođenja bilo kakve naknade ili promjene uvjeta korištenja, svi registrirani korisnici bit će pravovremeno obaviješteni putem e-mail adrese kojom su se registrirali, prije nego što promjene stupe na snagu.
           </p>
         </section>
 
