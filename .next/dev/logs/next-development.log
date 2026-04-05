@@ -21,3 +21,7 @@
 {"timestamp":"00:08:07.975","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Running queued event pageview { path: '/', route: '/' }"}
 {"timestamp":"00:08:07.975","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] [view] https://vm-luraj4yq3izotkffyxrnv2.vusercontent.net/ {\\n  dp: '/',\\n  f: undefined,\\n  o: 'https://vm-luraj4yq3izotkffyxrnv2.vusercontent.net/',\\n  r: 'https://v0.app/',\\n  sdkn: '@vercel/analytics/next',\\n  sdkv: '1.6.1',\\n  sv: '0.1.3',\\n  ts: 1775408987034\\n} /_vercel/insights/view\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
 {"timestamp":"00:08:07.975","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] [view] https://vm-luraj4yq3izotkffyxrnv2.vusercontent.net/ {\n  dp: '/',\n  f: undefined,\n  o: 'https://vm-luraj4yq3izotkffyxrnv2.vusercontent.net/',\n  r: 'https://v0.app/',\n  sdkn: '@vercel/analytics/next',\n  sdkv: '1.6.1',\n  sv: '0.1.3',\n  ts: 1775408987034\n} /_vercel/insights/view"}
+{"timestamp":"00:10:39.120","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:11:29.204","source":"Server","level":"LOG","message":"✓ Compiled in 98ms"}
+{"timestamp":"00:11:47.015","source":"Server","level":"LOG","message":"✓ Compiled in 95ms"}
+{"timestamp":"00:12:12.948","source":"Server","level":"LOG","message":"✓ Compiled in 102ms"}
