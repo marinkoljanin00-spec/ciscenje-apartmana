@@ -1,0 +1,51 @@
+import { NextResponse } from 'next/server'
+import { neon } from '@neondatabase/serverless'
+import { v2 as cloudinary } from 'cloudinary'
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
+function getSQL() {
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL not set')
+  return neon(process.env.DATABASE_URL)
+}
+
+export async function POST(request: Request) {
+  try {
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+    const userId = formData.get('userId') as string
+
+    if (!file || !userId) {
+      return NextResponse.json({ success: false, error: 'Datoteka i userId su obavezni' }, { status: 400 })
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ success: false, error: 'Slika ne smije biti veća od 5MB' }, { status: 400 })
+    }
+
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
+
+    const result = await cloudinary.uploader.upload(base64, {
+      folder: 'tvojcistac/pending',
+      transformation: [{ width: 400, height: 400, crop: 'fill' }]
+    })
+
+    const sql = getSQL()
+    await sql`
+      UPDATE users 
+      SET image_pending = ${result.secure_url}, image_verified = FALSE
+      WHERE id = ${parseInt(userId)}
+    `
+
+    return NextResponse.json({ success: true, url: result.secure_url })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Greška pri uploadu'
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
+  }
+}
