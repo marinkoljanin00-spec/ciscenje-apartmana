@@ -35,6 +35,17 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
     try {
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
+      if (!data.success && data.requiresVerification) {
+        setVerificationEmail(email)
+        await fetch('/api/auth/send-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        })
+        setShowVerification(true)
+        setLoading(false)
+        return
+      }
       if (data.success && data.user) {
         if (mode === 'register' && (data.user.role === 'cleaner' || data.user.role === 'client')) {
           setVerificationEmail(email)
