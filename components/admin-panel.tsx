@@ -108,6 +108,17 @@ export function AdminPanel() {
   const [selectedUser, setSelectedUser] = useState<(User & { lozinka?: string }) | null>(null)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
 
+  // Image approval state
+  const [pendingImages, setPendingImages] = useState<{
+    id: number
+    email: string
+    full_name: string
+    role: string
+    image_pending: string
+  }[]>([])
+  const [loadingImages, setLoadingImages] = useState(false)
+  const [approvingId, setApprovingId] = useState<number | null>(null)
+
   // Only admin can see this panel
   if (user?.email !== ADMIN_EMAIL) {
     return (
@@ -316,6 +327,38 @@ export function AdminPanel() {
   // Get user info by email
   const getUserByEmail = (email: string) => users.find((u) => u.email === email)
 
+  // Image approval functions
+  const loadPendingImages = async () => {
+    setLoadingImages(true)
+    try {
+      const res = await fetch('/api/admin/pending-images')
+      const data = await res.json()
+      setPendingImages(data.users || [])
+    } catch {
+      setPendingImages([])
+    }
+    setLoadingImages(false)
+  }
+
+  const handleImageDecision = async (userId: number, approve: boolean) => {
+    setApprovingId(userId)
+    try {
+      await fetch('/api/admin/approve-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, approve })
+      })
+      setPendingImages(prev => prev.filter(u => u.id !== userId))
+    } catch {
+      // Error handling silently
+    }
+    setApprovingId(null)
+  }
+
+  useEffect(() => {
+    if (activeTab === 'slike') loadPendingImages()
+  }, [activeTab])
+
   const ReportCard = ({ report }: { report: BugReport }) => {
     const status = statusConfig[report.status]
     const prioritet = prioritetConfig[report.prioritet]
@@ -470,7 +513,7 @@ export function AdminPanel() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="pregled" className="gap-2">
             <TrendingUp className="w-4 h-4 hidden sm:block" />
             <span className="hidden sm:inline">Pregled</span>
@@ -490,6 +533,16 @@ export function AdminPanel() {
             <Briefcase className="w-4 h-4 hidden sm:block" />
             <span className="hidden sm:inline">Poslovi</span>
             <span className="sm:hidden">Jobs</span>
+          </TabsTrigger>
+          <TabsTrigger value="slike" className="gap-2 relative">
+            <BadgeCheck className="w-4 h-4 hidden sm:block" />
+            <span className="hidden sm:inline">Slike</span>
+            <span className="sm:hidden">Img</span>
+            {pendingImages.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-chart-4 text-white text-xs rounded-full flex items-center justify-center">
+                {pendingImages.length}
+              </span>
+            )}
           </TabsTrigger>
           <TabsTrigger value="prijave" className="gap-2 relative">
             <Bug className="w-4 h-4 hidden sm:block" />
@@ -1150,6 +1203,89 @@ export function AdminPanel() {
         </TabsContent>
 
         {/* PRIJAVE TAB */}
+        {/* Slike Tab */}
+        <TabsContent value="slike" className="space-y-6">
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BadgeCheck className="w-5 h-5 text-primary" />
+                Slike na čekanju
+              </CardTitle>
+              <CardDescription>
+                Odobrite ili odbijte profilne slike korisnika
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingImages ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : pendingImages.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                    <BadgeCheck className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground">Nema slika na čekanju</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendingImages.map((user) => (
+                    <Card key={user.id} className="border-border/50">
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <img
+                          src={user.image_pending}
+                          alt={user.full_name}
+                          className="w-20 h-20 rounded-full object-cover border-2 border-primary/30"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground truncate">{user.full_name}</p>
+                          <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "mt-2",
+                              user.role === "cleaner"
+                                ? "bg-primary/10 text-primary border-primary/30"
+                                : "bg-chart-2/10 text-chart-2 border-chart-2/30"
+                            )}
+                          >
+                            {user.role === "cleaner" ? "Čistač" : "Klijent"}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleImageDecision(user.id, true)}
+                            disabled={approvingId === user.id}
+                            className="gap-1"
+                          >
+                            {approvingId === user.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-4 h-4" />
+                            )}
+                            Odobri
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleImageDecision(user.id, false)}
+                            disabled={approvingId === user.id}
+                            className="gap-1"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            Odbij
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="prijave" className="space-y-6">
           {/* Bug Report Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

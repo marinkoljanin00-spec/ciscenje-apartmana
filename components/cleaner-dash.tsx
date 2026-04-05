@@ -36,6 +36,12 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [clientRatings, setClientRatings] = useState<Record<number, number>>({})
   const [expandedMonthsCleaner, setExpandedMonthsCleaner] = useState<Set<string>>(new Set())
 
+  // Image upload state
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageUploaded, setImageUploaded] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -153,6 +159,50 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       else next.add(month)
       return next
     })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ message: 'Slika ne smije biti veća od 5MB', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      return
+    }
+
+    setUploadingImage(true)
+    const reader = new FileReader()
+    reader.onloadend = () => setImagePreview(reader.result as string)
+    reader.readAsDataURL(file)
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('userId', uid)
+
+    try {
+      const res = await fetch('/api/profile/upload-image', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await res.json()
+      if (data.success) {
+        setImageUploaded(true)
+        setToast({ message: 'Slika uspješno uploadana! Čeka odobrenje admina.', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 5000)
+      } else {
+        setToast({ message: data.error || 'Greška pri uploadu', type: 'error' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Mrežna greška', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+    setUploadingImage(false)
   }
 
   const clearAllFilters = () => {
@@ -619,6 +669,67 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
         {tab === 'profile' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
+            {/* Profile Image Upload */}
+            <div style={{ ...cardStyle, padding: 24 }}>
+              <h4 style={{ color: t.text, fontSize: 16, fontWeight: 700, margin: '0 0 16px 0' }}>
+                Profilna slika
+              </h4>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ 
+                  width: 80, height: 80, borderRadius: '50%',
+                  background: t.bgCard, border: `2px solid ${t.border}`,
+                  overflow: 'hidden', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: 32 }}>{'👤'}</span>
+                  )}
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  {imageUploaded ? (
+                    <div style={{ 
+                      padding: '10px 16px', borderRadius: 10,
+                      background: 'rgba(16,185,129,0.1)', 
+                      border: '1px solid #10b981',
+                      color: '#10b981', fontSize: 13, fontWeight: 600
+                    }}>
+                      {'✓'} Slika čeka odobrenje admina
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploadingImage}
+                        style={{
+                          ...btnPrimary,
+                          padding: '10px 20px',
+                          fontSize: 14,
+                          opacity: uploadingImage ? 0.7 : 1
+                        }}
+                      >
+                        {uploadingImage ? 'Uploadam...' : 'Dodaj profilnu sliku'}
+                      </button>
+                      <p style={{ color: t.textDim, fontSize: 12, margin: '8px 0 0 0' }}>
+                        Max 5MB. Nakon odobrenja admina dobivate badge verifikacije.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Profile Info Card */}
             <div style={{ ...cardStyle, padding: 32 }}>
               <h3 style={{ fontSize: 20, fontWeight: 700, color: t.text, margin: '0 0 24px 0' }}>Moj profil</h3>
