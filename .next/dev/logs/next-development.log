@@ -28,3 +28,31 @@
 {"timestamp":"00:02:10.780","source":"Server","level":"LOG","message":"✓ Compiled in 49ms"}
 {"timestamp":"00:02:18.514","source":"Server","level":"LOG","message":"✓ Compiled in 43ms"}
 {"timestamp":"00:02:24.297","source":"Server","level":"LOG","message":"✓ Compiled in 46ms"}
+{"timestamp":"00:02:35.878","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:04:26.605","source":"Server","level":"LOG","message":"✓ Compiled in 59ms"}
+{"timestamp":"00:04:26.912","source":"Server","level":"LOG","message":"✓ Compiled in 51ms"}
+{"timestamp":"00:04:27.219","source":"Server","level":"LOG","message":"✓ Compiled in 48ms"}
+{"timestamp":"00:04:27.471","source":"Server","level":"LOG","message":"✓ Compiled in 61ms"}
+{"timestamp":"00:04:27.925","source":"Server","level":"LOG","message":"✓ Compiled in 54ms"}
+{"timestamp":"00:04:27.995","source":"Server","level":"LOG","message":"✓ Compiled in 53ms"}
+{"timestamp":"00:04:51.427","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server.\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:04:51.427","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server."}
+{"timestamp":"00:04:51.428","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Running queued event pageview { path: '/terms', route: '/terms' }\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:04:51.428","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Running queued event pageview { path: '/terms', route: '/terms' }"}
+{"timestamp":"00:04:51.428","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] [view] https://vm-tczn2aih9l2xaw5r44aokv.vusercontent.net/terms {\\n  dp: '/terms',\\n  f: undefined,\\n  o: 'https://vm-tczn2aih9l2xaw5r44aokv.vusercontent.net/terms',\\n  sdkn: '@vercel/analytics/next',\\n  sdkv: '1.6.1',\\n  sv: '0.1.3',\\n  ts: 1775407978273\\n} /_vercel/insights/view\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:04:51.428","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] [view] https://vm-tczn2aih9l2xaw5r44aokv.vusercontent.net/terms {\n  dp: '/terms',\n  f: undefined,\n  o: 'https://vm-tczn2aih9l2xaw5r44aokv.vusercontent.net/terms',\n  sdkn: '@vercel/analytics/next',\n  sdkv: '1.6.1',\n  sv: '0.1.3',\n  ts: 1775407978273\n} /_vercel/insights/view"}
+{"timestamp":"00:04:51.429","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit"}
+{"timestamp":"00:04:51.429","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {\"path\":\"/terms\",\"route\":\"/terms\"}"}
+{"timestamp":"00:04:51.429","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c [view] https://vm-tczn2aih9l2xaw5r44aokv.vusercontent.net/terms color: rgb(120, 120, 120) color: inherit {\"dp\":\"/terms\",\"o\":\"https://vm-tczn2aih9l2xaw5r44aokv.vusercontent.net/terms\",\"sdkn\":\"@vercel/analytics/next\",\"sdkv\":\"1.6.1\",\"sv\":\"0.1.3\",\"ts\":1775407978273} /_vercel/insights/view"}
+{"timestamp":"00:04:55.932","source":"Server","level":"LOG","message":"✓ Compiled in 42ms"}
+{"timestamp":"00:04:56.263","source":"Server","level":"LOG","message":"✓ Compiled in 37ms"}
+{"timestamp":"00:04:56.601","source":"Server","level":"LOG","message":"✓ Compiled in 47ms"}
+{"timestamp":"00:04:56.994","source":"Server","level":"LOG","message":"✓ Compiled in 35ms"}
+{"timestamp":"00:04:57.288","source":"Server","level":"LOG","message":"✓ Compiled in 38ms"}
+{"timestamp":"00:04:57.365","source":"Server","level":"LOG","message":"✓ Compiled in 45ms"}
+{"timestamp":"00:04:57.598","source":"Server","level":"LOG","message":"✓ Compiled in 43ms"}
+{"timestamp":"00:04:57.695","source":"Server","level":"LOG","message":"✓ Compiled in 46ms"}
+{"timestamp":"00:04:57.874","source":"Server","level":"LOG","message":"✓ Compiled in 46ms"}
+{"timestamp":"00:04:57.995","source":"Server","level":"LOG","message":"✓ Compiled in 41ms"}
+{"timestamp":"00:04:58.319","source":"Server","level":"LOG","message":"✓ Compiled in 52ms"}
+{"timestamp":"00:05:03.747","source":"Server","level":"LOG","message":"✓ Compiled in 48ms"}

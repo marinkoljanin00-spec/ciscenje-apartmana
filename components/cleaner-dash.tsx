@@ -257,7 +257,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       {/* Tabs */}
       <div style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4 }}>
-          {[{ k: 'available', l: 'Dostupni poslovi' }, { k: 'my', l: 'Moje prijave' }, { k: 'profile', l: 'Profil' }].map(x => (
+          {[{ k: 'available', l: 'Dostupni oglasi' }, { k: 'my', l: 'Moje prijave' }, { k: 'profile', l: 'Profil' }].map(x => (
             <button key={x.k} onClick={() => setTab(x.k as 'available' | 'my' | 'profile')} style={{ 
               padding: '16px 20px', 
               background: 'none', 
@@ -279,7 +279,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             {/* Search Input */}
             <input
               type="text"
-              placeholder="Pretrazi poslove (npr. stan, Zagreb, ciscenje...)"
+              placeholder="Pretrazi oglase (npr. stan, Zagreb, ciscenje...)"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{ ...inputStyle, marginBottom: 12, width: '100%' }}
@@ -328,7 +328,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
             {/* Results count */}
             <p style={{ color: t.textMuted, fontSize: 13, margin: '8px 0 16px 0' }}>
-              Pronadeno {filteredJobs.length} od {jobs.length} poslova
+              Pronadeno {filteredJobs.length} od {jobs.length} oglasa
             </p>
 
             {/* Jobs Grid */}
@@ -382,7 +382,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             </div>
             {filteredJobs.length === 0 && (
               <div style={{ ...cardStyle, padding: 60, textAlign: 'center' }}>
-                <p style={{ color: t.textMuted, margin: 0, fontSize: 16 }}>Nema dostupnih poslova s ovim filterima</p>
+                <p style={{ color: t.textMuted, margin: 0, fontSize: 16 }}>Nema dostupnih oglasa s ovim filterima</p>
               </div>
             )}
           </>
@@ -403,7 +403,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
               <>
             {/* Accepted Jobs - In Progress */}
             <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
-              Prihvaceni poslovi ({myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').length})
+              Prihvaceni oglasi ({myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').length})
             </h3>
             {myApplications.filter(a => a.status === 'accepted' && a.job_status === 'accepted').length > 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
@@ -487,7 +487,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             {myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').length > 0 && (
               <>
                 <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>
-                  Zavrseni poslovi ({myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').length})
+                  Zavrseni oglasi ({myApplications.filter(a => a.job_status === 'completed' || a.job_status === 'reviewed').length})
                 </h3>
                 <div>
                   {Object.entries(groupedMyJobs).map(([month, monthApps]) => (
@@ -528,7 +528,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                             borderRadius: 100,
                             padding: '2px 10px'
                           }}>
-                            {monthApps.length} {monthApps.length === 1 ? 'posao' : 'poslova'}
+                            {monthApps.length} {monthApps.length === 1 ? 'oglas' : 'oglasa'}
                           </span>
                         </div>
                         <div style={{
