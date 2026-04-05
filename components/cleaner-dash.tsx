@@ -430,9 +430,9 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                       <div style={{ fontWeight: 600, color: t.accent, marginBottom: 8, fontSize: 13 }}>Kontakt klijenta:</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <div style={{ color: t.text, fontSize: 14, fontWeight: 600 }}>{app.client_name}</div>
-                        {app.client_id && clientRatings[app.client_id] > 0 && (
+                        {app.client_id && Number(clientRatings[app.client_id]) > 0 && (
                           <div style={{ color: '#eab308', fontSize: 13, fontWeight: 600 }}>
-                            {'\u2B50'} Ocjena klijenta: {clientRatings[app.client_id].toFixed(1)}
+                            {'\u2B50'} Ocjena klijenta: {Number(clientRatings[app.client_id]).toFixed(1)}
                           </div>
                         )}
                         {app.client_email && (
