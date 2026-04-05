@@ -265,7 +265,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       {/* Tabs */}
       <div style={{ borderBottom: `1px solid ${t.border}`, background: t.bgCard }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 4 }}>
-          {[{ k: 'active', l: 'Aktivni poslovi' }, { k: 'completed', l: 'Zavrseni' }, { k: 'profile', l: 'Profil' }].map(x => (
+          {[{ k: 'active', l: 'Aktivni oglasi' }, { k: 'completed', l: 'Zavrseni' }, { k: 'profile', l: 'Profil' }].map(x => (
             <button key={x.k} onClick={() => setTab(x.k as 'active' | 'completed' | 'profile')} style={{ 
               padding: '16px 20px', 
               background: 'none', 
@@ -286,7 +286,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
           <div style={{ display: 'flex', flexDirection: 'column-reverse', gap: 24 }} className="client-dash-grid">
             {/* Create Job Form */}
             <div style={{ ...cardStyle, padding: 24 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Novi posao</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Novi oglas</h3>
               {err && <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: `1px solid ${t.urgent}`, padding: 12, marginBottom: 16, borderRadius: 10, color: t.urgent, fontSize: 14 }}>{err}</div>}
               <form onSubmit={createJob}>
                 <div style={{ marginBottom: 14 }}>
@@ -355,13 +355,13 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     brzi pronalazak čistača — idealno za hitne situacije.
                   </p>
                 </div>
-                <button type="submit" disabled={submitting || !location} style={{ ...btnPrimary, width: '100%', opacity: (!location || submitting) ? 0.6 : 1 }}>{submitting ? 'Objavljujem...' : 'Objavi posao'}</button>
+                <button type="submit" disabled={submitting || !location} style={{ ...btnPrimary, width: '100%', opacity: (!location || submitting) ? 0.6 : 1 }}>{submitting ? 'Objavljujem...' : 'Objavi oglas'}</button>
               </form>
             </div>
 
             {/* Jobs List - Active only */}
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni poslovi ({jobs.filter(j => !['reviewed'].includes(j.status)).length})</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni oglasi ({jobs.filter(j => !['reviewed'].includes(j.status)).length})</h3>
               
               {/* Unreviewed jobs banner */}
               {(() => {
@@ -380,7 +380,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     <span style={{ color: '#eab308', fontWeight: 600 }}>
                       {unreviewedCount === 1 
                         ? '\u2B50 Imate 1 završeni posao koji čeka recenziju'
-                        : `\u2B50 Imate ${unreviewedCount} završenih poslova koji čekaju recenziju`}
+                        : `\u2B50 Imate ${unreviewedCount} završenih oglasa koji čekaju recenziju`}
                     </span>
                   </div>
                 ) : null
@@ -388,7 +388,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
               
               {jobs.filter(j => !['reviewed'].includes(j.status)).length === 0 ? (
                 <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
-                  <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih poslova</p>
+                  <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih oglasa</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -476,10 +476,10 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
 
         {tab === 'completed' && (
           <div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Zavrseni poslovi ({jobs.filter(j => j.status === 'reviewed').length})</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Zavrseni oglasi ({jobs.filter(j => j.status === 'reviewed').length})</h3>
             {jobs.filter(j => j.status === 'reviewed').length === 0 ? (
               <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
-                <p style={{ color: t.textMuted, margin: 0 }}>Nemate zavrsenih poslova</p>
+                <p style={{ color: t.textMuted, margin: 0 }}>Nemate zavrsenih oglasa</p>
               </div>
             ) : (
               <div>
@@ -521,7 +521,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                           borderRadius: 100,
                           padding: '2px 10px'
                         }}>
-                          {monthJobs.length} {monthJobs.length === 1 ? 'posao' : 'poslova'}
+                          {monthJobs.length} {monthJobs.length === 1 ? 'oglas' : 'oglasa'}
                         </span>
                       </div>
                       <div style={{
@@ -598,7 +598,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               <div style={{ ...cardStyle, padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: t.text }}>{stats.totalJobs || 0}</div>
-                <div style={{ fontSize: 13, color: t.textMuted }}>Ukupno poslova</div>
+                <div style={{ fontSize: 13, color: t.textMuted }}>Ukupno oglasa</div>
               </div>
               <div style={{ ...cardStyle, padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 28, fontWeight: 800, color: t.accent }}>{Number(stats.totalSpent || 0).toFixed(0)} EUR</div>
@@ -884,7 +884,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
                   <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
                     <div style={{ fontSize: 24, fontWeight: 700, color: t.accent }}>{cleanerProfile.user.completed_jobs || 0}</div>
-                    <div style={{ fontSize: 12, color: t.textMuted }}>Zavrsenih poslova</div>
+                    <div style={{ fontSize: 12, color: t.textMuted }}>Zavrsenih oglasa</div>
                   </div>
                   <div style={{ background: t.bgCard, borderRadius: 12, padding: 16, textAlign: 'center' }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>

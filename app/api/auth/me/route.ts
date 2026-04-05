@@ -30,7 +30,7 @@ export async function GET() {
 
     const sql = getSQL()
     const users = await sql`
-      SELECT id, email, full_name, role FROM users WHERE id = ${parseInt(userId, 10)}
+      SELECT id, email, full_name, role, email_verified FROM users WHERE id = ${parseInt(userId, 10)}
     `
 
     if (users.length === 0) {
