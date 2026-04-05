@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     `
 
     await resend.emails.send({
-      from: 'TvojČistač <onboarding@resend.dev>',
+      from: 'TvojČistač <noreply@tvojcistac.com>',
       to: email,
       subject: 'Verifikacija email adrese — TvojČistač',
       html: `
