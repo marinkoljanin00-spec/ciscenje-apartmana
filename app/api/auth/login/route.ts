@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const sql = getSQL()
 
     const users = await sql`
-      SELECT id, email, password_hash, role FROM users WHERE email = ${email}
+      SELECT id, email, password_hash, role, email_verified FROM users WHERE email = ${email}
     `
 
     if (users.length === 0) {
@@ -43,6 +43,14 @@ export async function POST(request: Request) {
 
     if (!isValid) {
       return NextResponse.json({ success: false, error: "Kriva lozinka." }, { status: 401 })
+    }
+
+    if (user.email_verified === false) {
+      return NextResponse.json({ 
+        success: false, 
+        requiresVerification: true,
+        error: 'Email nije verificiran. Provjeri inbox.' 
+      }, { status: 401 })
     }
 
     const sessionToken = generateSessionToken()

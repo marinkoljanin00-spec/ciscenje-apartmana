@@ -10,6 +10,13 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
   const [email, setEmail] = useState(''); const [pass, setPass] = useState(''); const [name, setName] = useState(''); const [phone, setPhone] = useState('')
   const [city, setCity] = useState('Zagreb')
   const [err, setErr] = useState(''); const [loading, setLoading] = useState(false)
+  const [showVerification, setShowVerification] = useState(false)
+  const [verificationEmail, setVerificationEmail] = useState('')
+  const [verificationCode, setVerificationCode] = useState('')
+  const [verifyError, setVerifyError] = useState('')
+  const [verifyLoading, setVerifyLoading] = useState(false)
+  const [resendLoading, setResendLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setLoading(true)
@@ -28,9 +35,153 @@ export function AuthPage({ mode, setMode, onLogin, onBack }: { mode: 'login' | '
     try {
       const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await res.json()
-      if (data.success && data.user) onLogin(data.user)
+      if (!data.success && data.requiresVerification) {
+        setVerificationEmail(email)
+        await fetch('/api/auth/send-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        })
+        setShowVerification(true)
+        setLoading(false)
+        return
+      }
+      if (data.success && data.user) {
+        if (mode === 'register' && (data.user.role === 'cleaner' || data.user.role === 'client')) {
+          setVerificationEmail(email)
+          await fetch('/api/auth/send-verification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          })
+          setShowVerification(true)
+          setLoading(false)
+          return
+        }
+        onLogin(data.user)
+      }
       else { setErr(data.error || 'Doslo je do greske'); setLoading(false) }
     } catch { setErr('Mrezna greska'); setLoading(false) }
+  }
+
+  const handleVerify = async () => {
+    setVerifyError('')
+    setVerifyLoading(true)
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: verificationEmail, code: verificationCode })
+      })
+      const data = await res.json()
+      if (data.success) {
+        const loginRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: verificationEmail, password: pass })
+        })
+        const loginData = await loginRes.json()
+        if (loginData.success && loginData.user) onLogin(loginData.user)
+      } else {
+        setVerifyError(data.error || 'Pogrešan kod')
+      }
+    } catch {
+      setVerifyError('Mrežna greška')
+    }
+    setVerifyLoading(false)
+  }
+
+  const handleResend = async () => {
+    setResendLoading(true)
+    await fetch('/api/auth/send-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: verificationEmail })
+    })
+    setResendLoading(false)
+    setResendCooldown(60)
+    const interval = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0 }
+        return prev - 1
+      })
+    }, 1000)
+  }
+
+  if (showVerification) {
+    return (
+      <div style={{ minHeight: '100vh', background: t.bg, display: 'flex', 
+        alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+          <div style={{ ...cardStyle, padding: 32, textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
+            <h2 style={{ color: t.text, fontSize: 22, fontWeight: 800, 
+              margin: '0 0 8px 0' }}>
+              Provjeri email
+            </h2>
+            <p style={{ color: t.textMuted, fontSize: 14, margin: '0 0 24px 0' }}>
+              Poslali smo 6-znamenkasti kod na<br/>
+              <span style={{ color: t.accent, fontWeight: 600 }}>
+                {verificationEmail}
+              </span>
+            </p>
+
+            <input
+              type="text"
+              maxLength={6}
+              placeholder="000000"
+              value={verificationCode}
+              onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+              style={{ 
+                ...inputStyle, 
+                textAlign: 'center', 
+                fontSize: 28, 
+                fontWeight: 800,
+                letterSpacing: 8,
+                marginBottom: 16
+              }}
+            />
+
+            {verifyError && (
+              <div style={{ color: t.urgent, fontSize: 13, 
+                marginBottom: 16 }}>
+                {verifyError}
+              </div>
+            )}
+
+            <button
+              onClick={handleVerify}
+              disabled={verifyLoading || verificationCode.length !== 6}
+              style={{ 
+                ...btnPrimary, 
+                width: '100%', 
+                marginBottom: 16,
+                opacity: (verifyLoading || verificationCode.length !== 6) ? 0.6 : 1
+              }}
+            >
+              {verifyLoading ? 'Provjeravam...' : 'Potvrdi email'}
+            </button>
+
+            <button
+              onClick={handleResend}
+              disabled={resendLoading || resendCooldown > 0}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: resendCooldown > 0 ? t.textDim : t.accent,
+                fontSize: 13, 
+                cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                fontWeight: 500
+              }}
+            >
+              {resendCooldown > 0 
+                ? `Pošalji novi kod za ${resendCooldown}s` 
+                : resendLoading ? 'Šaljem...' : 'Pošalji novi kod'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

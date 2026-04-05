@@ -118,7 +118,10 @@ export function TermsOfService({ onBack }: TermsOfServiceProps) {
             <section className="space-y-2">
               <h3 className="text-lg font-semibold text-foreground">8. Naknade i Provizije</h3>
               <p>
-                TvojČistač zadržava pravo naplaćivanja administrativne provizije od 10% na sve obavljene poslove. Sve cijene su iskazane u eurima (EUR). TvojČistač nije odgovorna za porezne obveze korisnika - one su isključivo odgovornost korisnika.
+                Korištenje platforme TvojČistač trenutno je <strong>potpuno besplatno</strong> za sve korisnike — kako za klijente tako i za čistače.
+              </p>
+              <p>
+                U slučaju uvođenja bilo kakve naknade ili promjene uvjeta korištenja, svi registrirani korisnici bit će pravovremeno obaviješteni putem e-mail adrese kojom su se registrirali, prije nego što promjene stupe na snagu.
               </p>
             </section>
 
