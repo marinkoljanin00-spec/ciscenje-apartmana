@@ -8,7 +8,7 @@ import { t, cardStyle, btnPrimary, inputStyle, selectStyle, CROATIAN_CITIES, Use
 export function AuthPage({ mode, setMode, onLogin, onBack, initialEmail, showVerificationOnMount }: { mode: 'login' | 'register' | 'verify'; setMode: (m: 'login' | 'register' | 'verify') => void; onLogin: (u: User) => void; onBack: () => void; initialEmail?: string; showVerificationOnMount?: boolean }) {
   const [role, setRole] = useState<'client' | 'cleaner'>('client')
   const [email, setEmail] = useState(''); const [pass, setPass] = useState(''); const [name, setName] = useState(''); const [phone, setPhone] = useState('')
-  const [city, setCity] = useState('Zagreb')
+  const [city, setCity] = useState('')
   const [err, setErr] = useState(''); const [loading, setLoading] = useState(false)
   const [showVerification, setShowVerification] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState('')
@@ -34,6 +34,11 @@ export function AuthPage({ mode, setMode, onLogin, onBack, initialEmail, showVer
     }
     if (mode === 'register' && !name.trim()) {
       setErr('Ime i prezime su obavezni.')
+      setLoading(false)
+      return
+    }
+    if (mode === 'register' && role === 'client' && !city) {
+      setErr('Molimo odaberite grad.')
       setLoading(false)
       return
     }
@@ -319,6 +324,7 @@ export function AuthPage({ mode, setMode, onLogin, onBack, initialEmail, showVer
                   <div style={{ marginBottom: 24 }}>
                     <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Grad</label>
                     <select value={city} onChange={e => setCity(e.target.value)} style={selectStyle}>
+                      <option value="" disabled>Odaberi grad</option>
                       {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
