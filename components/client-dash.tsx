@@ -697,23 +697,71 @@ const data = await res.json()
 
                 <div style={{ flex: 1 }}>
                   {profileData?.image_verified ? (
-                    <div style={{ 
-                      padding: '10px 16px', borderRadius: 10,
-                      background: 'rgba(16,185,129,0.1)', 
-                      border: '1px solid #10b981',
-                      color: '#10b981', fontSize: 13, fontWeight: 600
-                    }}>
-                      {'✓'} Slika verificirana — badge aktivan
-                    </div>
+                    <>
+                      <div style={{ 
+                        padding: '10px 16px', borderRadius: 10,
+                        background: 'rgba(16,185,129,0.1)', 
+                        border: '1px solid #10b981',
+                        color: '#10b981', fontSize: 13, fontWeight: 600
+                      }}>
+                        {'✓'} Slika verificirana — badge aktivan
+                      </div>
+                      <button
+                        onClick={() => {
+                          setImageUploaded(false)
+                          setImagePreview(null)
+                          setSelectedFile(null)
+                          setProfileLoaded(false)
+                          if (fileInputRef.current) fileInputRef.current.value = ''
+                        }}
+                        style={{
+                          background: 'none',
+                          border: `1px solid ${t.border}`,
+                          borderRadius: 10,
+                          padding: '8px 16px',
+                          color: t.textMuted,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          marginTop: 8,
+                          display: 'block'
+                        }}
+                      >
+                        Promijeni sliku
+                      </button>
+                    </>
                   ) : profileData?.image_pending ? (
-                    <div style={{ 
-                      padding: '10px 16px', borderRadius: 10,
-                      background: 'rgba(234,179,8,0.1)', 
-                      border: '1px solid #eab308',
-                      color: '#eab308', fontSize: 13, fontWeight: 600
-                    }}>
-                      {'⏳'} Slika čeka odobrenje admina
-                    </div>
+                    <>
+                      <div style={{ 
+                        padding: '10px 16px', borderRadius: 10,
+                        background: 'rgba(234,179,8,0.1)', 
+                        border: '1px solid #eab308',
+                        color: '#eab308', fontSize: 13, fontWeight: 600
+                      }}>
+                        {'⏳'} Slika čeka odobrenje admina
+                      </div>
+                      <button
+                        onClick={() => {
+                          setImageUploaded(false)
+                          setImagePreview(null)
+                          setSelectedFile(null)
+                          setProfileLoaded(false)
+                          if (fileInputRef.current) fileInputRef.current.value = ''
+                        }}
+                        style={{
+                          background: 'none',
+                          border: `1px solid ${t.border}`,
+                          borderRadius: 10,
+                          padding: '8px 16px',
+                          color: t.textMuted,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          marginTop: 8,
+                          display: 'block'
+                        }}
+                      >
+                        Promijeni sliku
+                      </button>
+                    </>
                   ) : (
                     <>
                       <input
