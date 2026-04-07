@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 
 const t = { bg: '#050505', bgCard: '#0a0a0a', card: '#111111', border: '#1f1f1f', text: '#ffffff', textMuted: '#a3a3a3', textDim: '#737373', accent: '#10b981', accentGlow: 'rgba(16, 185, 129, 0.15)', urgent: '#ef4444' }
@@ -28,6 +28,31 @@ export default function AdminDashboard() {
   }[]>([])
   const [loadingImages, setLoadingImages] = useState(false)
   const [approvingId, setApprovingId] = useState<number | null>(null)
+
+  // Check sessionStorage on mount
+  useEffect(() => {
+    const saved = sessionStorage.getItem('admin_authenticated')
+    if (saved === 'true') {
+      setAuthenticated(true)
+      loadStats()
+      loadPendingImages()
+    }
+  }, [])
+
+  const loadStats = useCallback(async () => {
+    try {
+      const [statsRes, ticketsRes] = await Promise.all([
+        fetch('/api/admin?adminKey=SjajGazda99'),
+        fetch('/api/support?adminKey=SjajGazda99')
+      ])
+      if (statsRes.ok && ticketsRes.ok) {
+        const statsData = await statsRes.json()
+        const ticketsData = await ticketsRes.json()
+        setStats(statsData)
+        setTickets(ticketsData.tickets || [])
+      }
+    } catch {}
+  }, [])
 
   const loadPendingImages = useCallback(async () => {
     setLoadingImages(true)
@@ -72,6 +97,7 @@ export default function AdminDashboard() {
         setStats(statsData)
         setTickets(ticketsData.tickets || [])
         setAuthenticated(true)
+        sessionStorage.setItem('admin_authenticated', 'true')
         loadPendingImages()
       } else {
         setError('Greška pri dohvaćanju podataka')
@@ -81,6 +107,13 @@ export default function AdminDashboard() {
     }
     setLoading(false)
   }, [key])
+
+  const handleAdminLogout = () => {
+    sessionStorage.removeItem('admin_authenticated')
+    setAuthenticated(false)
+    setStats(null)
+    setKey('')
+  }
 
   const updateTicketStatus = async (ticketId: number, status: string) => {
     await fetch('/api/support', {
@@ -145,6 +178,16 @@ export default function AdminDashboard() {
           </button>
           <button onClick={() => setTab('slike')} style={{ padding: '8px 16px', background: tab === 'slike' ? t.accentGlow : 'transparent', border: `1px solid ${tab === 'slike' ? t.accent : t.border}`, borderRadius: 8, color: tab === 'slike' ? t.accent : t.textMuted, fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             Slike {pendingImages.length > 0 && <span style={{ background: t.urgent, color: '#fff', fontSize: 11, padding: '2px 6px', borderRadius: 100 }}>{pendingImages.length}</span>}
+          </button>
+          <button onClick={handleAdminLogout} style={{ 
+            ...btnPrimary, 
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid #ef4444',
+            color: '#ef4444',
+            padding: '8px 16px',
+            fontSize: 13
+          }}>
+            Odjava
           </button>
         </div>
       </header>
