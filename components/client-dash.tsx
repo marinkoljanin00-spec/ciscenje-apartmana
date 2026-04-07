@@ -325,7 +325,22 @@ const data = await res.json()
             <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 4vw, 20px)', color: t.text }}>TvojČistač</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)' }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }} className="hide-on-mobile">{name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="hide-on-mobile">
+              <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+              {profileData?.image_verified && (
+                <span style={{ 
+                  background: 'rgba(16,185,129,0.15)',
+                  border: '1px solid #10b981',
+                  borderRadius: 100,
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#10b981'
+                }}>
+                  {'✓'} Verificiran
+                </span>
+              )}
+            </div>
             <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
           </div>
         </div>
@@ -985,6 +1000,20 @@ const data = await res.json()
                             >
                               {app.cleaner_name}
                             </button>
+                            {app.image_verified && (
+                              <span style={{ 
+                                background: 'rgba(16,185,129,0.15)',
+                                border: '1px solid #10b981',
+                                borderRadius: 100,
+                                padding: '2px 6px',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: '#10b981',
+                                marginLeft: 6
+                              }}>
+                                {'✓'} Verificiran
+                              </span>
+                            )}
                             <div style={{ fontSize: 13, color: t.textMuted, marginTop: 4 }}>
                               Ocjena: <span style={{ color: t.accent, fontWeight: 600 }}>{app.rating || 5.0}</span>
                             </div>

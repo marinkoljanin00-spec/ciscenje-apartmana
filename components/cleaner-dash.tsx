@@ -330,7 +330,22 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 4vw, 20px)', color: t.text }}>TvojČistač</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)' }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }} className="hide-on-mobile">{name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="hide-on-mobile">
+              <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+              {profileData?.image_verified && (
+                <span style={{ 
+                  background: 'rgba(16,185,129,0.15)',
+                  border: '1px solid #10b981',
+                  borderRadius: 100,
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#10b981'
+                }}>
+                  {'✓'} Verificiran
+                </span>
+              )}
+            </div>
             <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
           </div>
         </div>
@@ -432,6 +447,11 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           {job.client_rating && job.client_rating > 0 && (
                             <span style={{ color: '#eab308', fontWeight: 600 }}>
                               {'\u2B50'} {Number(job.client_rating).toFixed(1)}
+                            </span>
+                          )}
+                          {job.client_image_verified && (
+                            <span style={{ color: '#10b981', fontSize: 11, fontWeight: 700 }}>
+                              {'✓'}
                             </span>
                           )}
                         </p>
