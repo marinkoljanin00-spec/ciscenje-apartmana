@@ -131,7 +131,7 @@ export async function GET(request: Request) {
 // Create a new job
 export async function POST(request: Request) {
   try {
-    const { title, location, price, userId, propertyType, isUrgent, description, latitude, longitude, city } = await request.json()
+    const { title, location, price, userId, propertyType, isUrgent, description, latitude, longitude, city, scheduledDate } = await request.json()
 
     // Try to get user from cookie first, then fall back to userId from body
     let clientId: number | null = null
@@ -155,9 +155,9 @@ export async function POST(request: Request) {
 
     const sql = getSQL()
     const result = await sql`
-      INSERT INTO jobs (title, location, price, status, client_id, property_type, is_urgent, description, latitude, longitude, city, created_at)
-      VALUES (${title}, ${location}, ${finalPrice}, 'open', ${clientId}, ${propertyType || 'stan'}, ${isUrgent || false}, ${description || null}, ${latitude || null}, ${longitude || null}, ${city || null}, NOW())
-      RETURNING id, title, location, price, status, property_type, is_urgent, city, created_at
+      INSERT INTO jobs (title, location, price, status, client_id, property_type, is_urgent, description, latitude, longitude, city, scheduled_date, created_at)
+      VALUES (${title}, ${location}, ${finalPrice}, 'open', ${clientId}, ${propertyType || 'stan'}, ${isUrgent || false}, ${description || null}, ${latitude || null}, ${longitude || null}, ${city || null}, ${scheduledDate || null}, NOW())
+      RETURNING id, title, location, price, status, property_type, is_urgent, city, scheduled_date, created_at
     `
 
     // Update client's total_spent
