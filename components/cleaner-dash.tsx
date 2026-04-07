@@ -42,6 +42,12 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [imageUploaded, setImageUploaded] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [profileData, setProfileData] = useState<{
+    image_verified?: boolean;
+    image_pending?: string;
+    profile_image?: string;
+  } | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -96,21 +102,27 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       })
   }, [myApplications])
 
-  // Load profile image on mount
+  // Load profile image
   useEffect(() => {
+    if (profileLoaded) return
     fetch(`/api/profile?userId=${uid}`)
       .then(r => r.json())
       .then(d => {
-        if (d.user?.profile_image) {
+        setProfileData(d.user)
+        setProfileLoaded(true)
+        if (d.user?.profile_image && d.user?.image_verified) {
           setImagePreview(d.user.profile_image)
           setImageUploaded(true)
         } else if (d.user?.image_pending) {
           setImagePreview(d.user.image_pending)
           setImageUploaded(true)
+        } else {
+          setImagePreview(null)
+          setImageUploaded(false)
         }
       })
       .catch(() => {})
-  }, [uid])
+  }, [uid, profileLoaded])
 
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
@@ -208,6 +220,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       if (data.success) {
         setImageUploaded(true)
         setSelectedFile(null)
+        setProfileLoaded(false)
         setToast({ message: 'Slika uspješno uploadana! Čeka odobrenje admina.', type: 'success' })
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
         toastTimerRef.current = setTimeout(() => setToast(null), 5000)
@@ -710,14 +723,23 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  {imageUploaded ? (
+                  {profileData?.image_verified ? (
                     <div style={{ 
                       padding: '10px 16px', borderRadius: 10,
                       background: 'rgba(16,185,129,0.1)', 
                       border: '1px solid #10b981',
                       color: '#10b981', fontSize: 13, fontWeight: 600
                     }}>
-                      {'✓'} Slika čeka odobrenje admina
+                      {'✓'} Slika verificirana — badge aktivan
+                    </div>
+                  ) : profileData?.image_pending ? (
+                    <div style={{ 
+                      padding: '10px 16px', borderRadius: 10,
+                      background: 'rgba(234,179,8,0.1)', 
+                      border: '1px solid #eab308',
+                      color: '#eab308', fontSize: 13, fontWeight: 600
+                    }}>
+                      {'⏳'} Slika čeka odobrenje admina
                     </div>
                   ) : (
                     <>
