@@ -18,7 +18,39 @@ export default function AdminDashboard() {
   const [error, setError] = useState('')
   const [stats, setStats] = useState<Stats | null>(null)
   const [tickets, setTickets] = useState<Ticket[]>([])
-  const [tab, setTab] = useState<'overview' | 'tickets'>('overview')
+  const [tab, setTab] = useState<'overview' | 'tickets' | 'slike'>('overview')
+  const [pendingImages, setPendingImages] = useState<{
+    id: number
+    email: string
+    full_name: string
+    role: string
+    image_pending: string
+  }[]>([])
+  const [loadingImages, setLoadingImages] = useState(false)
+  const [approvingId, setApprovingId] = useState<number | null>(null)
+
+  const loadPendingImages = useCallback(async () => {
+    setLoadingImages(true)
+    try {
+      const res = await fetch('/api/admin/pending-images')
+      const data = await res.json()
+      setPendingImages(data.users || [])
+    } catch {}
+    setLoadingImages(false)
+  }, [])
+
+  const handleImageDecision = async (userId: number, approve: boolean) => {
+    setApprovingId(userId)
+    try {
+      await fetch('/api/admin/approve-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, approve })
+      })
+      setPendingImages(prev => prev.filter(u => u.id !== userId))
+    } catch {}
+    setApprovingId(null)
+  }
 
   const authenticate = useCallback(async () => {
     if (key !== 'SjajGazda99') {
@@ -40,6 +72,7 @@ export default function AdminDashboard() {
         setStats(statsData)
         setTickets(ticketsData.tickets || [])
         setAuthenticated(true)
+        loadPendingImages()
       } else {
         setError('Greška pri dohvaćanju podataka')
       }
@@ -109,6 +142,9 @@ export default function AdminDashboard() {
           <button onClick={() => setTab('overview')} style={{ padding: '8px 16px', background: tab === 'overview' ? t.accentGlow : 'transparent', border: `1px solid ${tab === 'overview' ? t.accent : t.border}`, borderRadius: 8, color: tab === 'overview' ? t.accent : t.textMuted, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Pregled</button>
           <button onClick={() => setTab('tickets')} style={{ padding: '8px 16px', background: tab === 'tickets' ? t.accentGlow : 'transparent', border: `1px solid ${tab === 'tickets' ? t.accent : t.border}`, borderRadius: 8, color: tab === 'tickets' ? t.accent : t.textMuted, fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             Podrška {openTickets > 0 && <span style={{ background: t.urgent, color: '#fff', fontSize: 11, padding: '2px 6px', borderRadius: 100 }}>{openTickets}</span>}
+          </button>
+          <button onClick={() => setTab('slike')} style={{ padding: '8px 16px', background: tab === 'slike' ? t.accentGlow : 'transparent', border: `1px solid ${tab === 'slike' ? t.accent : t.border}`, borderRadius: 8, color: tab === 'slike' ? t.accent : t.textMuted, fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            Slike {pendingImages.length > 0 && <span style={{ background: t.urgent, color: '#fff', fontSize: 11, padding: '2px 6px', borderRadius: 100 }}>{pendingImages.length}</span>}
           </button>
         </div>
       </header>
@@ -222,6 +258,89 @@ export default function AdminDashboard() {
                         <button onClick={() => updateTicketStatus(ticket.id, 'open')} style={{ padding: '10px 20px', background: 'transparent', border: `1px solid ${t.border}`, borderRadius: 8, color: t.textMuted, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Ponovo otvori</button>
                       )}
                       <a href={`mailto:${ticket.email}?subject=Re: Vaša prijava na TvojČistač`} style={{ padding: '10px 20px', background: 'transparent', border: `1px solid ${t.border}`, borderRadius: 8, color: t.textMuted, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Odgovori</a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'slike' && (
+          <div>
+            <h3 style={{ color: t.text, fontSize: 18, fontWeight: 700, margin: '0 0 20px 0' }}>
+              Slike na čekanju ({pendingImages.length})
+            </h3>
+            
+            {loadingImages ? (
+              <div style={{ textAlign: 'center', padding: 60, color: t.textMuted }}>
+                Učitavam...
+              </div>
+            ) : pendingImages.length === 0 ? (
+              <div style={{ ...cardStyle, padding: 60, textAlign: 'center' }}>
+                <p style={{ color: t.textMuted, margin: 0 }}>Nema slika na čekanju</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {pendingImages.map(user => (
+                  <div key={user.id} style={{ 
+                    ...cardStyle, padding: 20,
+                    display: 'flex', alignItems: 'center', gap: 16 
+                  }}>
+                    <img
+                      src={user.image_pending}
+                      alt={user.full_name}
+                      style={{ 
+                        width: 80, height: 80, borderRadius: '50%',
+                        objectFit: 'cover', 
+                        border: `2px solid ${t.accent}`,
+                        flexShrink: 0
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: t.text, fontWeight: 700, fontSize: 15 }}>
+                        {user.full_name}
+                      </div>
+                      <div style={{ color: t.textMuted, fontSize: 13 }}>
+                        {user.email}
+                      </div>
+                      <span style={{
+                        display: 'inline-block', marginTop: 6,
+                        fontSize: 11, fontWeight: 600,
+                        padding: '2px 10px', borderRadius: 100,
+                        background: user.role === 'cleaner' 
+                          ? 'rgba(16,185,129,0.1)' 
+                          : 'rgba(59,130,246,0.1)',
+                        color: user.role === 'cleaner' ? t.accent : '#3b82f6'
+                      }}>
+                        {user.role === 'cleaner' ? 'Čistač' : 'Klijent'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => handleImageDecision(user.id, true)}
+                        disabled={approvingId === user.id}
+                        style={{
+                          ...btnPrimary, padding: '10px 20px', fontSize: 13,
+                          opacity: approvingId === user.id ? 0.7 : 1
+                        }}
+                      >
+                        Odobri
+                      </button>
+                      <button
+                        onClick={() => handleImageDecision(user.id, false)}
+                        disabled={approvingId === user.id}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid #ef4444',
+                          borderRadius: 10, padding: '10px 20px',
+                          color: '#ef4444', fontSize: 13,
+                          fontWeight: 600, cursor: 'pointer',
+                          opacity: approvingId === user.id ? 0.7 : 1
+                        }}
+                      >
+                        Odbij
+                      </button>
                     </div>
                   </div>
                 ))}
