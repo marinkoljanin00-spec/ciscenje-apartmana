@@ -2,7 +2,7 @@ import { neon } from '@neondatabase/serverless'
 import bcrypt from 'bcryptjs'
 
 async function createAdmin() {
-  const sql = neon(process.env.DATABASE_URL!)
+  const sql = neon(process.env.DATABASE_URL)
   
   const passwordHash = await bcrypt.hash('SjajGazda99', 10)
   
