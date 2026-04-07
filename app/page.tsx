@@ -10,7 +10,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [view, setView] = useState<'landing' | 'auth' | 'dashboard'>('landing')
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'verify'>('login')
-  const [userRole, setUserRole] = useState<'client' | 'cleaner' | null>(null)
+  const [userRole, setUserRole] = useState<'client' | 'cleaner' | 'admin' | null>(null)
   const [userName, setUserName] = useState('')
   const [userId, setUserId] = useState('')
   const [verificationEmail, setVerificationEmail] = useState('')
@@ -30,6 +30,10 @@ export default function Home() {
             setAuthMode('verify')
             setVerificationEmail(data.user.email)
           } else {
+            if (data.user.role === 'admin') {
+              window.location.href = '/admin-dashboard'
+              return
+            }
             setUserRole(data.user.role)
             setUserName(data.user.email)
             setUserId(data.user.id.toString())
@@ -42,7 +46,11 @@ export default function Home() {
   }, [])
 
   const login = (u: User) => {
-    setUserRole(u.role)
+    if (u.role === 'admin') {
+      window.location.href = '/admin-dashboard'
+      return
+    }
+    setUserRole(u.role as 'client' | 'cleaner')
     setUserName(u.email)
     setUserId(u.id.toString())
     setView('dashboard')
