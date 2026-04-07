@@ -711,6 +711,7 @@ const data = await res.json()
                           setImageUploaded(false)
                           setImagePreview(null)
                           setSelectedFile(null)
+                          setProfileLoaded(false)
                           if (fileInputRef.current) {
                             fileInputRef.current.value = ''
                             fileInputRef.current.click()
@@ -746,6 +747,7 @@ const data = await res.json()
                           setImageUploaded(false)
                           setImagePreview(null)
                           setSelectedFile(null)
+                          setProfileLoaded(false)
                           if (fileInputRef.current) {
                             fileInputRef.current.value = ''
                             fileInputRef.current.click()
