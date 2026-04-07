@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary, inputStyle, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
 import { DatePicker } from './date-picker'
 
