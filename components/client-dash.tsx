@@ -1,6 +1,7 @@
 'use client'
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary, inputStyle, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
+import { DatePicker } from './date-picker'
 
 // ═══════════════════════════════════════════════════════════════
 // CLIENT DASHBOARD - Dark Emerald Theme
@@ -53,24 +54,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [scheduledDate, setScheduledDate] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
 
-  // Generate next 14 days for date picker
-  const dateOptions = useMemo(() => {
-    const days = []
-    const today = new Date()
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(today)
-      d.setDate(today.getDate() + i)
-      days.push({
-        date: d.toISOString().split('T')[0],
-        dayName: d.toLocaleDateString('hr-HR', { weekday: 'short' }),
-        dayNum: d.getDate(),
-        monthName: d.toLocaleDateString('hr-HR', { month: 'short' }),
-        isToday: i === 0,
-        isTomorrow: i === 1
-      })
-    }
-    return days
-  }, [])
+  
 
   useEffect(() => {
     return () => {
@@ -401,64 +385,11 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 {/* Date Picker */}
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 10, color: t.textMuted }}>Datum čišćenja</label>
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: 8, 
-                    overflowX: 'auto', 
-                    paddingBottom: 8,
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: `${t.border} transparent`
-                  }}>
-                    {dateOptions.map(day => (
-                      <button
-                        key={day.date}
-                        type="button"
-                        onClick={() => setScheduledDate(scheduledDate === day.date ? null : day.date)}
-                        style={{
-                          flexShrink: 0,
-                          width: 64,
-                          padding: '10px 8px',
-                          borderRadius: 12,
-                          border: `2px solid ${scheduledDate === day.date ? t.accent : t.border}`,
-                          background: scheduledDate === day.date ? t.accentGlow : 'transparent',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: 2,
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <span style={{ 
-                          fontSize: 11, 
-                          fontWeight: 600, 
-                          color: scheduledDate === day.date ? t.accent : t.textMuted,
-                          textTransform: 'capitalize'
-                        }}>
-                          {day.isToday ? 'Danas' : day.isTomorrow ? 'Sutra' : day.dayName}
-                        </span>
-                        <span style={{ 
-                          fontSize: 18, 
-                          fontWeight: 700, 
-                          color: scheduledDate === day.date ? t.accent : t.text 
-                        }}>
-                          {day.dayNum}
-                        </span>
-                        <span style={{ 
-                          fontSize: 10, 
-                          color: scheduledDate === day.date ? t.accent : t.textMuted,
-                          textTransform: 'uppercase'
-                        }}>
-                          {day.monthName}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                  {scheduledDate && (
-                    <p style={{ fontSize: 12, color: t.accent, marginTop: 8, marginBottom: 0 }}>
-                      Odabrano: {new Date(scheduledDate).toLocaleDateString('hr-HR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </p>
-                  )}
+                  <DatePicker 
+                    value={scheduledDate} 
+                    onChange={setScheduledDate}
+                    placeholder="Odaberi datum"
+                  />
                 </div>
 
                 <div style={{ 
