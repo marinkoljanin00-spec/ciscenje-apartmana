@@ -379,14 +379,17 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} required placeholder="Cijena (EUR)" min="1" style={inputStyle} />
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Cijena po satu (€/h)</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} required placeholder="npr. 15" min="1" style={inputStyle} />
                   <select value={propertyType} onChange={e => setPropertyType(e.target.value)} style={selectStyle}>
                     <option value="stan">Stan</option>
                     <option value="kuca">Kuća</option>
                     <option value="ured">Ured</option>
                     <option value="poslovni">Poslovni prostor</option>
                   </select>
+                  </div>
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Grad</label>
@@ -415,7 +418,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     </div>
                     {isUrgent && price && (
                       <span style={{ color: t.accent, fontWeight: 700, fontSize: 15 }}>
-                        {(Number(price) * 1.5).toFixed(2)} EUR
+                        €{(Number(price) * 1.5).toFixed(0)}/h
                       </span>
                     )}
                   </div>
@@ -475,7 +478,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                           <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(2)} EUR</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(job.price).toFixed(0)}/h</div>
                           <div style={{ fontSize: 12, color: t.textDim }}>{job.property_type}</div>
                         </div>
                       </div>
@@ -622,7 +625,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                               <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
+                              <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(job.price).toFixed(0)}/h</div>
                               <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: t.accentGlow, color: t.accent }}>
                                 Zavrseno
                               </span>

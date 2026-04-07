@@ -357,14 +357,14 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
               </select>
               <input
                 type="number"
-                placeholder="Min EUR"
+                placeholder="Min €/h"
                 value={minPrice}
                 onChange={e => setMinPrice(e.target.value)}
                 style={{ ...inputStyle, width: 100 }}
               />
               <input
                 type="number"
-                placeholder="Max EUR"
+                placeholder="Max €/h"
                 value={maxPrice}
                 onChange={e => setMaxPrice(e.target.value)}
                 style={{ ...inputStyle, width: 100 }}
@@ -408,7 +408,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         </p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>€{Number(job.price).toFixed(0)}/h</div>
                         <div style={{ fontSize: 12, color: t.textDim }}>{job.property_type}</div>
                       </div>
                     </div>
@@ -471,7 +471,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>€{Number(app.price || 0).toFixed(0)}/h</div>
                         <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
                           U tijeku
                         </span>
@@ -613,8 +613,8 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
-                                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
+<div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(app.price || 0).toFixed(0)}/h</div>
+                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
                                     Zavrseno
                                   </span>
                                 </div>
@@ -655,8 +655,8 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
-                        <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
+<div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(app.price || 0).toFixed(0)}/h</div>
+                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
                           Na cekanju
                         </span>
                       </div>
