@@ -758,8 +758,10 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           setImageUploaded(false)
                           setImagePreview(null)
                           setSelectedFile(null)
-                          setProfileLoaded(false)
-                          if (fileInputRef.current) fileInputRef.current.value = ''
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = ''
+                            fileInputRef.current.click()
+                          }
                         }}
                         style={{
                           background: 'none',
@@ -791,8 +793,10 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           setImageUploaded(false)
                           setImagePreview(null)
                           setSelectedFile(null)
-                          setProfileLoaded(false)
-                          if (fileInputRef.current) fileInputRef.current.value = ''
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = ''
+                            fileInputRef.current.click()
+                          }
                         }}
                         style={{
                           background: 'none',

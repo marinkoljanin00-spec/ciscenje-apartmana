@@ -711,8 +711,10 @@ const data = await res.json()
                           setImageUploaded(false)
                           setImagePreview(null)
                           setSelectedFile(null)
-                          setProfileLoaded(false)
-                          if (fileInputRef.current) fileInputRef.current.value = ''
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = ''
+                            fileInputRef.current.click()
+                          }
                         }}
                         style={{
                           background: 'none',
@@ -744,8 +746,10 @@ const data = await res.json()
                           setImageUploaded(false)
                           setImagePreview(null)
                           setSelectedFile(null)
-                          setProfileLoaded(false)
-                          if (fileInputRef.current) fileInputRef.current.value = ''
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = ''
+                            fileInputRef.current.click()
+                          }
                         }}
                         style={{
                           background: 'none',
