@@ -477,6 +477,10 @@
     inset-inline-start: var(--spacing);
   }
 
+  .end {
+    inset-inline-end: var(--spacing);
+  }
+
   .-top-1 {
     top: calc(var(--spacing) * -1);
   }
