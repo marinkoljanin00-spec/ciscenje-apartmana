@@ -37,13 +37,26 @@ export async function POST(request: Request) {
     })
 
     const sql = getSQL()
-    await sql`
+    const updateResult = await sql`
       UPDATE users 
-      SET image_pending = ${result.secure_url}, image_verified = FALSE
-      WHERE id = ${parseInt(userId)}
+      SET image_pending = ${result.secure_url}, 
+          image_verified = FALSE
+      WHERE id = ${parseInt(userId, 10)}
+      RETURNING id, image_pending
     `
 
-    return NextResponse.json({ success: true, url: result.secure_url })
+    if (!updateResult || updateResult.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `Korisnik s ID ${userId} nije pronađen u bazi` 
+      }, { status: 404 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      url: result.secure_url,
+      userId: updateResult[0].id
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Greška pri uploadu'
     return NextResponse.json({ success: false, error: message }, { status: 500 })
