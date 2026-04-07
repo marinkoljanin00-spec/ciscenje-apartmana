@@ -350,6 +350,22 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Naslov posla" style={inputStyle} />
                 </div>
                 
+                {/* Opis posla */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis posla</label>
+                  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                </div>
+                
+                {/* Date Picker */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 10, color: t.textMuted }}>Datum čišćenja</label>
+                  <DatePicker 
+                    value={scheduledDate} 
+                    onChange={setScheduledDate}
+                    placeholder="Odaberi datum"
+                  />
+                </div>
+
                 {/* Location Input */}
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Lokacija</label>
@@ -377,19 +393,6 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                   <select value={jobCity} onChange={e => setJobCity(e.target.value)} style={selectStyle}>
                     {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
-                </div>
-                <div style={{ marginBottom: 14 }}>
-                  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
-                </div>
-                
-                {/* Date Picker */}
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 10, color: t.textMuted }}>Datum čišćenja</label>
-                  <DatePicker 
-                    value={scheduledDate} 
-                    onChange={setScheduledDate}
-                    placeholder="Odaberi datum"
-                  />
                 </div>
 
                 <div style={{ 
