@@ -26,7 +26,10 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   // Client profile tab state
   const [profileData, setProfileData] = useState<{ 
     created_at?: string; 
-    client_rating?: number 
+    client_rating?: number;
+    profile_image?: string;
+    image_pending?: string;
+    image_verified?: boolean;
   } | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
 
@@ -72,12 +75,17 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     if (tab === 'profile' && !profileLoaded) {
       fetch(`/api/profile?userId=${uid}`)
         .then(r => r.json())
-        .then(d => { 
-          console.log('Profile data received:', d)
-          console.log('client_rating:', d.user?.client_rating)
-          setProfileData(d.user)
-          setProfileLoaded(true) 
-        })
+.then(d => {
+  setProfileData(d.user)
+  setProfileLoaded(true)
+  if (d.user?.profile_image) {
+    setImagePreview(d.user.profile_image)
+    setImageUploaded(true)
+  } else if (d.user?.image_pending) {
+    setImagePreview(d.user.image_pending)
+    setImageUploaded(true)
+  }
+  })
     }
   }, [tab, profileLoaded, uid])
 

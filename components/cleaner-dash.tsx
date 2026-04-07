@@ -96,6 +96,22 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       })
   }, [myApplications])
 
+  // Load profile image on mount
+  useEffect(() => {
+    fetch(`/api/profile?userId=${uid}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.user?.profile_image) {
+          setImagePreview(d.user.profile_image)
+          setImageUploaded(true)
+        } else if (d.user?.image_pending) {
+          setImagePreview(d.user.image_pending)
+          setImageUploaded(true)
+        }
+      })
+      .catch(() => {})
+  }, [uid])
+
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
     if (tab === 'profile' && !reviewsLoaded && !loadingReviews) {
