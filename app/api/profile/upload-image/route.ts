@@ -19,6 +19,18 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File
     const userId = formData.get('userId') as string
 
+    // DEBUG: Return early with all received data
+    return NextResponse.json({
+      debug: true,
+      fileExists: !!file,
+      fileSize: file?.size,
+      fileName: file?.name,
+      userId: userId,
+      userIdType: typeof userId,
+      parsedId: parseInt(userId, 10),
+      isNaN: isNaN(parseInt(userId, 10))
+    }, { status: 200 })
+
     if (!file || !userId) {
       return NextResponse.json({ 
         success: false, 
