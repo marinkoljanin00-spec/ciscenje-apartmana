@@ -85,3 +85,12 @@
 {"timestamp":"00:09:15.411","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {\"path\":\"/\",\"route\":\"/\"}"}
 {"timestamp":"00:09:15.411","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c [view] https://vm-utvp6bpmyqlrovsrjv3fva.vusercontent.net/ color: rgb(120, 120, 120) color: inherit {\"dp\":\"/\",\"o\":\"https://vm-utvp6bpmyqlrovsrjv3fva.vusercontent.net/\",\"r\":\"https://v0.app/\",\"sdkn\":\"@vercel/analytics/next\",\"sdkv\":\"1.6.1\",\"sv\":\"0.1.3\",\"ts\":1775658041396} /_vercel/insights/view"}
 {"timestamp":"00:11:43.254","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:12:02.349","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:12:02.521","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:13:08.652","source":"Server","level":"LOG","message":"✓ Compiled in 53ms"}
+{"timestamp":"00:13:15.599","source":"Server","level":"LOG","message":"✓ Compiled in 69ms"}
+{"timestamp":"00:13:27.872","source":"Server","level":"LOG","message":"✓ Compiled in 89ms"}
+{"timestamp":"00:13:38.420","source":"Server","level":"LOG","message":"✓ Compiled in 53ms"}
+{"timestamp":"00:15:08.731","source":"Server","level":"LOG","message":"✓ Compiled in 72ms"}
+{"timestamp":"00:15:21.587","source":"Server","level":"LOG","message":"✓ Compiled in 69ms"}
+{"timestamp":"00:15:36.507","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}

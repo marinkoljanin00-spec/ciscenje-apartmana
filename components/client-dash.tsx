@@ -57,6 +57,11 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [scheduledDate, setScheduledDate] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
 
+  // Account deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
+
   
 
   useEffect(() => {
@@ -292,6 +297,32 @@ const data = await res.json()
       toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setUploadingImage(false)
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'IZBRISI RACUN') return
+    setDeletingAccount(true)
+    try {
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid })
+      })
+      const data = await res.json()
+      if (data.success) {
+        logout()
+      } else {
+        setToast({ message: data.error || 'Greška pri brisanju', type: 'error' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+        setDeletingAccount(false)
+      }
+    } catch {
+      setToast({ message: 'Mrežna greška', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      setDeletingAccount(false)
+    }
   }
 
   const handleDeleteImage = async () => {
@@ -900,24 +931,98 @@ const data = await res.json()
             )}
 
             {/* Danger Zone */}
-            <div style={{ ...cardStyle, padding: 24, border: '1px solid rgba(239,68,68,0.3)' }}>
-              <h4 style={{ fontSize: 14, fontWeight: 600, color: '#ef4444', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>Zona opasnosti</h4>
-              <button 
-                onClick={logout} 
-                style={{ 
-                  width: '100%',
-                  padding: '12px 20px', 
-                  background: 'rgba(239, 68, 68, 0.1)', 
-                  border: '1px solid rgba(239,68,68,0.3)', 
-                  borderRadius: 10, 
-                  color: '#ef4444', 
-                  fontSize: 14, 
-                  fontWeight: 600, 
-                  cursor: 'pointer' 
-                }}
-              >
-                Odjavi se
-              </button>
+            <div style={{ 
+              marginTop: 24,
+              padding: 24,
+              borderRadius: 16,
+              border: '1px solid rgba(239,68,68,0.3)',
+              background: 'rgba(239,68,68,0.05)'
+            }}>
+              <h4 style={{ 
+                color: '#ef4444', 
+                fontSize: 14, 
+                fontWeight: 700, 
+                margin: '0 0 8px 0',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5
+              }}>
+                Opasna zona
+              </h4>
+              <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 16px 0', lineHeight: 1.6 }}>
+                Brisanje računa je trajno i ne može se poništiti. 
+                Svi tvoji podaci, poslovi, recenzije i profilna slika 
+                bit će trajno izbrisani.
+              </p>
+
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid #ef4444',
+                    borderRadius: 10,
+                    padding: '10px 20px',
+                    color: '#ef4444',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Izbriši moj račun
+                </button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <p style={{ color: '#ef4444', fontSize: 13, fontWeight: 600, margin: 0 }}>
+                    Upiši IZBRISI RACUN za potvrdu:
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={e => setDeleteConfirmText(e.target.value)}
+                    placeholder="IZBRISI RACUN"
+                    style={{ 
+                      ...inputStyle,
+                      border: '1px solid #ef4444',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => {
+                        setShowDeleteConfirm(false)
+                        setDeleteConfirmText('')
+                      }}
+                      style={{
+                        flex: 1,
+                        ...btnSecondary,
+                        padding: '10px 16px',
+                        fontSize: 13
+                      }}
+                    >
+                      Odustani
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteConfirmText !== 'IZBRISI RACUN' || deletingAccount}
+                      style={{
+                        flex: 1,
+                        background: deleteConfirmText === 'IZBRISI RACUN' 
+                          ? '#ef4444' : 'rgba(239,68,68,0.2)',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: deleteConfirmText === 'IZBRISI RACUN' ? 'pointer' : 'default',
+                        opacity: deletingAccount ? 0.7 : 1
+                      }}
+                    >
+                      {deletingAccount ? 'Brišem...' : 'Trajno izbriši'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
