@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary } from './shared'
-import { useCountUp } from '@/hooks/useCountUp'
+
 
 // ═══════════════════════════════════════════════════════════════
 // LANDING PAGE - Dark Emerald with Background Image - Single Screen
@@ -13,13 +13,9 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
     avgRating: 5.0
   })
 
-  const clientsEnd = platformStats.totalClients ? parseInt(String(platformStats.totalClients)) + 20 : 0
-  const cleanersEnd = platformStats.totalCleaners ? parseInt(String(platformStats.totalCleaners)) + 20 : 0
-  const ratingEnd = platformStats.avgRating > 0 ? platformStats.avgRating : 5.0
-
-  const { count: clientsCount, ref: clientsRef } = useCountUp({ end: clientsEnd, duration: 2500, decimals: 0, suffix: '+' })
-  const { count: cleanersCount, ref: cleanersRef } = useCountUp({ end: cleanersEnd, duration: 2500, decimals: 0, suffix: '+' })
-  const { count: ratingCount, ref: ratingRef } = useCountUp({ end: ratingEnd, duration: 2000, decimals: 1, suffix: '' })
+  const clientsDisplay = platformStats.totalClients ? (parseInt(String(platformStats.totalClients)) + 20) + '+' : '-'
+  const cleanersDisplay = platformStats.totalCleaners ? (parseInt(String(platformStats.totalCleaners)) + 20) + '+' : '-'
+  const ratingDisplay = platformStats.avgRating > 0 ? Number(platformStats.avgRating).toFixed(1) : '5.0'
 
   useEffect(() => {
     fetch('/api/stats')
@@ -199,16 +195,16 @@ export function LandingPage({ onLogin, onRegister }: { onLogin: () => void; onRe
               gap: 'clamp(24px, 6vw, 48px)',
               flexWrap: 'wrap'
             }}>
-              <div ref={clientsRef} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 36, fontWeight: 800, color: t.accent, marginBottom: 4 }}>{clientsEnd > 0 ? clientsCount : '-'}</div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 36, fontWeight: 800, color: t.accent, marginBottom: 4 }}>{clientsDisplay}</div>
                 <div style={{ fontSize: 13, color: t.textDim, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>Klijenata</div>
               </div>
-              <div ref={cleanersRef} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 36, fontWeight: 800, color: t.accent, marginBottom: 4 }}>{cleanersEnd > 0 ? cleanersCount : '-'}</div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 36, fontWeight: 800, color: t.accent, marginBottom: 4 }}>{cleanersDisplay}</div>
                 <div style={{ fontSize: 13, color: t.textDim, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>Čistača</div>
               </div>
-              <div ref={ratingRef} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 36, fontWeight: 800, color: t.accent, marginBottom: 4 }}>{ratingCount}</div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 36, fontWeight: 800, color: t.accent, marginBottom: 4 }}>{ratingDisplay}</div>
                 <div style={{ fontSize: 13, color: t.textDim, fontWeight: 500, textTransform: 'uppercase', letterSpacing: 1 }}>Ocjena</div>
               </div>
             </div>
