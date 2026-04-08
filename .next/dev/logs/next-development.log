@@ -26,3 +26,13 @@
 {"timestamp":"00:00:51.168","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] [view] https://vm-utvp6bpmyqlrovsrjv3fva.vusercontent.net/ {\\n  dp: '/',\\n  f: undefined,\\n  o: 'https://vm-utvp6bpmyqlrovsrjv3fva.vusercontent.net/',\\n  r: 'https://v0.app/',\\n  sdkn: '@vercel/analytics/next',\\n  sdkv: '1.6.1',\\n  sv: '0.1.3',\\n  ts: 1775657537153\\n} /_vercel/insights/view\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
 {"timestamp":"00:00:51.168","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] [view] https://vm-utvp6bpmyqlrovsrjv3fva.vusercontent.net/ {\n  dp: '/',\n  f: undefined,\n  o: 'https://vm-utvp6bpmyqlrovsrjv3fva.vusercontent.net/',\n  r: 'https://v0.app/',\n  sdkn: '@vercel/analytics/next',\n  sdkv: '1.6.1',\n  sv: '0.1.3',\n  ts: 1775657537153\n} /_vercel/insights/view"}
 {"timestamp":"00:04:39.803","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:05:00.615","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:05:00.760","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:05:38.407","source":"Server","level":"LOG","message":"✓ Compiled in 81ms"}
+{"timestamp":"00:05:46.662","source":"Server","level":"LOG","message":"✓ Compiled in 63ms"}
+{"timestamp":"00:05:55.398","source":"Server","level":"LOG","message":"✓ Compiled in 59ms"}
+{"timestamp":"00:06:02.650","source":"Server","level":"LOG","message":"✓ Compiled in 94ms"}
+{"timestamp":"00:06:09.649","source":"Server","level":"LOG","message":"✓ Compiled in 57ms"}
+{"timestamp":"00:06:17.783","source":"Server","level":"LOG","message":"✓ Compiled in 71ms"}
+{"timestamp":"00:06:28.905","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:06:29.555","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}

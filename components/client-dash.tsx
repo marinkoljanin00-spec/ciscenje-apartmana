@@ -294,6 +294,38 @@ const data = await res.json()
     setUploadingImage(false)
   }
 
+  const handleDeleteImage = async () => {
+    if (!confirm('Jeste li sigurni da želite izbrisati profilnu sliku? Izgubit ćete badge verifikacije.')) return
+    
+    try {
+      const res = await fetch('/api/profile/delete-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setImagePreview(null)
+        setImageUploaded(false)
+        setSelectedFile(null)
+        setProfileLoaded(false)
+        setProfileData(prev => prev ? { 
+          ...prev, 
+          profile_image: undefined,
+          image_pending: undefined,
+          image_verified: false 
+        } : null)
+        setToast({ message: 'Slika je izbrisana.', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Greška pri brisanju slike', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+  }
+
   const createJob = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setSubmitting(true)
     const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
@@ -707,29 +739,20 @@ const data = await res.json()
                         {'✓'} Slika verificirana — badge aktivan
                       </div>
                       <button
-                        onClick={() => {
-                          setImageUploaded(false)
-                          setImagePreview(null)
-                          setSelectedFile(null)
-                          setProfileLoaded(false)
-                          if (fileInputRef.current) {
-                            fileInputRef.current.value = ''
-                            fileInputRef.current.click()
-                          }
-                        }}
+                        onClick={handleDeleteImage}
                         style={{
-                          background: 'none',
-                          border: `1px solid ${t.border}`,
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid #ef4444',
                           borderRadius: 10,
                           padding: '8px 16px',
-                          color: t.textMuted,
+                          color: '#ef4444',
                           fontSize: 13,
                           cursor: 'pointer',
                           marginTop: 8,
                           display: 'block'
                         }}
                       >
-                        Promijeni sliku
+                        Izbriši sliku
                       </button>
                     </>
                   ) : profileData?.image_pending ? (
@@ -743,29 +766,20 @@ const data = await res.json()
                         {'⏳'} Slika čeka odobrenje admina
                       </div>
                       <button
-                        onClick={() => {
-                          setImageUploaded(false)
-                          setImagePreview(null)
-                          setSelectedFile(null)
-                          setProfileLoaded(false)
-                          if (fileInputRef.current) {
-                            fileInputRef.current.value = ''
-                            fileInputRef.current.click()
-                          }
-                        }}
+                        onClick={handleDeleteImage}
                         style={{
-                          background: 'none',
-                          border: `1px solid ${t.border}`,
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid #ef4444',
                           borderRadius: 10,
                           padding: '8px 16px',
-                          color: t.textMuted,
+                          color: '#ef4444',
                           fontSize: 13,
                           cursor: 'pointer',
                           marginTop: 8,
                           display: 'block'
                         }}
                       >
-                        Promijeni sliku
+                        Izbriši sliku
                       </button>
                     </>
                   ) : (
