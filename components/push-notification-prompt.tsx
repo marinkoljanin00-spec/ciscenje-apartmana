@@ -1,29 +1,51 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, BellOff, X } from 'lucide-react';
+import { Bell, BellOff, X, Share, Plus } from 'lucide-react';
+
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function isInStandaloneMode() {
+  return ('standalone' in window.navigator) && (window.navigator as any).standalone;
+}
 
 export function PushNotificationPrompt({ userId }: { userId?: number }) {
   const [show, setShow] = useState(false);
+  const [showIOSGuide, setShowIOSGuide] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
 
   useEffect(() => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-    setPermission(Notification.permission);
-    if (Notification.permission === 'default') {
-      const dismissed = localStorage.getItem('push-dismissed');
-      if (!dismissed) setTimeout(() => setShow(true), 3000);
+    if (!('serviceWorker' in navigator)) return;
+
+    const dismissed = localStorage.getItem('push-dismissed');
+    if (dismissed) return;
+
+    if (isIOS()) {
+      // Na iPhoneu pokazuj uputu samo ako NISU u standalone modu
+      if (!isInStandaloneMode()) {
+        setTimeout(() => setShowIOSGuide(true), 3000);
+      } else {
+        // Jesu u standalone, mogu dobiti notifikacije normalno
+        if ('Notification' in window && Notification.permission === 'default') {
+          setTimeout(() => setShow(true), 3000);
+        }
+      }
+    } else {
+      // Android / Desktop
+      if ('Notification' in window) {
+        setPermission(Notification.permission);
+        if (Notification.permission === 'default') {
+          setTimeout(() => setShow(true), 3000);
+        }
+      }
     }
   }, []);
 
-  async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register('/sw.js');
-    return registration;
-  }
-
   async function subscribe() {
     try {
-      const registration = await registerServiceWorker();
+      const registration = await navigator.serviceWorker.register('/sw.js');
       const sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
@@ -43,8 +65,63 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
   function dismiss() {
     localStorage.setItem('push-dismissed', '1');
     setShow(false);
+    setShowIOSGuide(false);
   }
 
+  // iOS uputa — dodaj na početni zaslon
+  if (showIOSGuide) {
+    return (
+      <div className="fixed bottom-4 left-4 right-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl p-5 z-50">
+        <button onClick={dismiss} className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600">
+          <X size={18} />
+        </button>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="bg-emerald-100 dark:bg-emerald-900 rounded-full p-2">
+            <Bell className="text-emerald-600" size={20} />
+          </div>
+          <div>
+            <p className="font-semibold text-sm">Primajte obavijesti o novim poslovima</p>
+            <p className="text-xs text-zinc-500">Instalirajte app za primanje obavijesti</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl p-3">
+            <div className="bg-blue-100 rounded-full p-1.5 shrink-0">
+              <Share size={14} className="text-blue-600" />
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300">
+              <span className="font-semibold">Korak 1:</span> Kliknite ikonu <span className="font-semibold">Dijeli</span> (kvadrat sa strelicom) na dnu Safarija
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl p-3">
+            <div className="bg-emerald-100 rounded-full p-1.5 shrink-0">
+              <Plus size={14} className="text-emerald-600" />
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300">
+              <span className="font-semibold">Korak 2:</span> Odaberite <span className="font-semibold">&quot;Dodaj na početni zaslon&quot;</span> i kliknite Dodaj
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl p-3">
+            <div className="bg-purple-100 rounded-full p-1.5 shrink-0">
+              <Bell size={14} className="text-purple-600" />
+            </div>
+            <p className="text-xs text-zinc-600 dark:text-zinc-300">
+              <span className="font-semibold">Korak 3:</span> Otvorite app s početnog zaslona i primajte obavijesti
+            </p>
+          </div>
+        </div>
+
+        <Button onClick={dismiss} variant="outline" className="w-full text-sm">
+          Zatvori
+        </Button>
+      </div>
+    );
+  }
+
+  // Android / Desktop popup
   if (!show || permission !== 'default') return null;
 
   return (
