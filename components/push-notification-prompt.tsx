@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Bell, BellOff, X, Share, Plus } from 'lucide-react';
+import { Bell, BellOff, X, Share, Plus, MoreHorizontal, ChevronDown } from 'lucide-react';
 
 function isIOS() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -71,45 +71,63 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
   // iOS uputa — dodaj na početni zaslon
   if (showIOSGuide) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl p-5 z-50">
+      <div className="fixed bottom-4 left-4 right-4 bg-white rounded-2xl shadow-2xl p-5 z-50">
         <button onClick={dismiss} className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600">
           <X size={18} />
         </button>
         <div className="flex items-center gap-3 mb-4">
-          <div className="bg-emerald-100 dark:bg-emerald-900 rounded-full p-2">
+          <div className="bg-emerald-100 rounded-full p-2">
             <Bell className="text-emerald-600" size={20} />
           </div>
           <div>
-            <p className="font-semibold text-sm">Primajte obavijesti o novim poslovima</p>
+            <p className="font-bold text-base text-black">Primajte obavijesti o novim poslovima</p>
             <p className="text-xs text-zinc-500">Instalirajte app za primanje obavijesti</p>
           </div>
         </div>
 
         <div className="space-y-3 mb-4">
-          <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl p-3">
+          <div className="flex items-center gap-3 bg-zinc-50 rounded-xl p-3">
+            <div className="bg-blue-100 rounded-full p-1.5 shrink-0">
+              <MoreHorizontal size={14} className="text-blue-600" />
+            </div>
+            <p className="text-xs text-black">
+              <span className="font-bold">Korak 1:</span> Kliknite <span className="font-bold">tri točkice</span> (···) u donjem desnom kutu Safarija
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-zinc-50 rounded-xl p-3">
             <div className="bg-blue-100 rounded-full p-1.5 shrink-0">
               <Share size={14} className="text-blue-600" />
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-300">
-              <span className="font-semibold">Korak 1:</span> Kliknite ikonu <span className="font-semibold">Dijeli</span> (kvadrat sa strelicom) na dnu Safarija
+            <p className="text-xs text-black">
+              <span className="font-bold">Korak 2:</span> Kliknite <span className="font-bold">Podijeli</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl p-3">
+          <div className="flex items-center gap-3 bg-zinc-50 rounded-xl p-3">
+            <div className="bg-zinc-200 rounded-full p-1.5 shrink-0">
+              <ChevronDown size={14} className="text-zinc-600" />
+            </div>
+            <p className="text-xs text-black">
+              <span className="font-bold">Korak 3:</span> Skrolajte dolje i kliknite <span className="font-bold">Prikaži više</span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-emerald-50 rounded-xl p-3">
             <div className="bg-emerald-100 rounded-full p-1.5 shrink-0">
               <Plus size={14} className="text-emerald-600" />
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-300">
-              <span className="font-semibold">Korak 2:</span> Odaberite <span className="font-semibold">&quot;Dodaj na početni zaslon&quot;</span> i kliknite Dodaj
+            <p className="text-xs text-black">
+              <span className="font-bold">Korak 4:</span> Kliknite <span className="font-bold">"Dodaj na početni zaslon"</span> → Dodaj
             </p>
           </div>
 
-          <div className="flex items-center gap-3 bg-zinc-50 dark:bg-zinc-800 rounded-xl p-3">
+          <div className="flex items-center gap-3 bg-purple-50 rounded-xl p-3">
             <div className="bg-purple-100 rounded-full p-1.5 shrink-0">
               <Bell size={14} className="text-purple-600" />
             </div>
-            <p className="text-xs text-zinc-600 dark:text-zinc-300">
-              <span className="font-semibold">Korak 3:</span> Otvorite app s početnog zaslona i primajte obavijesti
+            <p className="text-xs text-black">
+              <span className="font-bold">Korak 5:</span> Otvorite app s početnog zaslona i primajte obavijesti ✅
             </p>
           </div>
         </div>
