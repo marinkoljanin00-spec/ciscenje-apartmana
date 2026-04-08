@@ -17,27 +17,29 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
   const [permission, setPermission] = useState<NotificationPermission>('default');
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator)) return;
 
-    if (isIOS()) {
-      // Na iPhoneu pokazuj uputu samo ako NISU u standalone modu
-      if (!isInStandaloneMode()) {
-        setTimeout(() => setShowIOSGuide(true), 3000);
+    const timer = setTimeout(() => {
+      if (isIOS()) {
+        if (!isInStandaloneMode()) {
+          setShowIOSGuide(true);
+        } else {
+          if ('Notification' in window && Notification.permission === 'default') {
+            setShow(true);
+          }
+        }
       } else {
-        // Jesu u standalone, mogu dobiti notifikacije normalno
-        if ('Notification' in window && Notification.permission === 'default') {
-          setTimeout(() => setShow(true), 3000);
+        if ('Notification' in window) {
+          setPermission(Notification.permission);
+          if (Notification.permission === 'default') {
+            setShow(true);
+          }
         }
       }
-    } else {
-      // Android / Desktop
-      if ('Notification' in window) {
-        setPermission(Notification.permission);
-        if (Notification.permission === 'default') {
-          setTimeout(() => setShow(true), 3000);
-        }
-      }
-    }
+    }, 8000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   async function subscribe() {
@@ -67,7 +69,7 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
   // iOS uputa — dodaj na početni zaslon
   if (showIOSGuide) {
     return (
-      <div className="fixed bottom-4 left-4 right-4 bg-white rounded-2xl shadow-2xl p-5 z-50">
+      <div className="fixed bottom-4 left-4 right-4 bg-white rounded-2xl shadow-2xl p-5 z-40">
         <button onClick={dismiss} className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600">
           <X size={18} />
         </button>
@@ -139,7 +141,7 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
   if (!show || permission !== 'default') return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl p-5 z-50">
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl shadow-2xl p-5 z-40">
       <button onClick={dismiss} className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-600">
         <X size={18} />
       </button>
