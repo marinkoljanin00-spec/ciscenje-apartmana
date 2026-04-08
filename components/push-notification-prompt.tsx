@@ -37,7 +37,7 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
           }
         }
       }
-    }, 5000);
+    }, 8000);
 
     return () => clearTimeout(timer);
   }, []);
