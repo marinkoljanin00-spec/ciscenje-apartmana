@@ -19,9 +19,6 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
-    const dismissed = localStorage.getItem('push-dismissed');
-    if (dismissed) return;
-
     if (isIOS()) {
       // Na iPhoneu pokazuj uputu samo ako NISU u standalone modu
       if (!isInStandaloneMode()) {
@@ -63,7 +60,6 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
   }
 
   function dismiss() {
-    localStorage.setItem('push-dismissed', '1');
     setShow(false);
     setShowIOSGuide(false);
   }
