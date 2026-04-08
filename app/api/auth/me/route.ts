@@ -5,6 +5,7 @@ import { NextResponse } from "next/server"
 export const dynamic = "force-dynamic"
 
 const SESSION_COOKIE = "marketplace_session"
+const REQUIRED_SESSION_VERSION = "v2"
 
 function getSQL() {
   const databaseUrl = process.env.DATABASE_URL
@@ -23,7 +24,16 @@ export async function GET() {
       return NextResponse.json({ user: null }, { status: 401 })
     }
 
-    const [userId] = sessionCookie.value.split(":")
+    // Check session version
+    const parts = sessionCookie.value.split(":")
+    const version = parts[2]
+    if (version !== REQUIRED_SESSION_VERSION) {
+      const response = NextResponse.json({ user: null, forceLogout: true })
+      response.cookies.delete(SESSION_COOKIE)
+      return response
+    }
+
+    const [userId] = parts
     if (!userId) {
       return NextResponse.json({ user: null }, { status: 401 })
     }

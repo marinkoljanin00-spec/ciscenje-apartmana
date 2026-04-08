@@ -19,6 +19,10 @@ export default function Home() {
     fetch('/api/auth/me')
       .then(r => r.json())
       .then(async data => {
+        if (data.forceLogout) {
+          window.location.href = '/'
+          return
+        }
         if (data.user) {
           if (!data.user.email_verified) {
             await fetch('/api/auth/send-verification', {
