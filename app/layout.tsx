@@ -65,6 +65,15 @@ export default function RootLayout({
             gtag('config', 'G-HYX1QBVQLS');
           `}
         </Script>
+        <Script id="sw-register" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js');
+              });
+            }
+          `}
+        </Script>
       </head>
       <body className="font-sans antialiased">
         {children}
