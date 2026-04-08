@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
+export const runtime = 'nodejs'
 
 const SESSION_COOKIE = "marketplace_session"
 
@@ -162,6 +163,31 @@ export async function POST(request: Request) {
 
     // Update client's total_spent
     await sql`UPDATE users SET total_spent = total_spent + ${finalPrice} WHERE id = ${clientId}`
+
+    // Send push notifications to all cleaners
+    try {
+      const { sendPushNotification } = await import('@/lib/push');
+      const cleanerSubs = await sql`
+        SELECT ps.subscription FROM push_subscriptions ps
+        JOIN users u ON ps.user_id = u.id
+        WHERE u.role = 'cleaner'
+      `;
+      const jobTitle = result[0].title;
+      const jobCity = result[0].city || '';
+      const jobPrice = result[0].price;
+      await Promise.all(
+        cleanerSubs.map((row: any) =>
+          sendPushNotification(
+            row.subscription,
+            '🧹 Novi posao dostupan!',
+            `${jobTitle}${jobCity ? ' · ' + jobCity : ''} · €${Number(jobPrice).toFixed(0)}/h`,
+            '/'
+          )
+        )
+      );
+    } catch (e) {
+      console.error('Push notification error:', e);
+    }
 
     return NextResponse.json({ success: true, job: result[0] })
   } catch (error) {
