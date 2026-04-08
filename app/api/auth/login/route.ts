@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     const sessionToken = generateSessionToken()
-    const sessionValue = `${user.id}:${sessionToken}`
+    const sessionValue = `${user.id}:${sessionToken}:v2`
     
     // Create response and return user data
     const response = NextResponse.json({ 

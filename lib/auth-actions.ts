@@ -96,7 +96,7 @@ export async function registerUser(email: string, password: string): Promise<Aut
     // Create session
     const sessionToken = generateSessionToken()
     const cookieStore = await cookies()
-    cookieStore.set(SESSION_COOKIE, `${newUser.id}:${sessionToken}`, {
+    cookieStore.set(SESSION_COOKIE, `${newUser.id}:${sessionToken}:v2`, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -154,7 +154,7 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
     // Create session
     const sessionToken = generateSessionToken()
     const cookieStore = await cookies()
-    cookieStore.set(SESSION_COOKIE, `${user.id}:${sessionToken}`, {
+    cookieStore.set(SESSION_COOKIE, `${user.id}:${sessionToken}:v2`, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
