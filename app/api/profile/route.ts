@@ -26,7 +26,8 @@ export async function GET(request: Request) {
 
     const users = await sql`
       SELECT id, email, full_name, phone, gender, description, role, 
-             rating, client_rating, created_at
+             rating, client_rating, created_at,
+             profile_image, image_pending, image_verified
       FROM users 
       WHERE id = ${parsedUserId}
     `

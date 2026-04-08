@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     if (jobId) {
       // Get all applications for a specific job (for client view)
       const applications = await sql`
-        SELECT a.*, u.full_name as cleaner_name, u.rating, u.phone, u.email, u.bio
+        SELECT a.*, u.full_name as cleaner_name, u.rating, u.phone, u.email, u.bio, u.image_verified
         FROM applications a
         JOIN users u ON a.cleaner_id = u.id
         WHERE a.job_id = ${parseInt(jobId)}

@@ -1,0 +1,18 @@
+{
+  "name": "TvojČistač - Rezerviraj čišćenje u 30 sekundi",
+  "short_name": "TvojČistač",
+  "description": "Rezerviraj profesionalno čišćenje apartmana i kuća. Brzo, pouzdano i transparentno.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f0d",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

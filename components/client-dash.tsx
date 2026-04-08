@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { t, cardStyle, btnPrimary, btnSecondary, inputStyle, selectStyle, CROATIAN_CITIES, Job, Application, Stats } from './shared'
+import { DatePicker } from './date-picker'
 
 // ═══════════════════════════════════════════════════════════════
 // CLIENT DASHBOARD - Dark Emerald Theme
@@ -25,7 +26,10 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   // Client profile tab state
   const [profileData, setProfileData] = useState<{ 
     created_at?: string; 
-    client_rating?: number 
+    client_rating?: number;
+    profile_image?: string;
+    image_pending?: string;
+    image_verified?: boolean;
   } | null>(null)
   const [profileLoaded, setProfileLoaded] = useState(false)
 
@@ -50,7 +54,15 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [title, setTitle] = useState(''); const [location, setLocation] = useState(''); const [price, setPrice] = useState('')
   const [propertyType, setPropertyType] = useState('stan'); const [isUrgent, setIsUrgent] = useState(false); const [desc, setDesc] = useState('')
   const [jobCity, setJobCity] = useState('Zagreb')
+  const [scheduledDate, setScheduledDate] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false); const [err, setErr] = useState('')
+
+  // Account deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
+
+  
 
   useEffect(() => {
     return () => {
@@ -68,12 +80,20 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     if (tab === 'profile' && !profileLoaded) {
       fetch(`/api/profile?userId=${uid}`)
         .then(r => r.json())
-        .then(d => { 
-          console.log('Profile data received:', d)
-          console.log('client_rating:', d.user?.client_rating)
-          setProfileData(d.user)
-          setProfileLoaded(true) 
-        })
+.then(d => {
+  setProfileData(d.user)
+  setProfileLoaded(true)
+  if (d.user?.profile_image && d.user?.image_verified) {
+    setImagePreview(d.user.profile_image)
+    setImageUploaded(true)
+  } else if (d.user?.image_pending) {
+    setImagePreview(d.user.image_pending)
+    setImageUploaded(true)
+  } else {
+    setImagePreview(null)
+    setImageUploaded(false)
+  }
+  })
     }
   }, [tab, profileLoaded, uid])
 
@@ -258,11 +278,12 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
         method: 'POST',
         body: formData
       })
-      const data = await res.json()
-      if (data.success) {
-        setImageUploaded(true)
-        setSelectedFile(null)
-        setToast({ message: 'Slika uspješno uploadana! Čeka odobrenje admina.', type: 'success' })
+const data = await res.json()
+  if (data.success) {
+    setImageUploaded(true)
+  setSelectedFile(null)
+  setProfileLoaded(false)
+  setToast({ message: 'Slika uspješno uploadana! Čeka odobrenje admina.', type: 'success' })
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
         toastTimerRef.current = setTimeout(() => setToast(null), 5000)
       } else {
@@ -278,6 +299,64 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     setUploadingImage(false)
   }
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'IZBRISI RACUN') return
+    setDeletingAccount(true)
+    try {
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid })
+      })
+      const data = await res.json()
+      if (data.success) {
+        logout()
+      } else {
+        setToast({ message: data.error || 'Greška pri brisanju', type: 'error' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+        setDeletingAccount(false)
+      }
+    } catch {
+      setToast({ message: 'Mrežna greška', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      setDeletingAccount(false)
+    }
+  }
+
+  const handleDeleteImage = async () => {
+    if (!confirm('Jeste li sigurni da želite izbrisati profilnu sliku? Izgubit ćete badge verifikacije.')) return
+    
+    try {
+      const res = await fetch('/api/profile/delete-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setImagePreview(null)
+        setImageUploaded(false)
+        setSelectedFile(null)
+        setProfileLoaded(false)
+        setProfileData(prev => prev ? { 
+          ...prev, 
+          profile_image: undefined,
+          image_pending: undefined,
+          image_verified: false 
+        } : null)
+        setToast({ message: 'Slika je izbrisana.', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Greška pri brisanju slike', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+  }
+
   const createJob = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setSubmitting(true)
     const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
@@ -285,13 +364,13 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       method: 'POST', 
       headers: { 'Content-Type': 'application/json' }, 
       body: JSON.stringify({
-        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity
+        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity, scheduledDate
       })
     })
     const data = await res.json()
     if (data.success) {
       setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
-      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb')
+      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb'); setScheduledDate(null)
       fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
     } else { setErr(data.error) }
     setSubmitting(false)
@@ -309,7 +388,22 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
             <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 4vw, 20px)', color: t.text }}>TvojČistač</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)' }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }} className="hide-on-mobile">{name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="hide-on-mobile">
+              <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+              {profileData?.image_verified && (
+                <span style={{ 
+                  background: 'rgba(16,185,129,0.15)',
+                  border: '1px solid #10b981',
+                  borderRadius: 100,
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#10b981'
+                }}>
+                  {'✓'} Verificiran
+                </span>
+              )}
+            </div>
             <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
           </div>
         </div>
@@ -346,6 +440,22 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Naslov posla" style={inputStyle} />
                 </div>
                 
+                {/* Opis posla */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis posla</label>
+                  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+                </div>
+                
+                {/* Date Picker */}
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 10, color: t.textMuted }}>Datum čišćenja</label>
+                  <DatePicker 
+                    value={scheduledDate} 
+                    onChange={setScheduledDate}
+                    placeholder="Odaberi datum"
+                  />
+                </div>
+
                 {/* Location Input */}
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8, fontWeight: 600 }}>Lokacija</label>
@@ -359,14 +469,17 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} required placeholder="Cijena (EUR)" min="1" style={inputStyle} />
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Cijena po satu (€/h)</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <input type="number" value={price} onChange={e => setPrice(e.target.value)} required placeholder="npr. 15" min="1" style={inputStyle} />
                   <select value={propertyType} onChange={e => setPropertyType(e.target.value)} style={selectStyle}>
                     <option value="stan">Stan</option>
                     <option value="kuca">Kuća</option>
                     <option value="ured">Ured</option>
                     <option value="poslovni">Poslovni prostor</option>
                   </select>
+                  </div>
                 </div>
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Grad</label>
@@ -374,9 +487,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     {CROATIAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <div style={{ marginBottom: 14 }}>
-                  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
-                </div>
+
                 <div style={{ 
                   marginBottom: 20, 
                   padding: 16, 
@@ -397,7 +508,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                     </div>
                     {isUrgent && price && (
                       <span style={{ color: t.accent, fontWeight: 700, fontSize: 15 }}>
-                        {(Number(price) * 1.5).toFixed(2)} EUR
+                        €{(Number(price) * 1.5).toFixed(0)}/h
                       </span>
                     )}
                   </div>
@@ -457,7 +568,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                           <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(2)} EUR</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(job.price).toFixed(0)}/h</div>
                           <div style={{ fontSize: 12, color: t.textDim }}>{job.property_type}</div>
                         </div>
                       </div>
@@ -604,7 +715,7 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                               <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{job.location}</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
+                              <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(job.price).toFixed(0)}/h</div>
                               <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: t.accentGlow, color: t.accent }}>
                                 Zavrseno
                               </span>
@@ -648,15 +759,60 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  {imageUploaded ? (
-                    <div style={{ 
-                      padding: '10px 16px', borderRadius: 10,
-                      background: 'rgba(16,185,129,0.1)', 
-                      border: '1px solid #10b981',
-                      color: '#10b981', fontSize: 13, fontWeight: 600
-                    }}>
-                      {'✓'} Slika čeka odobrenje admina
-                    </div>
+                  {profileData?.image_verified ? (
+                    <>
+                      <div style={{ 
+                        padding: '10px 16px', borderRadius: 10,
+                        background: 'rgba(16,185,129,0.1)', 
+                        border: '1px solid #10b981',
+                        color: '#10b981', fontSize: 13, fontWeight: 600
+                      }}>
+                        {'✓'} Slika verificirana — badge aktivan
+                      </div>
+                      <button
+                        onClick={handleDeleteImage}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid #ef4444',
+                          borderRadius: 10,
+                          padding: '8px 16px',
+                          color: '#ef4444',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          marginTop: 8,
+                          display: 'block'
+                        }}
+                      >
+                        Izbriši sliku
+                      </button>
+                    </>
+                  ) : profileData?.image_pending ? (
+                    <>
+                      <div style={{ 
+                        padding: '10px 16px', borderRadius: 10,
+                        background: 'rgba(234,179,8,0.1)', 
+                        border: '1px solid #eab308',
+                        color: '#eab308', fontSize: 13, fontWeight: 600
+                      }}>
+                        {'⏳'} Slika čeka odobrenje admina
+                      </div>
+                      <button
+                        onClick={handleDeleteImage}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid #ef4444',
+                          borderRadius: 10,
+                          padding: '8px 16px',
+                          color: '#ef4444',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          marginTop: 8,
+                          display: 'block'
+                        }}
+                      >
+                        Izbriši sliku
+                      </button>
+                    </>
                   ) : (
                     <>
                       <input
@@ -775,24 +931,98 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
             )}
 
             {/* Danger Zone */}
-            <div style={{ ...cardStyle, padding: 24, border: '1px solid rgba(239,68,68,0.3)' }}>
-              <h4 style={{ fontSize: 14, fontWeight: 600, color: '#ef4444', margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: 0.5 }}>Zona opasnosti</h4>
-              <button 
-                onClick={logout} 
-                style={{ 
-                  width: '100%',
-                  padding: '12px 20px', 
-                  background: 'rgba(239, 68, 68, 0.1)', 
-                  border: '1px solid rgba(239,68,68,0.3)', 
-                  borderRadius: 10, 
-                  color: '#ef4444', 
-                  fontSize: 14, 
-                  fontWeight: 600, 
-                  cursor: 'pointer' 
-                }}
-              >
-                Odjavi se
-              </button>
+            <div style={{ 
+              marginTop: 24,
+              padding: 24,
+              borderRadius: 16,
+              border: '1px solid rgba(239,68,68,0.3)',
+              background: 'rgba(239,68,68,0.05)'
+            }}>
+              <h4 style={{ 
+                color: '#ef4444', 
+                fontSize: 14, 
+                fontWeight: 700, 
+                margin: '0 0 8px 0',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5
+              }}>
+                Opasna zona
+              </h4>
+              <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 16px 0', lineHeight: 1.6 }}>
+                Brisanje računa je trajno i ne može se poništiti. 
+                Svi tvoji podaci, poslovi, recenzije i profilna slika 
+                bit će trajno izbrisani.
+              </p>
+
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid #ef4444',
+                    borderRadius: 10,
+                    padding: '10px 20px',
+                    color: '#ef4444',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Izbriši moj račun
+                </button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <p style={{ color: '#ef4444', fontSize: 13, fontWeight: 600, margin: 0 }}>
+                    Upiši IZBRISI RACUN za potvrdu:
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={e => setDeleteConfirmText(e.target.value)}
+                    placeholder="IZBRISI RACUN"
+                    style={{ 
+                      ...inputStyle,
+                      border: '1px solid #ef4444',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => {
+                        setShowDeleteConfirm(false)
+                        setDeleteConfirmText('')
+                      }}
+                      style={{
+                        flex: 1,
+                        ...btnSecondary,
+                        padding: '10px 16px',
+                        fontSize: 13
+                      }}
+                    >
+                      Odustani
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteConfirmText !== 'IZBRISI RACUN' || deletingAccount}
+                      style={{
+                        flex: 1,
+                        background: deleteConfirmText === 'IZBRISI RACUN' 
+                          ? '#ef4444' : 'rgba(239,68,68,0.2)',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: deleteConfirmText === 'IZBRISI RACUN' ? 'pointer' : 'default',
+                        opacity: deletingAccount ? 0.7 : 1
+                      }}
+                    >
+                      {deletingAccount ? 'Brišem...' : 'Trajno izbriši'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -943,6 +1173,20 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
                             >
                               {app.cleaner_name}
                             </button>
+                            {app.image_verified && (
+                              <span style={{ 
+                                background: 'rgba(16,185,129,0.15)',
+                                border: '1px solid #10b981',
+                                borderRadius: 100,
+                                padding: '2px 6px',
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: '#10b981',
+                                marginLeft: 6
+                              }}>
+                                {'✓'} Verificiran
+                              </span>
+                            )}
                             <div style={{ fontSize: 13, color: t.textMuted, marginTop: 4 }}>
                               Ocjena: <span style={{ color: t.accent, fontWeight: 600 }}>{app.rating || 5.0}</span>
                             </div>

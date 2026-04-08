@@ -20,11 +20,17 @@ export async function POST(request: Request) {
     const userId = formData.get('userId') as string
 
     if (!file || !userId) {
-      return NextResponse.json({ success: false, error: 'Datoteka i userId su obavezni' }, { status: 400 })
+      return NextResponse.json({ 
+        success: false, 
+        error: `Nedostaju podaci: file=${!!file}, userId=${userId}` 
+      }, { status: 400 })
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ success: false, error: 'Slika ne smije biti veća od 5MB' }, { status: 400 })
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Slika ne smije biti veća od 5MB' 
+      }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
@@ -37,13 +43,35 @@ export async function POST(request: Request) {
     })
 
     const sql = getSQL()
-    await sql`
+    
+    const parsedId = parseInt(userId, 10)
+    if (isNaN(parsedId)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `Nevažeći userId: "${userId}"` 
+      }, { status: 400 })
+    }
+
+    const updateResult = await sql`
       UPDATE users 
-      SET image_pending = ${result.secure_url}, image_verified = FALSE
-      WHERE id = ${parseInt(userId)}
+      SET image_pending = ${result.secure_url}, 
+          image_verified = FALSE
+      WHERE id = ${parsedId}
+      RETURNING id, email, image_pending
     `
 
-    return NextResponse.json({ success: true, url: result.secure_url })
+    if (!updateResult || updateResult.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: `Korisnik s ID ${parsedId} nije pronađen. Cloudinary URL: ${result.secure_url}` 
+      }, { status: 404 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      url: result.secure_url,
+      savedForUser: updateResult[0].email
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Greška pri uploadu'
     return NextResponse.json({ success: false, error: message }, { status: 500 })

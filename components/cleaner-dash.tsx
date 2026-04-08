@@ -42,6 +42,17 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [imageUploaded, setImageUploaded] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [profileData, setProfileData] = useState<{
+    image_verified?: boolean;
+    image_pending?: string;
+    profile_image?: string;
+  } | null>(null)
+  const [profileLoaded, setProfileLoaded] = useState(false)
+
+  // Account deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -95,6 +106,28 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
         }
       })
   }, [myApplications])
+
+  // Load profile image
+  useEffect(() => {
+    if (profileLoaded) return
+    fetch(`/api/profile?userId=${uid}`)
+      .then(r => r.json())
+      .then(d => {
+        setProfileData(d.user)
+        setProfileLoaded(true)
+        if (d.user?.profile_image && d.user?.image_verified) {
+          setImagePreview(d.user.profile_image)
+          setImageUploaded(true)
+        } else if (d.user?.image_pending) {
+          setImagePreview(d.user.image_pending)
+          setImageUploaded(true)
+        } else {
+          setImagePreview(null)
+          setImageUploaded(false)
+        }
+      })
+      .catch(() => {})
+  }, [uid, profileLoaded])
 
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
@@ -192,6 +225,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       if (data.success) {
         setImageUploaded(true)
         setSelectedFile(null)
+        setProfileLoaded(false)
         setToast({ message: 'Slika uspješno uploadana! Čeka odobrenje admina.', type: 'success' })
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
         toastTimerRef.current = setTimeout(() => setToast(null), 5000)
@@ -206,6 +240,64 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setUploadingImage(false)
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'IZBRISI RACUN') return
+    setDeletingAccount(true)
+    try {
+      const res = await fetch('/api/auth/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid })
+      })
+      const data = await res.json()
+      if (data.success) {
+        logout()
+      } else {
+        setToast({ message: data.error || 'Greška pri brisanju', type: 'error' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+        setDeletingAccount(false)
+      }
+    } catch {
+      setToast({ message: 'Mrežna greška', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      setDeletingAccount(false)
+    }
+  }
+
+  const handleDeleteImage = async () => {
+    if (!confirm('Jeste li sigurni da želite izbrisati profilnu sliku? Izgubit ćete badge verifikacije.')) return
+    
+    try {
+      const res = await fetch('/api/profile/delete-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uid })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setImagePreview(null)
+        setImageUploaded(false)
+        setSelectedFile(null)
+        setProfileLoaded(false)
+        setProfileData(prev => prev ? { 
+          ...prev, 
+          profile_image: undefined,
+          image_pending: undefined,
+          image_verified: false 
+        } : null)
+        setToast({ message: 'Slika je izbrisana.', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Greška pri brisanju slike', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
   }
 
   const clearAllFilters = () => {
@@ -301,7 +393,22 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             <span style={{ fontWeight: 800, fontSize: 'clamp(16px, 4vw, 20px)', color: t.text }}>TvojČistač</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 2vw, 16px)' }}>
-            <span style={{ color: t.textMuted, fontSize: 14 }} className="hide-on-mobile">{name}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="hide-on-mobile">
+              <span style={{ color: t.textMuted, fontSize: 14 }}>{name}</span>
+              {profileData?.image_verified && (
+                <span style={{ 
+                  background: 'rgba(16,185,129,0.15)',
+                  border: '1px solid #10b981',
+                  borderRadius: 100,
+                  padding: '2px 8px',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: '#10b981'
+                }}>
+                  {'✓'} Verificiran
+                </span>
+              )}
+            </div>
             <button onClick={logout} style={{ ...btnSecondary, padding: '10px 20px', fontSize: 13 }}>Odjava</button>
           </div>
         </div>
@@ -357,14 +464,14 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
               </select>
               <input
                 type="number"
-                placeholder="Min EUR"
+                placeholder="Min €/h"
                 value={minPrice}
                 onChange={e => setMinPrice(e.target.value)}
                 style={{ ...inputStyle, width: 100 }}
               />
               <input
                 type="number"
-                placeholder="Max EUR"
+                placeholder="Max €/h"
                 value={maxPrice}
                 onChange={e => setMaxPrice(e.target.value)}
                 style={{ ...inputStyle, width: 100 }}
@@ -405,10 +512,15 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                               {'\u2B50'} {Number(job.client_rating).toFixed(1)}
                             </span>
                           )}
+                          {job.client_image_verified && (
+                            <span style={{ color: '#10b981', fontSize: 11, fontWeight: 700 }}>
+                              {'✓'}
+                            </span>
+                          )}
                         </p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>{Number(job.price).toFixed(0)} EUR</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>€{Number(job.price).toFixed(0)}/h</div>
                         <div style={{ fontSize: 12, color: t.textDim }}>{job.property_type}</div>
                       </div>
                     </div>
@@ -471,7 +583,7 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: t.accent }}>€{Number(app.price || 0).toFixed(0)}/h</div>
                         <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' }}>
                           U tijeku
                         </span>
@@ -613,8 +725,8 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <div style={{ textAlign: 'right' }}>
-                                  <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
-                                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
+<div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(app.price || 0).toFixed(0)}/h</div>
+                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(16, 185, 129, 0.15)', color: t.accent }}>
                                     Zavrseno
                                   </span>
                                 </div>
@@ -655,8 +767,8 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         <p style={{ color: t.textMuted, fontSize: 13, margin: 0 }}>{app.location}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>{Number(app.price || 0).toFixed(0)} EUR</div>
-                        <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
+<div style={{ fontSize: 18, fontWeight: 700, color: t.accent }}>€{Number(app.price || 0).toFixed(0)}/h</div>
+                  <span style={{ padding: '4px 10px', borderRadius: 100, fontSize: 12, fontWeight: 600, background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
                           Na cekanju
                         </span>
                       </div>
@@ -694,15 +806,60 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  {imageUploaded ? (
-                    <div style={{ 
-                      padding: '10px 16px', borderRadius: 10,
-                      background: 'rgba(16,185,129,0.1)', 
-                      border: '1px solid #10b981',
-                      color: '#10b981', fontSize: 13, fontWeight: 600
-                    }}>
-                      {'✓'} Slika čeka odobrenje admina
-                    </div>
+                  {profileData?.image_verified ? (
+                    <>
+                      <div style={{ 
+                        padding: '10px 16px', borderRadius: 10,
+                        background: 'rgba(16,185,129,0.1)', 
+                        border: '1px solid #10b981',
+                        color: '#10b981', fontSize: 13, fontWeight: 600
+                      }}>
+                        {'✓'} Slika verificirana — badge aktivan
+                      </div>
+                      <button
+                        onClick={handleDeleteImage}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid #ef4444',
+                          borderRadius: 10,
+                          padding: '8px 16px',
+                          color: '#ef4444',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          marginTop: 8,
+                          display: 'block'
+                        }}
+                      >
+                        Izbriši sliku
+                      </button>
+                    </>
+                  ) : profileData?.image_pending ? (
+                    <>
+                      <div style={{ 
+                        padding: '10px 16px', borderRadius: 10,
+                        background: 'rgba(234,179,8,0.1)', 
+                        border: '1px solid #eab308',
+                        color: '#eab308', fontSize: 13, fontWeight: 600
+                      }}>
+                        {'⏳'} Slika čeka odobrenje admina
+                      </div>
+                      <button
+                        onClick={handleDeleteImage}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)',
+                          border: '1px solid #ef4444',
+                          borderRadius: 10,
+                          padding: '8px 16px',
+                          color: '#ef4444',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          marginTop: 8,
+                          display: 'block'
+                        }}
+                      >
+                        Izbriši sliku
+                      </button>
+                    </>
                   ) : (
                     <>
                       <input
@@ -880,6 +1037,101 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                     })}
                   </div>
                 </>
+              )}
+            </div>
+
+            {/* Danger Zone */}
+            <div style={{ 
+              marginTop: 24,
+              padding: 24,
+              borderRadius: 16,
+              border: '1px solid rgba(239,68,68,0.3)',
+              background: 'rgba(239,68,68,0.05)'
+            }}>
+              <h4 style={{ 
+                color: '#ef4444', 
+                fontSize: 14, 
+                fontWeight: 700, 
+                margin: '0 0 8px 0',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5
+              }}>
+                Opasna zona
+              </h4>
+              <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 16px 0', lineHeight: 1.6 }}>
+                Brisanje računa je trajno i ne može se poništiti. 
+                Svi tvoji podaci, poslovi, recenzije i profilna slika 
+                bit će trajno izbrisani.
+              </p>
+
+              {!showDeleteConfirm ? (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    background: 'rgba(239,68,68,0.1)',
+                    border: '1px solid #ef4444',
+                    borderRadius: 10,
+                    padding: '10px 20px',
+                    color: '#ef4444',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Izbriši moj račun
+                </button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <p style={{ color: '#ef4444', fontSize: 13, fontWeight: 600, margin: 0 }}>
+                    Upiši IZBRISI RACUN za potvrdu:
+                  </p>
+                  <input
+                    type="text"
+                    value={deleteConfirmText}
+                    onChange={e => setDeleteConfirmText(e.target.value)}
+                    placeholder="IZBRISI RACUN"
+                    style={{ 
+                      ...inputStyle,
+                      border: '1px solid #ef4444',
+                      fontFamily: 'monospace'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={() => {
+                        setShowDeleteConfirm(false)
+                        setDeleteConfirmText('')
+                      }}
+                      style={{
+                        flex: 1,
+                        ...btnSecondary,
+                        padding: '10px 16px',
+                        fontSize: 13
+                      }}
+                    >
+                      Odustani
+                    </button>
+                    <button
+                      onClick={handleDeleteAccount}
+                      disabled={deleteConfirmText !== 'IZBRISI RACUN' || deletingAccount}
+                      style={{
+                        flex: 1,
+                        background: deleteConfirmText === 'IZBRISI RACUN' 
+                          ? '#ef4444' : 'rgba(239,68,68,0.2)',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '10px 16px',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 700,
+                        cursor: deleteConfirmText === 'IZBRISI RACUN' ? 'pointer' : 'default',
+                        opacity: deletingAccount ? 0.7 : 1
+                      }}
+                    >
+                      {deletingAccount ? 'Brišem...' : 'Trajno izbriši'}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
