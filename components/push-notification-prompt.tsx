@@ -150,8 +150,8 @@ export function PushNotificationPrompt({ userId }: { userId?: number }) {
           <Bell className="text-emerald-600" size={20} />
         </div>
         <div>
-          <p className="font-semibold text-sm">Primajte obavijesti o novim poslovima</p>
-          <p className="text-xs text-zinc-500">Budite prvi koji prihvate novi posao</p>
+          <p className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">Primajte obavijesti o novim poslovima</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Budite prvi koji prihvate novi posao</p>
         </div>
       </div>
       <div className="flex gap-2">
