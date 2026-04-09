@@ -96,6 +96,7 @@ const jobStatusConfig: Record<string, { label: string; color: string; bg: string
   U_TIJEKU: { label: "U tijeku", color: "text-chart-5", bg: "bg-chart-5/10", icon: PlayCircle },
   ZAVRŠENO: { label: "Završeno", color: "text-chart-2", bg: "bg-chart-2/10", icon: CheckCircle2 },
   ODBIJENO: { label: "Odbijeno", color: "text-destructive", bg: "bg-destructive/10", icon: XCircle },
+  cancelled: { label: "Otkazano", color: "text-destructive", bg: "bg-destructive/10", icon: XCircle },
 }
 
 export function AdminPanel() {
@@ -140,6 +141,7 @@ export function AdminPanel() {
     const cistaci = users.filter((u) => u.tip === "cistacica")
     const aktivniPoslovi = jobs.filter((j) => ["OTVORENO", "ZATRAŽENO", "PRIHVAĆENO", "U_TIJEKU"].includes(j.status))
     const zavrseniPoslovi = jobs.filter((j) => j.status === "ZAVRŠENO")
+    const otkazaniPoslovi = jobs.filter((j) => j.status === "cancelled")
     const ukupnaZarada = zavrseniPoslovi.reduce((sum, j) => sum + j.cijena, 0)
     const prosjecnaOcjena = reviews.length > 0 
       ? (reviews.reduce((sum, r) => sum + r.ocjena, 0) / reviews.length).toFixed(1)
@@ -151,6 +153,7 @@ export function AdminPanel() {
       cistaca: cistaci.length,
       aktivnihPoslova: aktivniPoslovi.length,
       zavrseniPoslovi: zavrseniPoslovi.length,
+      otkazaniPoslovi: otkazaniPoslovi.length,
       ukupnoPoslova: jobs.length,
       ukupnaZarada,
       prosjecnaOcjena,
@@ -220,6 +223,7 @@ export function AdminPanel() {
       { name: "U tijeku", value: jobs.filter(j => ["ZATRAŽENO", "PRIHVAĆENO", "U_TIJEKU"].includes(j.status)).length, fill: "#8b5cf6" },
       { name: "Zavrseni", value: jobs.filter(j => j.status === "ZAVRŠENO").length, fill: "#22c55e" },
       { name: "Odbijeni", value: jobs.filter(j => j.status === "ODBIJENO").length, fill: "#ef4444" },
+      { name: "Otkazani", value: jobs.filter(j => j.status === "cancelled").length, fill: "#dc2626" },
     ]
 
     // Revenue by month
@@ -430,7 +434,7 @@ export function AdminPanel() {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
         <Card className="border-border/50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -505,6 +509,19 @@ export function AdminPanel() {
               <div>
                 <p className="text-xs text-muted-foreground">Ocjena</p>
                 <p className="text-xl font-bold text-foreground">{stats.prosjecnaOcjena}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                <XCircle className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Otkazani</p>
+                <p className="text-xl font-bold text-foreground">{stats.otkazaniPoslovi}</p>
               </div>
             </div>
           </CardContent>
