@@ -284,12 +284,6 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     setAcceptingId(null)
   }
 
-  const deleteJob = async (jobId: number) => {
-    if (!confirm('Jeste li sigurni da zelite obrisati ovaj posao?')) return
-    await fetch(`/api/jobs?jobId=${jobId}&userId=${uid}`, { method: 'DELETE' })
-    setJobs(jobs.filter(j => j.id !== jobId))
-  }
-
   const submitReview = async () => {
     if (!reviewJob) return
     setSubmittingReview(true)
@@ -823,11 +817,6 @@ const createJob = async (e: React.FormEvent) => {
                           {job.status === 'open' && job.application_count && job.application_count > 0 && (
                             <button onClick={() => loadApplications(job)} style={{ ...btnSecondary, padding: '8px 14px', fontSize: 12 }}>
                               Prijave ({job.application_count})
-                            </button>
-                          )}
-                          {job.status === 'open' && (
-                            <button onClick={() => deleteJob(job.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: `1px solid ${t.urgent}`, borderRadius: 8, padding: '8px 14px', color: t.urgent, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                              Obrisi
                             </button>
                           )}
                           {(job.status === 'open' || job.status === 'waiting_for_client') && (

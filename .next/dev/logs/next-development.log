@@ -17,3 +17,7 @@
 {"timestamp":"00:01:07.632","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
 {"timestamp":"00:01:08.176","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
 {"timestamp":"00:01:27.779","source":"Server","level":"LOG","message":"✓ Compiled in 70ms"}
+{"timestamp":"00:01:39.160","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:01:39.573","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:17:23.733","source":"Server","level":"LOG","message":"✓ Compiled in 68ms"}
+{"timestamp":"00:17:37.356","source":"Server","level":"LOG","message":"✓ Compiled in 75ms"}
