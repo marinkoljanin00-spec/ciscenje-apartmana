@@ -97,6 +97,21 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     }
   }, [tab, profileLoaded, uid])
 
+  // Show profile image reminder toast after 60 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!imagePreview && !profileData?.profile_image && !profileData?.image_pending) {
+        setToast({
+          message: '📸 Dodajte profilnu sliku i dobijte badge verifikacije — korisnici s fotografijom izgledaju pouzdanije!',
+          type: 'success'
+        })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 8000)
+      }
+    }, 60000)
+    return () => clearTimeout(timer)
+  }, [profileData, imagePreview])
+
   const loadApplications = async (job: Job) => {
     setSelectedJob(job)
     const res = await fetch(`/api/applications?jobId=${job.id}`)

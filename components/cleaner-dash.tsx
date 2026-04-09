@@ -129,6 +129,21 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       .catch(() => {})
   }, [uid, profileLoaded])
 
+  // Show profile image reminder toast after 60 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!imagePreview && !profileData?.profile_image && !profileData?.image_pending) {
+        setToast({
+          message: '📸 Dodajte profilnu sliku i dobijte badge verifikacije — korisnici s fotografijom izgledaju pouzdanije!',
+          type: 'success'
+        })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 8000)
+      }
+    }, 60000)
+    return () => clearTimeout(timer)
+  }, [profileData, imagePreview])
+
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
     if (tab === 'profile' && !reviewsLoaded && !loadingReviews) {
