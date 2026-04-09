@@ -62,7 +62,9 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deletingAccount, setDeletingAccount] = useState(false)
 
-  
+  // Job templates state
+  const [templates, setTemplates] = useState<any[]>([])
+  const [showTemplates, setShowTemplates] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -74,6 +76,14 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
     fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
   }, [uid])
+
+  // Load templates on mount
+  useEffect(() => {
+    fetch('/api/jobs/templates')
+      .then(r => r.json())
+      .then(d => setTemplates(d.templates || []))
+      .catch(() => {})
+  }, [])
 
   // Lazy load profile data when profile tab opens
   useEffect(() => {
@@ -144,6 +154,38 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
       toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
+  }
+
+  const saveAsTemplate = async (job: any) => {
+    try {
+      const res = await fetch('/api/jobs/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: job.title,
+          location: job.location,
+          city: job.city,
+          price: job.price,
+          property_type: job.property_type,
+          is_urgent: false,
+          description: job.description,
+          latitude: job.latitude,
+          longitude: job.longitude
+        })
+      })
+      const data = await res.json()
+      if (data.template) {
+        setTemplates(prev => [data.template, ...prev])
+        setToast({ message: 'Posao spremljen kao predlozak!', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch { }
+  }
+
+  const deleteTemplate = async (templateId: number) => {
+    await fetch(`/api/jobs/templates?id=${templateId}`, { method: 'DELETE' })
+    setTemplates(prev => prev.filter(t => t.id !== templateId))
   }
 
   const fetchCleanerProfile = async (cleanerId: number, app: Application) => {
@@ -476,6 +518,77 @@ const data = await res.json()
             {/* Create Job Form */}
             <div style={{ ...cardStyle, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Novi oglas</h3>
+              
+              {/* Templates Section */}
+              {templates.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplates(!showTemplates)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      background: 'rgba(16,185,129,0.08)',
+                      border: '1px solid rgba(16,185,129,0.25)',
+                      borderRadius: 10, padding: '10px 16px',
+                      color: t.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%'
+                    }}
+                  >
+                    <span>Moji predlosci ({templates.length})</span>
+                    <span style={{ marginLeft: 'auto' }}>{showTemplates ? '▲' : '▼'}</span>
+                  </button>
+
+                  {showTemplates && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                      {templates.map(tmpl => (
+                        <div key={tmpl.id} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          background: t.bgCard, border: `1px solid ${t.border}`,
+                          borderRadius: 10, padding: '10px 14px'
+                        }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{tmpl.title}</div>
+                            <div style={{ fontSize: 12, color: t.textMuted }}>{tmpl.city} — {tmpl.price} EUR</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTitle(tmpl.title || '')
+                                setLocation(tmpl.location || '')
+                                setJobCity(tmpl.city || 'Zagreb')
+                                setPrice(tmpl.price?.toString() || '')
+                                setPropertyType(tmpl.property_type || 'stan')
+                                setDesc(tmpl.description || '')
+                                setIsUrgent(false)
+                                setShowTemplates(false)
+                              }}
+                              style={{
+                                background: t.accent, border: 'none', borderRadius: 8,
+                                padding: '6px 12px', color: '#fff', fontSize: 12,
+                                fontWeight: 600, cursor: 'pointer'
+                              }}
+                            >
+                              Koristi
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteTemplate(tmpl.id)}
+                              style={{
+                                background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444',
+                                borderRadius: 8, padding: '6px 10px',
+                                color: '#ef4444', fontSize: 12, cursor: 'pointer'
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {err && <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: `1px solid ${t.urgent}`, padding: 12, marginBottom: 16, borderRadius: 10, color: t.urgent, fontSize: 14 }}>{err}</div>}
               <form onSubmit={createJob}>
                 <div style={{ marginBottom: 14 }}>
@@ -782,6 +895,16 @@ const data = await res.json()
                           <div style={{ padding: 12, background: t.bgCard, borderRadius: 10 }}>
                             <div style={{ color: t.textMuted, fontSize: 13 }}>Cistac: <span style={{ color: t.text, fontWeight: 600 }}>{job.cleaner_name}</span></div>
                           </div>
+                          <button
+                            onClick={() => saveAsTemplate(job)}
+                            style={{
+                              background: 'none', border: `1px solid ${t.border}`,
+                              borderRadius: 8, padding: '6px 12px',
+                              color: t.textMuted, fontSize: 12, cursor: 'pointer', marginTop: 8
+                            }}
+                          >
+                            Spremi kao predlozak
+                          </button>
                         </div>
                       ))}
                     </div>
