@@ -37,6 +37,35 @@ export async function POST(request: Request) {
     
     // NOTE: Earnings are added when cleaner marks job as completed (in /api/jobs/complete)
     
+    // Send push notification to the cleaner
+    try {
+      const { sendPushNotification } = await import('@/lib/push')
+      const jobDetails = await sql`
+        SELECT j.title, j.cleaner_id, u.full_name as client_name
+        FROM jobs j
+        JOIN users u ON u.id = j.client_id
+        WHERE j.id = ${jobId}
+      `
+      if (jobDetails.length > 0) {
+        const cleanerSubs = await sql`
+          SELECT subscription FROM push_subscriptions
+          WHERE user_id = ${jobDetails[0].cleaner_id}
+        `
+        await Promise.all(
+          cleanerSubs.map((row: any) =>
+            sendPushNotification(
+              row.subscription,
+              '🎉 Odabrani ste za posao!',
+              `${jobDetails[0].client_name} vas je odabrao za "${jobDetails[0].title}"`,
+              '/'
+            )
+          )
+        )
+      }
+    } catch (e) {
+      console.error('Push notification error:', e)
+    }
+    
     // Get cleaner contact info to return to client
     const cleaner = await sql`
       SELECT id, full_name, email, phone, rating FROM users WHERE id = ${cleanerId}
