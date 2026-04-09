@@ -119,6 +119,33 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     setApplications(data.applications || [])
   }
 
+  const cancelJob = async (jobId: number) => {
+    if (!confirm('Jeste li sigurni da želite otkazati ovaj posao?')) return
+    try {
+      const res = await fetch('/api/jobs/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setToast({ message: 'Posao je otkazan.', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+        // Remove from local state
+        setJobs(prev => prev.filter(j => j.id !== jobId))
+      } else {
+        setToast({ message: data.error || 'Greška', type: 'error' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Mrežna greška', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+  }
+
   const fetchCleanerProfile = async (cleanerId: number, app: Application) => {
     // Check cache first
     if (cleanerProfileCache.has(cleanerId)) {
@@ -607,6 +634,22 @@ const data = await res.json()
                           {job.status === 'open' && (
                             <button onClick={() => deleteJob(job.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: `1px solid ${t.urgent}`, borderRadius: 8, padding: '8px 14px', color: t.urgent, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                               Obrisi
+                            </button>
+                          )}
+                          {(job.status === 'open' || job.status === 'waiting_for_client') && (
+                            <button
+                              onClick={() => cancelJob(job.id)}
+                              style={{
+                                background: 'rgba(239,68,68,0.1)',
+                                border: '1px solid #ef4444',
+                                borderRadius: 10,
+                                padding: '8px 16px',
+                                color: '#ef4444',
+                                fontSize: 13,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Otkaži posao
                             </button>
                           )}
                         </div>
