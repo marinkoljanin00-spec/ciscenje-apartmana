@@ -864,6 +864,24 @@ const data = await res.json()
                         </div>
                       ) : (
                         <>
+                          {!profileData?.image_verified && !profileData?.image_pending && !imagePreview && (
+                            <div style={{
+                              display: 'flex', alignItems: 'flex-start', gap: 10,
+                              background: 'rgba(16, 185, 129, 0.08)',
+                              border: '1px solid rgba(16, 185, 129, 0.25)',
+                              borderRadius: 12, padding: '12px 14px', marginBottom: 14,
+                            }}>
+                              <span style={{ fontSize: 18, lineHeight: 1.2 }}>✓</span>
+                              <div>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#10b981' }}>
+                                  Dobijte badge verifikacije
+                                </p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: 12, color: t.textMuted, lineHeight: 1.5 }}>
+                                  Uploadajte profilnu sliku — nakon odobrenja admina dobivate zeleni ✓ badge koji gradi povjerenje.
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadingImage}
