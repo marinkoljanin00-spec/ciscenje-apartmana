@@ -48,3 +48,7 @@
 {"timestamp":"00:20:03.390","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
 {"timestamp":"00:20:03.955","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
 {"timestamp":"00:20:18.335","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:20:38.838","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:20:39.255","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:20:59.007","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:20:59.420","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
