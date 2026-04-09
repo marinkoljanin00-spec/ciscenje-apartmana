@@ -25,3 +25,4 @@
 {"timestamp":"00:17:50.691","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
 {"timestamp":"00:18:58.642","source":"Server","level":"LOG","message":"✓ Compiled in 94ms"}
 {"timestamp":"00:19:33.884","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:19:34.535","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}

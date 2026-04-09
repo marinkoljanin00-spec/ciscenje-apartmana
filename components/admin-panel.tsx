@@ -1,7 +1,55 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { useAppStore, type BugReport, type BugReportStatus, ADMIN_EMAIL, type User, type Job, type Review, getCleanerLevel } from "@/lib/store"
+import { useAppStore, type BugReport, type BugReportStatus, ADMIN_EMAIL } from "@/lib/store"
+
+// Types for real database data
+interface DbUser {
+  id: number
+  email: string
+  full_name: string
+  role: 'client' | 'cleaner'
+  phone?: string
+  city?: string
+  bio?: string
+  rating?: number
+  total_earned?: number
+  profile_image?: string
+  image_verified?: boolean
+  image_pending?: string
+  created_at: string
+}
+
+interface DbJob {
+  id: number
+  title: string
+  location: string
+  city: string
+  price: number
+  status: string
+  property_type?: string
+  is_urgent?: boolean
+  description?: string
+  client_id: number
+  cleaner_id?: number
+  client_name?: string
+  cleaner_name?: string
+  created_at: string
+  scheduled_date?: string
+}
+
+interface DbReview {
+  id: number
+  job_id: number
+  client_id: number
+  cleaner_id: number
+  rating: number
+  comment?: string
+  reviewer_type: string
+  reviewer_name?: string
+  cleaner_name?: string
+  created_at: string
+}
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -90,24 +138,31 @@ const prioritetConfig = {
 }
 
 const jobStatusConfig: Record<string, { label: string; color: string; bg: string; icon: typeof Clock }> = {
-  OTVORENO: { label: "Otvoreno", color: "text-chart-4", bg: "bg-chart-4/10", icon: Clock },
-  ZATRAŽENO: { label: "Zatraženo", color: "text-chart-2", bg: "bg-chart-2/10", icon: Loader2 },
-  PRIHVAĆENO: { label: "Prihvaćeno", color: "text-primary", bg: "bg-primary/10", icon: CheckCircle2 },
-  U_TIJEKU: { label: "U tijeku", color: "text-chart-5", bg: "bg-chart-5/10", icon: PlayCircle },
-  ZAVRŠENO: { label: "Završeno", color: "text-chart-2", bg: "bg-chart-2/10", icon: CheckCircle2 },
-  ODBIJENO: { label: "Odbijeno", color: "text-destructive", bg: "bg-destructive/10", icon: XCircle },
+  open: { label: "Otvoreno", color: "text-chart-4", bg: "bg-chart-4/10", icon: Clock },
+  waiting_for_client: { label: "Ceka odabir", color: "text-chart-2", bg: "bg-chart-2/10", icon: Loader2 },
+  accepted: { label: "Prihvaceno", color: "text-primary", bg: "bg-primary/10", icon: CheckCircle2 },
+  completed: { label: "Zavrseno", color: "text-chart-5", bg: "bg-chart-5/10", icon: PlayCircle },
+  confirmed: { label: "Potvrdeno", color: "text-chart-2", bg: "bg-chart-2/10", icon: CheckCircle2 },
+  reviewed: { label: "Recenzirano", color: "text-primary", bg: "bg-primary/10", icon: CheckCircle2 },
   cancelled: { label: "Otkazano", color: "text-destructive", bg: "bg-destructive/10", icon: XCircle },
 }
 
 export function AdminPanel() {
-  const { user, users, jobs, reviews, bugReports, updateBugReportStatus, getAverageRating, getCleanerReviews } = useAppStore()
+  const { user, bugReports, updateBugReportStatus } = useAppStore()
+  
+  // Real data from database
+  const [users, setUsers] = useState<DbUser[]>([])
+  const [jobs, setJobs] = useState<DbJob[]>([])
+  const [reviews, setReviews] = useState<DbReview[]>([])
+  const [loading, setLoading] = useState(true)
+  
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null)
   const [newStatus, setNewStatus] = useState<BugReportStatus>("novo")
   const [odgovor, setOdgovor] = useState("")
   const [activeTab, setActiveTab] = useState("pregled")
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedUser, setSelectedUser] = useState<(User & { lozinka?: string }) | null>(null)
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [selectedUser, setSelectedUser] = useState<DbUser | null>(null)
+  const [selectedJob, setSelectedJob] = useState<DbJob | null>(null)
 
   // Image approval state
   const [pendingImages, setPendingImages] = useState<{
@@ -119,6 +174,24 @@ export function AdminPanel() {
   }[]>([])
   const [loadingImages, setLoadingImages] = useState(false)
   const [approvingId, setApprovingId] = useState<number | null>(null)
+  
+  // Fetch real data from database on mount
+  useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        const res = await fetch('/api/admin?adminKey=SjajGazda99')
+        const data = await res.json()
+        if (data.users) setUsers(data.users)
+        if (data.jobs) setJobs(data.jobs)
+        if (data.reviews) setReviews(data.reviews)
+      } catch (error) {
+        console.error('Failed to fetch admin data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAdminData()
+  }, [])
 
   // Only admin can see this panel
   if (user?.email !== ADMIN_EMAIL) {
@@ -135,20 +208,30 @@ export function AdminPanel() {
     )
   }
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Ucitavam podatke...</p>
+      </div>
+    )
+  }
+
   // Statistics calculations
   const stats = useMemo(() => {
-    const vlasnici = users.filter((u) => u.tip === "vlasnik" && u.email !== ADMIN_EMAIL)
-    const cistaci = users.filter((u) => u.tip === "cistacica")
-    const aktivniPoslovi = jobs.filter((j) => ["OTVORENO", "ZATRAŽENO", "PRIHVAĆENO", "U_TIJEKU"].includes(j.status))
-    const zavrseniPoslovi = jobs.filter((j) => j.status === "ZAVRŠENO")
+    const vlasnici = users.filter((u) => u.role === "client" && u.email !== ADMIN_EMAIL)
+    const cistaci = users.filter((u) => u.role === "cleaner")
+    const aktivniPoslovi = jobs.filter((j) => ["open", "waiting_for_client", "accepted"].includes(j.status))
+    const zavrseniPoslovi = jobs.filter((j) => ["completed", "confirmed", "reviewed"].includes(j.status))
     const otkazaniPoslovi = jobs.filter((j) => j.status === "cancelled")
-    const ukupnaZarada = zavrseniPoslovi.reduce((sum, j) => sum + j.cijena, 0)
+    const ukupnaZarada = zavrseniPoslovi.reduce((sum, j) => sum + (j.price || 0), 0)
     const prosjecnaOcjena = reviews.length > 0 
-      ? (reviews.reduce((sum, r) => sum + r.ocjena, 0) / reviews.length).toFixed(1)
+      ? (reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1)
       : "N/A"
     
     return {
-      ukupnoKorisnika: users.length - 1, // exclude admin
+      ukupnoKorisnika: users.length,
       vlasnika: vlasnici.length,
       cistaca: cistaci.length,
       aktivnihPoslova: aktivniPoslovi.length,
@@ -159,7 +242,7 @@ export function AdminPanel() {
       prosjecnaOcjena,
       ukupnoRecenzija: reviews.length,
       novihPrijava: bugReports.filter((r) => r.status === "novo").length,
-      verificiranih: users.filter((u) => u.slikaVerificiran).length,
+      verificiranih: users.filter((u) => u.image_verified).length,
     }
   }, [users, jobs, reviews, bugReports])
 
@@ -219,10 +302,9 @@ export function AdminPanel() {
 
     // Job status distribution
     const jobStatusDistribution = [
-      { name: "Otvoreni", value: jobs.filter(j => j.status === "OTVORENO").length, fill: "#f59e0b" },
-      { name: "U tijeku", value: jobs.filter(j => ["ZATRAŽENO", "PRIHVAĆENO", "U_TIJEKU"].includes(j.status)).length, fill: "#8b5cf6" },
-      { name: "Zavrseni", value: jobs.filter(j => j.status === "ZAVRŠENO").length, fill: "#22c55e" },
-      { name: "Odbijeni", value: jobs.filter(j => j.status === "ODBIJENO").length, fill: "#ef4444" },
+      { name: "Otvoreni", value: jobs.filter(j => j.status === "open").length, fill: "#f59e0b" },
+      { name: "U tijeku", value: jobs.filter(j => ["waiting_for_client", "accepted"].includes(j.status)).length, fill: "#8b5cf6" },
+      { name: "Zavrseni", value: jobs.filter(j => ["completed", "confirmed", "reviewed"].includes(j.status)).length, fill: "#22c55e" },
       { name: "Otkazani", value: jobs.filter(j => j.status === "cancelled").length, fill: "#dc2626" },
     ]
 
@@ -286,27 +368,28 @@ export function AdminPanel() {
 
   const [statsPeriod, setStatsPeriod] = useState<"dnevno" | "tjedno" | "mjesecno" | "godisnje">("mjesecno")
 
-  // Filtered data
+// Filtered data
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users.filter((u) => u.email !== ADMIN_EMAIL)
     const query = searchQuery.toLowerCase()
-    return users.filter((u) => 
-      u.email !== ADMIN_EMAIL && (
-        u.ime.toLowerCase().includes(query) ||
-        u.email.toLowerCase().includes(query) ||
-        u.mobitel.includes(query)
-      )
+    return users.filter((u) =>
+    u.email !== ADMIN_EMAIL && (
+    (u.full_name || '').toLowerCase().includes(query) ||
+    u.email.toLowerCase().includes(query) ||
+    (u.phone || '').includes(query)
+    )
     )
   }, [users, searchQuery])
 
-  const filteredJobs = useMemo(() => {
+const filteredJobs = useMemo(() => {
     if (!searchQuery) return jobs
     const query = searchQuery.toLowerCase()
-    return jobs.filter((j) => 
-      j.adresa.toLowerCase().includes(query) ||
-      j.grad.toLowerCase().includes(query) ||
-      j.vlasnik.toLowerCase().includes(query) ||
-      (j.cistacica && j.cistacica.toLowerCase().includes(query))
+    return jobs.filter((j) =>
+    (j.location || '').toLowerCase().includes(query) ||
+    (j.city || '').toLowerCase().includes(query) ||
+    (j.client_name || '').toLowerCase().includes(query) ||
+    (j.cleaner_name || '').toLowerCase().includes(query) ||
+    (j.title || '').toLowerCase().includes(query)
     )
   }, [jobs, searchQuery])
 
@@ -951,13 +1034,13 @@ export function AdminPanel() {
                       onClick={() => setSelectedJob(job)}
                     >
                       <Badge variant="outline" className={cn("flex-shrink-0", statusInfo.bg, statusInfo.color)}>
-                        <StatusIcon className={cn("w-3 h-3", job.status === "U_TIJEKU" && "animate-pulse")} />
+                        <StatusIcon className={cn("w-3 h-3", job.status === "accepted" && "animate-pulse")} />
                       </Badge>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{job.adresa}</p>
-                        <p className="text-xs text-muted-foreground">{job.grad} - {job.datum}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{job.title}</p>
+                        <p className="text-xs text-muted-foreground">{job.city} - {new Date(job.created_at).toLocaleDateString('hr')}</p>
                       </div>
-                      <span className="text-sm font-semibold text-foreground">{job.cijena}€</span>
+                      <span className="text-sm font-semibold text-foreground">{job.price}€</span>
                     </div>
                   )
                 })}
@@ -975,12 +1058,11 @@ export function AdminPanel() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {users
-                  .filter((u) => u.tip === "cistacica")
+                  .filter((u) => u.role === "cleaner")
                   .map((cleaner) => {
-                    const avgRating = getAverageRating(cleaner.email)
-                    const completedJobs = jobs.filter((j) => j.cistacica === cleaner.email && j.status === "ZAVRŠENO").length
-                    const level = getCleanerLevel(completedJobs, avgRating)
-                    return { ...cleaner, avgRating, completedJobs, level }
+                    const avgRating = cleaner.rating || 0
+                    const completedJobs = jobs.filter((j) => j.cleaner_id === cleaner.id && ["completed", "confirmed", "reviewed"].includes(j.status)).length
+                    return { ...cleaner, avgRating, completedJobs }
                   })
                   .sort((a, b) => b.avgRating - a.avgRating || b.completedJobs - a.completedJobs)
                   .slice(0, 5)
@@ -992,7 +1074,7 @@ export function AdminPanel() {
                     >
                       <UserAvatar user={cleaner} size="sm" showBadge />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{cleaner.ime}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{cleaner.full_name}</p>
                         <p className="text-xs text-muted-foreground">{cleaner.completedJobs} poslova</p>
                       </div>
                       <div className="flex items-center gap-1">
@@ -1050,13 +1132,11 @@ export function AdminPanel() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {reviews.slice(0, 5).map((review) => {
-                  const reviewer = getUserByEmail(review.ocjenjeni)
                   return (
                     <div key={review.id} className="p-3 rounded-lg bg-muted/30">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <UserAvatar user={reviewer ?? {}} size="xs" />
-                          <span className="text-sm font-medium">{reviewer?.ime || review.ocjenjeni}</span>
+                          <span className="text-sm font-medium">{review.cleaner_name || 'Nepoznato'}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           {[...Array(5)].map((_, i) => (
@@ -1064,14 +1144,14 @@ export function AdminPanel() {
                               key={i} 
                               className={cn(
                                 "w-3 h-3",
-                                i < review.ocjena ? "text-chart-4 fill-chart-4" : "text-muted"
+                                i < (review.rating || 0) ? "text-chart-4 fill-chart-4" : "text-muted"
                               )} 
                             />
                           ))}
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{review.komentar}</p>
-                      <p className="text-xs text-muted-foreground/60 mt-1">{review.datum}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{review.comment || ''}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">{new Date(review.created_at).toLocaleDateString('hr')}</p>
                     </div>
                   )
                 })}
@@ -1085,9 +1165,9 @@ export function AdminPanel() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredUsers.map((u) => {
               const completedJobs = jobs.filter((j) => 
-                (j.cistacica === u.email || j.vlasnik === u.email) && j.status === "ZAVRŠENO"
+                (j.cleaner_id === u.id || j.client_id === u.id) && ["completed", "confirmed", "reviewed"].includes(j.status)
               ).length
-              const avgRating = u.tip === "cistacica" ? getAverageRating(u.email) : 0
+              const avgRating = u.role === "cleaner" ? (u.rating || 0) : 0
               
               return (
                 <Card 
@@ -1100,8 +1180,8 @@ export function AdminPanel() {
                       <UserAvatar user={u} size="md" showBadge />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground truncate">{u.ime}</p>
-                          {u.slikaVerificiran && (
+                          <p className="font-medium text-foreground truncate">{u.full_name}</p>
+                          {u.image_verified && (
                             <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
                           )}
                         </div>
@@ -1109,16 +1189,10 @@ export function AdminPanel() {
                         <div className="flex items-center gap-2 mt-2">
                           <Badge variant="outline" className={cn(
                             "text-xs",
-                            u.tip === "vlasnik" ? "bg-chart-2/10 text-chart-2" : "bg-chart-4/10 text-chart-4"
+                            u.role === "client" ? "bg-chart-2/10 text-chart-2" : "bg-chart-4/10 text-chart-4"
                           )}>
-                            {u.tip === "vlasnik" ? "Vlasnik" : "Cistac"}
+                            {u.role === "client" ? "Vlasnik" : "Cistac"}
                           </Badge>
-                          {u.emailVerificiran && (
-                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary">
-                              <Mail className="w-3 h-3 mr-1" />
-                              Verificiran
-                            </Badge>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -1127,7 +1201,7 @@ export function AdminPanel() {
                         <Briefcase className="w-3 h-3" />
                         {completedJobs} poslova
                       </span>
-                      {u.tip === "cistacica" && avgRating > 0 && (
+                      {u.role === "cleaner" && avgRating > 0 && (
                         <span className="flex items-center gap-1">
                           <Star className="w-3 h-3 text-chart-4 fill-chart-4" />
                           {avgRating.toFixed(1)}
@@ -1150,10 +1224,8 @@ export function AdminPanel() {
         <TabsContent value="poslovi" className="space-y-4">
           <div className="grid gap-4">
             {filteredJobs.map((job) => {
-              const statusInfo = jobStatusConfig[job.status] || jobStatusConfig.OTVORENO
+              const statusInfo = jobStatusConfig[job.status] || jobStatusConfig.open
               const StatusIcon = statusInfo.icon
-              const vlasnik = getUserByEmail(job.vlasnik)
-              const cistac = job.cistacica ? getUserByEmail(job.cistacica) : null
 
               return (
                 <Card 
@@ -1165,45 +1237,44 @@ export function AdminPanel() {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-foreground">{job.adresa}</h4>
+                          <h4 className="font-medium text-foreground">{job.title}</h4>
                           <Badge variant="outline" className={cn(statusInfo.bg, statusInfo.color)}>
-                            <StatusIcon className={cn("w-3 h-3 mr-1", job.status === "U_TIJEKU" && "animate-pulse")} />
+                            <StatusIcon className={cn("w-3 h-3 mr-1", job.status === "accepted" && "animate-pulse")} />
                             {statusInfo.label}
                           </Badge>
                         </div>
                         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
-                            {job.grad}
+                            {job.city}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {job.datum}
+                            {new Date(job.created_at).toLocaleDateString('hr')}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {job.vrijemeOd} - {job.vrijemeDo}
-                          </span>
+                          {job.location && (
+                            <span className="flex items-center gap-1 text-xs">
+                              {job.location}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="text-lg font-bold text-primary">{job.cijena}€</p>
-                          <p className="text-xs text-muted-foreground">{job.vrstaNekrtnine}</p>
+                          <p className="text-lg font-bold text-primary">{job.price}€</p>
+                          <p className="text-xs text-muted-foreground">{job.property_type || ''}</p>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/50">
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground">Vlasnik:</span>
-                        <UserAvatar user={vlasnik ?? {}} size="xs" />
-                        <span className="text-xs">{vlasnik?.ime || job.vlasnik}</span>
+                        <span className="text-xs">{job.client_name || 'Nepoznato'}</span>
                       </div>
-                      {cistac && (
+                      {job.cleaner_name && (
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">Cistac:</span>
-                          <UserAvatar user={cistac} size="xs" showBadge />
-                          <span className="text-xs">{cistac.ime}</span>
+                          <span className="text-xs">{job.cleaner_name}</span>
                         </div>
                       )}
                     </div>
@@ -1420,11 +1491,11 @@ export function AdminPanel() {
               <div className="flex items-center gap-4">
                 <UserAvatar user={selectedUser} size="xl" showBadge />
                 <div>
-                  <h3 className="text-xl font-semibold">{selectedUser.ime}</h3>
+                  <h3 className="text-xl font-semibold">{selectedUser.full_name}</h3>
                   <Badge variant="outline" className={cn(
-                    selectedUser.tip === "vlasnik" ? "bg-chart-2/10 text-chart-2" : "bg-chart-4/10 text-chart-4"
+                    selectedUser.role === "client" ? "bg-chart-2/10 text-chart-2" : "bg-chart-4/10 text-chart-4"
                   )}>
-                    {selectedUser.tip === "vlasnik" ? "Vlasnik" : "Cistac/ica"}
+                    {selectedUser.role === "client" ? "Vlasnik" : "Cistac/ica"}
                   </Badge>
                 </div>
               </div>
@@ -1436,37 +1507,34 @@ export function AdminPanel() {
                     <p className="text-xs text-muted-foreground">Email</p>
                     <p className="text-sm font-medium">{selectedUser.email}</p>
                   </div>
-                  {selectedUser.emailVerificiran && (
-                    <Badge variant="outline" className="ml-auto bg-primary/10 text-primary">Verificiran</Badge>
-                  )}
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                   <Phone className="w-4 h-4 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Mobitel</p>
-                    <p className="text-sm font-medium">{selectedUser.mobitel}</p>
+                    <p className="text-sm font-medium">{selectedUser.phone || 'N/A'}</p>
                   </div>
                 </div>
-                {selectedUser.opis && (
+                {selectedUser.bio && (
                   <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
                     <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="text-xs text-muted-foreground">Opis</p>
-                      <p className="text-sm">{selectedUser.opis}</p>
+                      <p className="text-sm">{selectedUser.bio}</p>
                     </div>
                   </div>
                 )}
               </div>
 
               <div className="flex items-center gap-3 pt-2">
-                {selectedUser.slikaVerificiran && (
+                {selectedUser.image_verified && (
                   <Badge variant="outline" className="bg-primary/10 text-primary gap-1">
                     <BadgeCheck className="w-3 h-3" />
                     Profilna slika verificirana
                   </Badge>
                 )}
-                {selectedUser.spol && (
-                  <Badge variant="outline">Spol: {selectedUser.spol}</Badge>
+                {selectedUser.city && (
+                  <Badge variant="outline">Grad: {selectedUser.city}</Badge>
                 )}
               </div>
             </div>
@@ -1482,10 +1550,8 @@ export function AdminPanel() {
             <DialogDescription className="sr-only">Pregledajte informacije o poslu</DialogDescription>
           </DialogHeader>
           {selectedJob && (() => {
-            const statusInfo = jobStatusConfig[selectedJob.status] || jobStatusConfig.OTVORENO
+            const statusInfo = jobStatusConfig[selectedJob.status] || jobStatusConfig.open
             const StatusIcon = statusInfo.icon
-            const vlasnik = getUserByEmail(selectedJob.vlasnik)
-            const cistac = selectedJob.cistacica ? getUserByEmail(selectedJob.cistacica) : null
 
             return (
               <div className="space-y-4 mt-2">
@@ -1494,37 +1560,37 @@ export function AdminPanel() {
                     <StatusIcon className="w-4 h-4" />
                     {statusInfo.label}
                   </Badge>
-                  <span className="text-2xl font-bold text-primary">{selectedJob.cijena}€</span>
+                  <span className="text-2xl font-bold text-primary">{selectedJob.price}€</span>
                 </div>
 
                 <div className="grid gap-3">
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Adresa</p>
-                      <p className="text-sm font-medium">{selectedJob.adresa}, {selectedJob.grad}</p>
+                      <p className="text-xs text-muted-foreground">Lokacija</p>
+                      <p className="text-sm font-medium">{selectedJob.location || selectedJob.title}, {selectedJob.city}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Datum i vrijeme</p>
-                      <p className="text-sm font-medium">{selectedJob.datum}, {selectedJob.vrijemeOd} - {selectedJob.vrijemeDo}</p>
+                      <p className="text-xs text-muted-foreground">Datum</p>
+                      <p className="text-sm font-medium">{new Date(selectedJob.created_at).toLocaleDateString('hr')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
                     <Briefcase className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">Vrsta nekretnine</p>
-                      <p className="text-sm font-medium">{selectedJob.vrstaNekrtnine}</p>
+                      <p className="text-sm font-medium">{selectedJob.property_type || 'N/A'}</p>
                     </div>
                   </div>
-                  {selectedJob.opis && (
+                  {selectedJob.description && (
                     <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
                       <FileText className="w-4 h-4 text-muted-foreground mt-0.5" />
                       <div>
                         <p className="text-xs text-muted-foreground">Opis</p>
-                        <p className="text-sm">{selectedJob.opis}</p>
+                        <p className="text-sm">{selectedJob.description}</p>
                       </div>
                     </div>
                   )}
@@ -1533,14 +1599,12 @@ export function AdminPanel() {
                 <div className="space-y-2 pt-2 border-t border-border">
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">Vlasnik:</span>
-                    <UserAvatar user={vlasnik ?? {}} size="sm" />
-                    <span className="text-sm font-medium">{vlasnik?.ime || selectedJob.vlasnik}</span>
+                    <span className="text-sm font-medium">{selectedJob.client_name || 'Nepoznato'}</span>
                   </div>
-                  {cistac && (
+                  {selectedJob.cleaner_name && (
                     <div className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground">Cistac:</span>
-                      <UserAvatar user={cistac} size="sm" showBadge />
-                      <span className="text-sm font-medium">{cistac.ime}</span>
+                      <span className="text-sm font-medium">{selectedJob.cleaner_name}</span>
                     </div>
                   )}
                 </div>
