@@ -870,14 +870,14 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             )}
 
             {/* Pending Applications */}
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Prijave na cekanju ({myApplications.filter(a => a.status === 'pending').length})</h3>
-            {myApplications.filter(a => a.status === 'pending').length === 0 ? (
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Prijave na cekanju ({myApplications.filter(a => a.status === 'pending' && a.job_status !== 'cancelled').length})</h3>
+            {myApplications.filter(a => a.status === 'pending' && a.job_status !== 'cancelled').length === 0 ? (
               <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
                 <p style={{ color: t.textMuted, margin: 0 }}>Nemate prijava na cekanju</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {myApplications.filter(a => a.status === 'pending').map(app => (
+                {myApplications.filter(a => a.status === 'pending' && a.job_status !== 'cancelled').map(app => (
                   <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
