@@ -1386,6 +1386,22 @@ const data = await res.json()
                                 {'✓'} Verificiran
                               </span>
                             )}
+                            {app.badge === 'premium' && (
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                background: 'rgba(234,179,8,0.15)', border: '1px solid #eab308',
+                                borderRadius: 100, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#eab308',
+                                marginLeft: 6
+                              }}>{'🏆'} Premium</span>
+                            )}
+                            {app.badge === 'iskusan' && (
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.3)',
+                                borderRadius: 100, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#10b981',
+                                marginLeft: 6
+                              }}>{'⭐'} Iskusni</span>
+                            )}
                             <div style={{ fontSize: 13, color: t.textMuted, marginTop: 4 }}>
                               Ocjena: <span style={{ color: t.accent, fontWeight: 600 }}>{app.rating || 5.0}</span>
                             </div>

@@ -810,6 +810,30 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
         {tab === 'profile' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
+            {/* Loyalty Badge Display */}
+            {profileData?.badge === 'premium' && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'linear-gradient(135deg, rgba(234,179,8,0.15), rgba(234,179,8,0.05))',
+                border: '1px solid #eab308',
+                borderRadius: 100, padding: '4px 12px', marginTop: 8, width: 'fit-content'
+              }}>
+                <span style={{ fontSize: 14 }}>{'🏆'}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#eab308' }}>Premium cistac</span>
+              </div>
+            )}
+            {profileData?.badge === 'iskusan' && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'rgba(16,185,129,0.08)',
+                border: '1px solid rgba(16,185,129,0.3)',
+                borderRadius: 100, padding: '4px 12px', marginTop: 8, width: 'fit-content'
+              }}>
+                <span style={{ fontSize: 14 }}>{'⭐'}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>Iskusni cistac</span>
+              </div>
+            )}
+            
             {/* Profile Image Upload */}
             <div style={{ ...cardStyle, padding: 24 }}>
               <h4 style={{ color: t.text, fontSize: 16, fontWeight: 700, margin: '0 0 16px 0' }}>

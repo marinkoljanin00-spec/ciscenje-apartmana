@@ -3,6 +3,12 @@ import { NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
+function getCleanerBadge(completedJobs: number, rating: number): string | null {
+  if (completedJobs >= 15 && rating >= 4.8) return 'premium'
+  if (completedJobs >= 5 && rating >= 4.5) return 'iskusan'
+  return null
+}
+
 function getSQL() {
   const databaseUrl = process.env.DATABASE_URL
   if (!databaseUrl) {
@@ -50,7 +56,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ 
       user: {
         ...users[0],
-        completed_jobs
+        completed_jobs,
+        badge: getCleanerBadge(completed_jobs, parseFloat(users[0].rating) || 0)
       }
     })
   } catch (error) {

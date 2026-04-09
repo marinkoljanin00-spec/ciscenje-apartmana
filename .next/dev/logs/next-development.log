@@ -98,3 +98,7 @@
 {"timestamp":"00:36:33.227","source":"Server","level":"LOG","message":"✓ Compiled in 77ms"}
 {"timestamp":"00:37:05.894","source":"Server","level":"LOG","message":"✓ Compiled in 91ms"}
 {"timestamp":"00:37:33.680","source":"Server","level":"LOG","message":"✓ Compiled in 80ms"}
+{"timestamp":"00:37:47.686","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:37:48.126","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:39:18.403","source":"Server","level":"LOG","message":"✓ Compiled in 65ms"}
+{"timestamp":"00:39:27.724","source":"Server","level":"LOG","message":"✓ Compiled in 71ms"}
