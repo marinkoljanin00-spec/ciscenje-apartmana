@@ -218,6 +218,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../../app/api/cron/reminders/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/cron/reminders">> = Specific
+  const handler = {} as typeof import("../../../app/api/cron/reminders/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/api/jobs/accept/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/jobs/accept">> = Specific
