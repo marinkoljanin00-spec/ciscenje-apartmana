@@ -1,0 +1,6 @@
+{
+  "crons": [{
+    "path": "/api/cron/reminders?secret=tvojcistac_cron_2026",
+    "schedule": "0 * * * *"
+  }]
+}
