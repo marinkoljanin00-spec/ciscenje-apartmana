@@ -66,6 +66,29 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [templates, setTemplates] = useState<any[]>([])
   const [showTemplates, setShowTemplates] = useState(false)
 
+  // Job photos state
+  const [jobPhotos, setJobPhotos] = useState<string[]>([])
+  const jobPhotoRef = useRef<HTMLInputElement>(null)
+  const [jobPhotoMap, setJobPhotoMap] = useState<Record<number, string[]>>({})
+
+  const handleJobPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || jobPhotos.length >= 3) return
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64 = reader.result as string
+      setJobPhotos(prev => [...prev, base64])
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const loadJobPhotos = async (jobId: number) => {
+    if (jobPhotoMap[jobId]) return
+    const res = await fetch(`/api/jobs/photos?jobId=${jobId}`)
+    const data = await res.json()
+    setJobPhotoMap(prev => ({ ...prev, [jobId]: data.photos?.map((p: any) => p.url) || [] }))
+  }
+
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -441,23 +464,35 @@ const data = await res.json()
     }
   }
 
-  const createJob = async (e: React.FormEvent) => {
-    e.preventDefault(); setErr(''); setSubmitting(true)
-    const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
-    const res = await fetch('/api/jobs', { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({
-        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity, scheduledDate
+const createJob = async (e: React.FormEvent) => {
+  e.preventDefault(); setErr(''); setSubmitting(true)
+  const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
+  const res = await fetch('/api/jobs', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+  title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity, scheduledDate
+  })
+  })
+  const data = await res.json()
+  if (data.success) {
+  const newJobId = data.job.id
+  // Upload photos if any
+  if (jobPhotos.length > 0) {
+    await Promise.all(jobPhotos.map(base64 =>
+      fetch('/api/jobs/photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: newJobId, base64, type: 'space', uploadedBy: uid })
       })
-    })
-    const data = await res.json()
-    if (data.success) {
-      setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
-      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb'); setScheduledDate(null)
-      fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
-    } else { setErr(data.error) }
-    setSubmitting(false)
+    ))
+    setJobPhotos([])
+  }
+  setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
+  setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb'); setScheduledDate(null)
+  fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
+  } else { setErr(data.error) }
+  setSubmitting(false)
   }
 
   return (
@@ -595,13 +630,56 @@ const data = await res.json()
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Naslov posla" style={inputStyle} />
                 </div>
                 
-                {/* Opis posla */}
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis posla</label>
-                  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
-                </div>
-                
-                {/* Date Picker */}
+{/* Opis posla */}
+  <div style={{ marginBottom: 14 }}>
+  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis posla</label>
+  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+  </div>
+
+  {/* Photo upload */}
+  <div style={{ marginBottom: 14 }}>
+    <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8 }}>
+      Fotografije prostora (max 3) — nije obavezno
+    </label>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {jobPhotos.map((photo, i) => (
+        <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
+          <img src={photo} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} alt="" />
+          <button
+            type="button"
+            onClick={() => setJobPhotos(prev => prev.filter((_, idx) => idx !== i))}
+            style={{
+              position: 'absolute', top: -6, right: -6,
+              width: 20, height: 20, borderRadius: '50%',
+              background: '#ef4444', border: 'none',
+              color: '#fff', fontSize: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+          >x</button>
+        </div>
+      ))}
+      {jobPhotos.length < 3 && (
+        <button
+          type="button"
+          onClick={() => jobPhotoRef.current?.click()}
+          style={{
+            width: 80, height: 80, borderRadius: 8,
+            border: `2px dashed ${t.border}`,
+            background: t.bgCard, cursor: 'pointer',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 4, color: t.textMuted, fontSize: 11
+          }}
+        >
+          <span style={{ fontSize: 20 }}>+</span>
+          <span>Dodaj</span>
+        </button>
+      )}
+      <input ref={jobPhotoRef} type="file" accept="image/*" onChange={handleJobPhotoUpload} style={{ display: 'none' }} />
+    </div>
+  </div>
+  
+  {/* Date Picker */}
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 10, color: t.textMuted }}>Datum čišćenja</label>
                   <DatePicker 
@@ -711,7 +789,10 @@ const data = await res.json()
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {jobs.filter(j => !['reviewed'].includes(j.status)).map(job => (
+                  {jobs.filter(j => !['reviewed'].includes(j.status)).map(job => {
+                    // Load photos on first render
+                    if (!jobPhotoMap[job.id]) loadJobPhotos(job.id)
+                    return (
                     <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                         <div>
@@ -801,8 +882,18 @@ const data = await res.json()
                           </div>
                         </div>
                       )}
+                      
+                      {/* Job photos */}
+                      {(jobPhotoMap[job.id] || []).length > 0 && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                          {jobPhotoMap[job.id].map((url, i) => (
+                            <img key={i} src={url} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }}
+                              onClick={() => window.open(url, '_blank')} alt="" />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               )}
             </div>

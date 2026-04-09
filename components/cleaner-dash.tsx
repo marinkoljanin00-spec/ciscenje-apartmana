@@ -54,6 +54,42 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deletingAccount, setDeletingAccount] = useState(false)
 
+  // Job photos state
+  const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null)
+  const afterPhotoRef = useRef<HTMLInputElement>(null)
+  const [activePhotoJobId, setActivePhotoJobId] = useState<number | null>(null)
+  const [jobPhotoMap, setJobPhotoMap] = useState<Record<number, string[]>>({})
+
+  const loadJobPhotos = async (jobId: number) => {
+    if (jobPhotoMap[jobId]) return
+    const res = await fetch(`/api/jobs/photos?jobId=${jobId}`)
+    const data = await res.json()
+    setJobPhotoMap(prev => ({ ...prev, [jobId]: data.photos?.map((p: any) => p.url) || [] }))
+  }
+
+  const handleAfterPhoto = async (e: React.ChangeEvent<HTMLInputElement>, jobId: number) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingPhoto(jobId)
+    const reader = new FileReader()
+    reader.onload = async () => {
+      await fetch('/api/jobs/photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, base64: reader.result, type: 'after', uploadedBy: uid })
+      })
+      // Refresh photos for this job
+      const res = await fetch(`/api/jobs/photos?jobId=${jobId}`)
+      const data = await res.json()
+      setJobPhotoMap(prev => ({ ...prev, [jobId]: data.photos?.map((p: any) => p.url) || [] }))
+      setUploadingPhoto(null)
+      setToast({ message: 'Fotografija dodana!', type: 'success' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+    reader.readAsDataURL(file)
+  }
+
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -550,23 +586,38 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         <div style={{ fontSize: 12, color: t.textDim }}>{job.property_type}</div>
                       </div>
                     </div>
-                    {job.description && <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 12px 0', lineHeight: 1.5 }}>{job.description}</p>}
-                    <button 
-                      onClick={() => {
-                        if (!alreadyApplied && confirm('Jeste li sigurni da se želite prijaviti za ovaj posao?')) {
-                          applyToJob(job.id, '')
-                        }
-                      }} 
-                      disabled={alreadyApplied}
-                      style={{ 
-                        ...btnPrimary, 
-                        width: '100%', 
-                        opacity: alreadyApplied ? 0.5 : 1,
-                        background: alreadyApplied ? t.textDim : t.accent
-                      }}
-                    >
-                      {alreadyApplied ? 'Vec prijavljeno' : 'Prijavi se'}
-                    </button>
+{job.description && <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 12px 0', lineHeight: 1.5 }}>{job.description}</p>}
+  
+  {/* Job photos */}
+  {(() => {
+    if (!jobPhotoMap[job.id]) loadJobPhotos(job.id)
+    return null
+  })()}
+  {(jobPhotoMap[job.id] || []).length > 0 && (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      {jobPhotoMap[job.id].map((url, i) => (
+        <img key={i} src={url} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }}
+          onClick={() => window.open(url, '_blank')} alt="" />
+      ))}
+    </div>
+  )}
+
+  <button
+  onClick={() => {
+  if (!alreadyApplied && confirm('Jeste li sigurni da se želite prijaviti za ovaj posao?')) {
+  applyToJob(job.id, '')
+  }
+  }}
+  disabled={alreadyApplied}
+  style={{
+  ...btnPrimary,
+  width: '100%',
+  opacity: alreadyApplied ? 0.5 : 1,
+  background: alreadyApplied ? t.textDim : t.accent
+  }}
+  >
+  {alreadyApplied ? 'Vec prijavljeno' : 'Prijavi se'}
+  </button>
                   </div>
                 )
               })}
@@ -639,6 +690,47 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           </a>
                         )}
                       </div>
+                    </div>
+
+                    {/* Job photos display */}
+                    {(() => {
+                      if (!jobPhotoMap[app.job_id]) loadJobPhotos(app.job_id)
+                      return null
+                    })()}
+                    {(jobPhotoMap[app.job_id] || []).length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                        {jobPhotoMap[app.job_id].map((url, i) => (
+                          <img key={i} src={url} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }}
+                            onClick={() => window.open(url, '_blank')} alt="" />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload after photo button */}
+                    <div style={{ marginBottom: 8 }}>
+                      <input
+                        ref={afterPhotoRef}
+                        type="file" accept="image/*"
+                        onChange={(e) => handleAfterPhoto(e, app.job_id)}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        onClick={() => {
+                          setActivePhotoJobId(app.job_id)
+                          afterPhotoRef.current?.click()
+                        }}
+                        disabled={uploadingPhoto === app.job_id}
+                        style={{
+                          width: '100%', padding: '10px 16px',
+                          background: 'rgba(16,185,129,0.08)',
+                          border: '1px solid rgba(16,185,129,0.25)',
+                          borderRadius: 10, color: t.accent,
+                          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                          opacity: uploadingPhoto === app.job_id ? 0.7 : 1
+                        }}
+                      >
+                        {uploadingPhoto === app.job_id ? 'Uploadam...' : '+ Dodaj fotografiju zavrsenog posla'}
+                      </button>
                     </div>
 
                     {/* Mark as Complete Button */}
