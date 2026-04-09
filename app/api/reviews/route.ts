@@ -81,6 +81,27 @@ export async function POST(request: Request) {
           UPDATE users SET rating = ${avgRating[0].avg_rating} WHERE id = ${cleanerId}
         `
       }
+
+      // Send push notification to the cleaner
+      try {
+        const { sendPushNotification } = await import('@/lib/push')
+        const cleanerSubs = await sql`
+          SELECT subscription FROM push_subscriptions
+          WHERE user_id = ${parseInt(cleanerId)}
+        `
+        await Promise.all(
+          cleanerSubs.map((row: any) =>
+            sendPushNotification(
+              row.subscription,
+              '⭐ Dobili ste novu recenziju!',
+              `Klijent vas je ocijenio ocjenom ${rating}/5${comment ? ` — "${comment.slice(0, 60)}${comment.length > 60 ? '...' : ''}"` : ''}`,
+              '/'
+            )
+          )
+        )
+      } catch (e) {
+        console.error('Push notification error:', e)
+      }
     } else {
       // Cleaner reviewing client - verify cleaner is assigned to job
       if (!cleanerId || !clientId) {
