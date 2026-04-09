@@ -218,10 +218,28 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../../app/api/cron/reminders/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/cron/reminders">> = Specific
+  const handler = {} as typeof import("../../../app/api/cron/reminders/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/api/jobs/accept/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/jobs/accept">> = Specific
   const handler = {} as typeof import("../../../app/api/jobs/accept/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/api/jobs/cancel/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/jobs/cancel">> = Specific
+  const handler = {} as typeof import("../../../app/api/jobs/cancel/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
@@ -254,10 +272,28 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../../app/api/jobs/photos/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/jobs/photos">> = Specific
+  const handler = {} as typeof import("../../../app/api/jobs/photos/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/api/jobs/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/jobs">> = Specific
   const handler = {} as typeof import("../../../app/api/jobs/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/api/jobs/templates/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/jobs/templates">> = Specific
+  const handler = {} as typeof import("../../../app/api/jobs/templates/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

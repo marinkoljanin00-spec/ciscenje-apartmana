@@ -44,6 +44,35 @@ export async function POST(request: Request) {
       UPDATE users SET total_earned = total_earned + ${job[0].price} WHERE id = ${cleanerId}
     `
 
+    // Send push notification to the client
+    try {
+      const { sendPushNotification } = await import('@/lib/push')
+      const jobDetails = await sql`
+        SELECT j.title, j.client_id, u.full_name as cleaner_name
+        FROM jobs j
+        JOIN users u ON u.id = j.cleaner_id
+        WHERE j.id = ${jobId}
+      `
+      if (jobDetails.length > 0) {
+        const clientSubs = await sql`
+          SELECT subscription FROM push_subscriptions
+          WHERE user_id = ${jobDetails[0].client_id}
+        `
+        await Promise.all(
+          clientSubs.map((row: any) =>
+            sendPushNotification(
+              row.subscription,
+              '🧹 Čišćenje završeno!',
+              `${jobDetails[0].cleaner_name} je označio "${jobDetails[0].title}" kao završeno. Potvrdite i ostavite recenziju!`,
+              '/'
+            )
+          )
+        )
+      }
+    } catch (e) {
+      console.error('Push notification error:', e)
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Nepoznata greska"

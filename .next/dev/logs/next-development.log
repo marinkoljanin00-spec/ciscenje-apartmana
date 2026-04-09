@@ -1,16 +1,28 @@
-{"timestamp":"00:00:01.032","source":"Server","level":"LOG","message":"- Experiments (use with caution):"}
-{"timestamp":"00:00:01.032","source":"Server","level":"LOG","message":"  · serverActions"}
-{"timestamp":"00:00:01.032","source":"Server","level":"LOG","message":"  ✓ transitionIndicator"}
-{"timestamp":"00:00:01.033","source":"Server","level":"LOG","message":"  ⨯ turbopackFileSystemCacheForDev"}
-{"timestamp":"00:00:01.033","source":"Server","level":"LOG","message":""}
-{"timestamp":"00:00:29.873","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
-{"timestamp":"00:00:41.398","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit"}
-{"timestamp":"00:00:41.398","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {\"path\":\"/\",\"route\":\"/\"}"}
-{"timestamp":"00:00:41.398","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c [view] https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/ color: rgb(120, 120, 120) color: inherit {\"dp\":\"/\",\"o\":\"https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/\",\"r\":\"https://v0.app/\",\"sdkn\":\"@vercel/analytics/next\",\"sdkv\":\"1.6.1\",\"sv\":\"0.1.3\",\"ts\":1775743430285} /_vercel/insights/view"}
-{"timestamp":"00:00:41.430","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server.\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
-{"timestamp":"00:00:41.430","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server."}
-{"timestamp":"00:00:41.434","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Running queued event pageview { path: '/', route: '/' }\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
-{"timestamp":"00:00:41.435","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Running queued event pageview { path: '/', route: '/' }"}
-{"timestamp":"00:00:41.438","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] [view] https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/ {\\n  dp: '/',\\n  f: undefined,\\n  o: 'https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/',\\n  r: 'https://v0.app/',\\n  sdkn: '@vercel/analytics/next',\\n  sdkv: '1.6.1',\\n  sv: '0.1.3',\\n  ts: 1775743430285\\n} /_vercel/insights/view\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
-{"timestamp":"00:00:41.438","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] [view] https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/ {\n  dp: '/',\n  f: undefined,\n  o: 'https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/',\n  r: 'https://v0.app/',\n  sdkn: '@vercel/analytics/next',\n  sdkv: '1.6.1',\n  sv: '0.1.3',\n  ts: 1775743430285\n} /_vercel/insights/view"}
-{"timestamp":"00:04:31.477","source":"Server","level":"LOG","message":"✓ Compiled in 169ms"}
+{"timestamp":"00:00:00.643","source":"Server","level":"LOG","message":"- Experiments (use with caution):"}
+{"timestamp":"00:00:00.644","source":"Server","level":"LOG","message":"  · serverActions"}
+{"timestamp":"00:00:00.644","source":"Server","level":"LOG","message":"  ✓ transitionIndicator"}
+{"timestamp":"00:00:00.644","source":"Server","level":"LOG","message":"  ⨯ turbopackFileSystemCacheForDev"}
+{"timestamp":"00:00:00.644","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:05.884","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:00:08.334","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit"}
+{"timestamp":"00:00:08.334","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {\"path\":\"/\",\"route\":\"/\"}"}
+{"timestamp":"00:00:08.334","source":"Browser","level":"LOG","message":"%c[Vercel Web Analytics]%c [view] https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/ color: rgb(120, 120, 120) color: inherit {\"dp\":\"/\",\"o\":\"https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/\",\"r\":\"https://v0.app/\",\"sdkn\":\"@vercel/analytics/next\",\"sdkv\":\"1.6.1\",\"sv\":\"0.1.3\",\"ts\":1775746471374} /_vercel/insights/view"}
+{"timestamp":"00:00:08.336","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server.\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:00:08.337","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Debug mode is enabled by default in development. No requests will be sent to the server."}
+{"timestamp":"00:00:08.339","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] Running queued event pageview { path: '/', route: '/' }\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:00:08.339","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] Running queued event pageview { path: '/', route: '/' }"}
+{"timestamp":"00:00:08.340","source":"Server","level":"LOG","message":"[browser] \"[Vercel Web Analytics] [view] https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/ {\\n  dp: '/',\\n  f: undefined,\\n  o: 'https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/',\\n  r: 'https://v0.app/',\\n  sdkn: '@vercel/analytics/next',\\n  sdkv: '1.6.1',\\n  sv: '0.1.3',\\n  ts: 1775746471374\\n} /_vercel/insights/view\" \"(https://va.vercel-scripts.com/v1/script.debug.js:1:615)\""}
+{"timestamp":"00:00:08.340","source":"Browser","level":"LOG","message":"[Vercel Web Analytics] [view] https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/ {\n  dp: '/',\n  f: undefined,\n  o: 'https://vm-vhdmnk9scvd0x4e2wvz8ha.vusercontent.net/',\n  r: 'https://v0.app/',\n  sdkn: '@vercel/analytics/next',\n  sdkv: '1.6.1',\n  sv: '0.1.3',\n  ts: 1775746471374\n} /_vercel/insights/view"}
+{"timestamp":"00:00:53.702","source":"Server","level":"LOG","message":"✓ Compiled in 74ms"}
+{"timestamp":"00:01:07.632","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:01:08.176","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:01:27.779","source":"Server","level":"LOG","message":"✓ Compiled in 70ms"}
+{"timestamp":"00:01:39.160","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:01:39.573","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:17:23.733","source":"Server","level":"LOG","message":"✓ Compiled in 68ms"}
+{"timestamp":"00:17:37.356","source":"Server","level":"LOG","message":"✓ Compiled in 75ms"}
+{"timestamp":"00:17:50.069","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:17:50.691","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}
+{"timestamp":"00:18:58.642","source":"Server","level":"LOG","message":"✓ Compiled in 94ms"}
+{"timestamp":"00:19:33.884","source":"Server","level":"LOG","message":"  Reload env: .env.development.local"}
+{"timestamp":"00:19:34.535","source":"Server","level":"WARN","message":"⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using \"http://localhost:3000\". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase"}

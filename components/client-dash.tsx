@@ -62,7 +62,32 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deletingAccount, setDeletingAccount] = useState(false)
 
-  
+  // Job templates state
+  const [templates, setTemplates] = useState<any[]>([])
+  const [showTemplates, setShowTemplates] = useState(false)
+
+  // Job photos state
+  const [jobPhotos, setJobPhotos] = useState<string[]>([])
+  const jobPhotoRef = useRef<HTMLInputElement>(null)
+  const [jobPhotoMap, setJobPhotoMap] = useState<Record<number, string[]>>({})
+
+  const handleJobPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || jobPhotos.length >= 3) return
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64 = reader.result as string
+      setJobPhotos(prev => [...prev, base64])
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const loadJobPhotos = async (jobId: number) => {
+    if (jobPhotoMap[jobId]) return
+    const res = await fetch(`/api/jobs/photos?jobId=${jobId}`)
+    const data = await res.json()
+    setJobPhotoMap(prev => ({ ...prev, [jobId]: data.photos?.map((p: any) => p.url) || [] }))
+  }
 
   useEffect(() => {
     return () => {
@@ -74,6 +99,14 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     fetch(`/api/jobs?role=client&userId=${uid}`).then(r => r.json()).then(d => setJobs(d.jobs || []))
     fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
   }, [uid])
+
+  // Load templates on mount
+  useEffect(() => {
+    fetch('/api/jobs/templates')
+      .then(r => r.json())
+      .then(d => setTemplates(d.templates || []))
+      .catch(() => {})
+  }, [])
 
   // Lazy load profile data when profile tab opens
   useEffect(() => {
@@ -97,11 +130,85 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
     }
   }, [tab, profileLoaded, uid])
 
+  // Show profile image reminder toast after 60 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!imagePreview && !profileData?.profile_image && !profileData?.image_pending) {
+        setToast({
+          message: '📸 Dodajte profilnu sliku i dobijte badge verifikacije — korisnici s fotografijom izgledaju pouzdanije!',
+          type: 'success'
+        })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 8000)
+      }
+    }, 60000)
+    return () => clearTimeout(timer)
+  }, [profileData, imagePreview])
+
   const loadApplications = async (job: Job) => {
     setSelectedJob(job)
     const res = await fetch(`/api/applications?jobId=${job.id}`)
     const data = await res.json()
     setApplications(data.applications || [])
+  }
+
+  const cancelJob = async (jobId: number) => {
+    if (!confirm('Jeste li sigurni da želite otkazati ovaj posao?')) return
+    try {
+      const res = await fetch('/api/jobs/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setToast({ message: 'Posao je otkazan.', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+        // Remove from local state
+        setJobs(prev => prev.filter(j => j.id !== jobId))
+      } else {
+        setToast({ message: data.error || 'Greška', type: 'error' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch {
+      setToast({ message: 'Mrežna greška', type: 'error' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+  }
+
+  const saveAsTemplate = async (job: any) => {
+    try {
+      const res = await fetch('/api/jobs/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: job.title,
+          location: job.location,
+          city: job.city,
+          price: job.price,
+          property_type: job.property_type,
+          is_urgent: false,
+          description: job.description,
+          latitude: job.latitude,
+          longitude: job.longitude
+        })
+      })
+      const data = await res.json()
+      if (data.template) {
+        setTemplates(prev => [data.template, ...prev])
+        setToast({ message: 'Posao spremljen kao predlozak!', type: 'success' })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+      }
+    } catch { }
+  }
+
+  const deleteTemplate = async (templateId: number) => {
+    await fetch(`/api/jobs/templates?id=${templateId}`, { method: 'DELETE' })
+    setTemplates(prev => prev.filter(t => t.id !== templateId))
   }
 
   const fetchCleanerProfile = async (cleanerId: number, app: Application) => {
@@ -175,12 +282,6 @@ export function ClientDash({ logout, name, uid }: { logout: () => void; name: st
       toastTimerRef.current = setTimeout(() => setToast(null), 3000)
     }
     setAcceptingId(null)
-  }
-
-  const deleteJob = async (jobId: number) => {
-    if (!confirm('Jeste li sigurni da zelite obrisati ovaj posao?')) return
-    await fetch(`/api/jobs?jobId=${jobId}&userId=${uid}`, { method: 'DELETE' })
-    setJobs(jobs.filter(j => j.id !== jobId))
   }
 
   const submitReview = async () => {
@@ -357,23 +458,35 @@ const data = await res.json()
     }
   }
 
-  const createJob = async (e: React.FormEvent) => {
-    e.preventDefault(); setErr(''); setSubmitting(true)
-    const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
-    const res = await fetch('/api/jobs', { 
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify({
-        title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity, scheduledDate
+const createJob = async (e: React.FormEvent) => {
+  e.preventDefault(); setErr(''); setSubmitting(true)
+  const finalPrice = isUrgent ? Number(price) * 1.5 : Number(price)
+  const res = await fetch('/api/jobs', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+  title, location, price: Number(price), propertyType, isUrgent, description: desc, userId: uid, city: jobCity, scheduledDate
+  })
+  })
+  const data = await res.json()
+  if (data.success) {
+  const newJobId = data.job.id
+  // Upload photos if any
+  if (jobPhotos.length > 0) {
+    await Promise.all(jobPhotos.map(base64 =>
+      fetch('/api/jobs/photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId: newJobId, base64, type: 'space', uploadedBy: uid })
       })
-    })
-    const data = await res.json()
-    if (data.success) {
-      setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
-      setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb'); setScheduledDate(null)
-      fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
-    } else { setErr(data.error) }
-    setSubmitting(false)
+    ))
+    setJobPhotos([])
+  }
+  setJobs([{ ...data.job, price: finalPrice, city: jobCity }, ...jobs])
+  setTitle(''); setLocation(''); setPrice(''); setDesc(''); setIsUrgent(false); setJobCity('Zagreb'); setScheduledDate(null)
+  fetch(`/api/stats?role=client&userId=${uid}`).then(r => r.json()).then(d => setStats(d))
+  } else { setErr(data.error) }
+  setSubmitting(false)
   }
 
   return (
@@ -434,19 +547,133 @@ const data = await res.json()
             {/* Create Job Form */}
             <div style={{ ...cardStyle, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 20px 0' }}>Novi oglas</h3>
+              
+              {/* Templates Section */}
+              {templates.length > 0 && (
+                <div style={{ marginBottom: 20 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplates(!showTemplates)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      background: 'rgba(16,185,129,0.08)',
+                      border: '1px solid rgba(16,185,129,0.25)',
+                      borderRadius: 10, padding: '10px 16px',
+                      color: t.accent, fontSize: 13, fontWeight: 600, cursor: 'pointer', width: '100%'
+                    }}
+                  >
+                    <span>Moji predlosci ({templates.length})</span>
+                    <span style={{ marginLeft: 'auto' }}>{showTemplates ? '▲' : '▼'}</span>
+                  </button>
+
+                  {showTemplates && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                      {templates.map(tmpl => (
+                        <div key={tmpl.id} style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          background: t.bgCard, border: `1px solid ${t.border}`,
+                          borderRadius: 10, padding: '10px 14px'
+                        }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{tmpl.title}</div>
+                            <div style={{ fontSize: 12, color: t.textMuted }}>{tmpl.city} — {tmpl.price} EUR</div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTitle(tmpl.title || '')
+                                setLocation(tmpl.location || '')
+                                setJobCity(tmpl.city || 'Zagreb')
+                                setPrice(tmpl.price?.toString() || '')
+                                setPropertyType(tmpl.property_type || 'stan')
+                                setDesc(tmpl.description || '')
+                                setIsUrgent(false)
+                                setShowTemplates(false)
+                              }}
+                              style={{
+                                background: t.accent, border: 'none', borderRadius: 8,
+                                padding: '6px 12px', color: '#fff', fontSize: 12,
+                                fontWeight: 600, cursor: 'pointer'
+                              }}
+                            >
+                              Koristi
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteTemplate(tmpl.id)}
+                              style={{
+                                background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444',
+                                borderRadius: 8, padding: '6px 10px',
+                                color: '#ef4444', fontSize: 12, cursor: 'pointer'
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {err && <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: `1px solid ${t.urgent}`, padding: 12, marginBottom: 16, borderRadius: 10, color: t.urgent, fontSize: 14 }}>{err}</div>}
               <form onSubmit={createJob}>
                 <div style={{ marginBottom: 14 }}>
                   <input type="text" value={title} onChange={e => setTitle(e.target.value)} required placeholder="Naslov posla" style={inputStyle} />
                 </div>
                 
-                {/* Opis posla */}
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis posla</label>
-                  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
-                </div>
-                
-                {/* Date Picker */}
+{/* Opis posla */}
+  <div style={{ marginBottom: 14 }}>
+  <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 8, color: t.textMuted }}>Opis posla</label>
+  <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Opis (opcionalno)" rows={3} style={{ ...inputStyle, resize: 'vertical' }} />
+  </div>
+
+  {/* Photo upload */}
+  <div style={{ marginBottom: 14 }}>
+    <label style={{ display: 'block', fontSize: 13, color: t.textMuted, marginBottom: 8 }}>
+      Fotografije prostora (max 3) — nije obavezno
+    </label>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {jobPhotos.map((photo, i) => (
+        <div key={i} style={{ position: 'relative', width: 80, height: 80 }}>
+          <img src={photo} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} alt="" />
+          <button
+            type="button"
+            onClick={() => setJobPhotos(prev => prev.filter((_, idx) => idx !== i))}
+            style={{
+              position: 'absolute', top: -6, right: -6,
+              width: 20, height: 20, borderRadius: '50%',
+              background: '#ef4444', border: 'none',
+              color: '#fff', fontSize: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+          >x</button>
+        </div>
+      ))}
+      {jobPhotos.length < 3 && (
+        <button
+          type="button"
+          onClick={() => jobPhotoRef.current?.click()}
+          style={{
+            width: 80, height: 80, borderRadius: 8,
+            border: `2px dashed ${t.border}`,
+            background: t.bgCard, cursor: 'pointer',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: 4, color: t.textMuted, fontSize: 11
+          }}
+        >
+          <span style={{ fontSize: 20 }}>+</span>
+          <span>Dodaj</span>
+        </button>
+      )}
+      <input ref={jobPhotoRef} type="file" accept="image/*" onChange={handleJobPhotoUpload} style={{ display: 'none' }} />
+    </div>
+  </div>
+  
+  {/* Date Picker */}
                 <div style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontWeight: 600, fontSize: 13, marginBottom: 10, color: t.textMuted }}>Datum čišćenja</label>
                   <DatePicker 
@@ -525,7 +752,7 @@ const data = await res.json()
 
             {/* Jobs List - Active only */}
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni oglasi ({jobs.filter(j => !['reviewed'].includes(j.status)).length})</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni oglasi ({jobs.filter(j => !['reviewed', 'cancelled'].includes(j.status)).length})</h3>
               
               {/* Unreviewed jobs banner */}
               {(() => {
@@ -550,13 +777,16 @@ const data = await res.json()
                 ) : null
               })()}
               
-              {jobs.filter(j => !['reviewed'].includes(j.status)).length === 0 ? (
+              {jobs.filter(j => !['reviewed', 'cancelled'].includes(j.status)).length === 0 ? (
                 <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
                   <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih oglasa</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {jobs.filter(j => !['reviewed'].includes(j.status)).map(job => (
+                  {jobs.filter(j => !['reviewed', 'cancelled'].includes(j.status)).map(job => {
+                    // Load photos on first render
+                    if (!jobPhotoMap[job.id]) loadJobPhotos(job.id)
+                    return (
                     <div key={job.id} style={{ ...cardStyle, padding: 20 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                         <div>
@@ -589,9 +819,20 @@ const data = await res.json()
                               Prijave ({job.application_count})
                             </button>
                           )}
-                          {job.status === 'open' && (
-                            <button onClick={() => deleteJob(job.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', border: `1px solid ${t.urgent}`, borderRadius: 8, padding: '8px 14px', color: t.urgent, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                              Obrisi
+                          {(job.status === 'open' || job.status === 'waiting_for_client') && (
+                            <button
+                              onClick={() => cancelJob(job.id)}
+                              style={{
+                                background: 'rgba(239,68,68,0.1)',
+                                border: '1px solid #ef4444',
+                                borderRadius: 10,
+                                padding: '8px 16px',
+                                color: '#ef4444',
+                                fontSize: 13,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Otkaži posao
                             </button>
                           )}
                         </div>
@@ -630,8 +871,19 @@ const data = await res.json()
                           </div>
                         </div>
                       )}
+                      
+                      {/* Job photos */}
+                      {(jobPhotoMap[job.id] || []).length > 0 && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                          {jobPhotoMap[job.id].map((url, i) => (
+                            <img key={i} src={url} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }}
+                              onClick={() => window.open(url, '_blank')} alt="" />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )
+                  })}
                 </div>
               )}
             </div>
@@ -724,6 +976,16 @@ const data = await res.json()
                           <div style={{ padding: 12, background: t.bgCard, borderRadius: 10 }}>
                             <div style={{ color: t.textMuted, fontSize: 13 }}>Cistac: <span style={{ color: t.text, fontWeight: 600 }}>{job.cleaner_name}</span></div>
                           </div>
+                          <button
+                            onClick={() => saveAsTemplate(job)}
+                            style={{
+                              background: 'none', border: `1px solid ${t.border}`,
+                              borderRadius: 8, padding: '6px 12px',
+                              color: t.textMuted, fontSize: 12, cursor: 'pointer', marginTop: 8
+                            }}
+                          >
+                            Spremi kao predlozak
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -849,6 +1111,24 @@ const data = await res.json()
                         </div>
                       ) : (
                         <>
+                          {!profileData?.image_verified && !profileData?.image_pending && !imagePreview && (
+                            <div style={{
+                              display: 'flex', alignItems: 'flex-start', gap: 10,
+                              background: 'rgba(16, 185, 129, 0.08)',
+                              border: '1px solid rgba(16, 185, 129, 0.25)',
+                              borderRadius: 12, padding: '12px 14px', marginBottom: 14,
+                            }}>
+                              <span style={{ fontSize: 18, lineHeight: 1.2 }}>✓</span>
+                              <div>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#10b981' }}>
+                                  Dobijte badge verifikacije
+                                </p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: 12, color: t.textMuted, lineHeight: 1.5 }}>
+                                  Uploadajte profilnu sliku — nakon odobrenja admina dobivate zeleni ✓ badge koji gradi povjerenje.
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadingImage}
@@ -1186,6 +1466,22 @@ const data = await res.json()
                               }}>
                                 {'✓'} Verificiran
                               </span>
+                            )}
+                            {app.badge === 'premium' && (
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                background: 'rgba(234,179,8,0.15)', border: '1px solid #eab308',
+                                borderRadius: 100, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#eab308',
+                                marginLeft: 6
+                              }}>{'🏆'} Premium</span>
+                            )}
+                            {app.badge === 'iskusan' && (
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 4,
+                                background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.3)',
+                                borderRadius: 100, padding: '2px 8px', fontSize: 11, fontWeight: 700, color: '#10b981',
+                                marginLeft: 6
+                              }}>{'⭐'} Iskusni</span>
                             )}
                             <div style={{ fontSize: 13, color: t.textMuted, marginTop: 4 }}>
                               Ocjena: <span style={{ color: t.accent, fontWeight: 600 }}>{app.rating || 5.0}</span>

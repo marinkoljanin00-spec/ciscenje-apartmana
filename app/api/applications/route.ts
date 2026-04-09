@@ -7,6 +7,12 @@ function getSQL() {
   return neon(databaseUrl)
 }
 
+function getCleanerBadge(completedJobs: number, rating: number): string | null {
+  if (completedJobs >= 15 && rating >= 4.8) return 'premium'
+  if (completedJobs >= 5 && rating >= 4.5) return 'iskusan'
+  return null
+}
+
 // Get applications for a job or for a cleaner
 export async function GET(request: Request) {
   try {
@@ -19,14 +25,23 @@ export async function GET(request: Request) {
     if (jobId) {
       // Get all applications for a specific job (for client view)
       const applications = await sql`
-        SELECT a.*, u.full_name as cleaner_name, u.rating, u.phone, u.email, u.bio, u.image_verified
+        SELECT a.*, u.full_name as cleaner_name, u.rating, u.phone, u.email, u.bio, u.image_verified,
+               (SELECT COUNT(*)::int FROM applications a2 
+                JOIN jobs j ON a2.job_id = j.id 
+                WHERE a2.cleaner_id = u.id AND a2.status = 'accepted' 
+                AND j.status IN ('completed', 'reviewed')) as completed_jobs
         FROM applications a
         JOIN users u ON a.cleaner_id = u.id
         WHERE a.job_id = ${parseInt(jobId)}
         ORDER BY a.created_at DESC
         LIMIT 100
       `
-      return NextResponse.json({ applications })
+      // Add badge to each application
+      const applicationsWithBadge = applications.map((app: any) => ({
+        ...app,
+        badge: getCleanerBadge(app.completed_jobs || 0, parseFloat(app.rating) || 0)
+      }))
+      return NextResponse.json({ applications: applicationsWithBadge })
     } else if (cleanerId) {
       // Get all applications by a cleaner (for cleaner view)
       const applications = await sql`

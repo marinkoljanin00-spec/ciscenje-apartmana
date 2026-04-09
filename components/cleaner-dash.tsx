@@ -54,6 +54,42 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deletingAccount, setDeletingAccount] = useState(false)
 
+  // Job photos state
+  const [uploadingPhoto, setUploadingPhoto] = useState<number | null>(null)
+  const afterPhotoRef = useRef<HTMLInputElement>(null)
+  const [activePhotoJobId, setActivePhotoJobId] = useState<number | null>(null)
+  const [jobPhotoMap, setJobPhotoMap] = useState<Record<number, string[]>>({})
+
+  const loadJobPhotos = async (jobId: number) => {
+    if (jobPhotoMap[jobId]) return
+    const res = await fetch(`/api/jobs/photos?jobId=${jobId}`)
+    const data = await res.json()
+    setJobPhotoMap(prev => ({ ...prev, [jobId]: data.photos?.map((p: any) => p.url) || [] }))
+  }
+
+  const handleAfterPhoto = async (e: React.ChangeEvent<HTMLInputElement>, jobId: number) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingPhoto(jobId)
+    const reader = new FileReader()
+    reader.onload = async () => {
+      await fetch('/api/jobs/photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId, base64: reader.result, type: 'after', uploadedBy: uid })
+      })
+      // Refresh photos for this job
+      const res = await fetch(`/api/jobs/photos?jobId=${jobId}`)
+      const data = await res.json()
+      setJobPhotoMap(prev => ({ ...prev, [jobId]: data.photos?.map((p: any) => p.url) || [] }))
+      setUploadingPhoto(null)
+      setToast({ message: 'Fotografija dodana!', type: 'success' })
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+    reader.readAsDataURL(file)
+  }
+
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
@@ -128,6 +164,21 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
       })
       .catch(() => {})
   }, [uid, profileLoaded])
+
+  // Show profile image reminder toast after 60 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!imagePreview && !profileData?.profile_image && !profileData?.image_pending) {
+        setToast({
+          message: '📸 Dodajte profilnu sliku i dobijte badge verifikacije — korisnici s fotografijom izgledaju pouzdanije!',
+          type: 'success'
+        })
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+        toastTimerRef.current = setTimeout(() => setToast(null), 8000)
+      }
+    }, 60000)
+    return () => clearTimeout(timer)
+  }, [profileData, imagePreview])
 
   // Lazy load reviews only when profile tab is visited
   useEffect(() => {
@@ -535,23 +586,38 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         <div style={{ fontSize: 12, color: t.textDim }}>{job.property_type}</div>
                       </div>
                     </div>
-                    {job.description && <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 12px 0', lineHeight: 1.5 }}>{job.description}</p>}
-                    <button 
-                      onClick={() => {
-                        if (!alreadyApplied && confirm('Jeste li sigurni da se želite prijaviti za ovaj posao?')) {
-                          applyToJob(job.id, '')
-                        }
-                      }} 
-                      disabled={alreadyApplied}
-                      style={{ 
-                        ...btnPrimary, 
-                        width: '100%', 
-                        opacity: alreadyApplied ? 0.5 : 1,
-                        background: alreadyApplied ? t.textDim : t.accent
-                      }}
-                    >
-                      {alreadyApplied ? 'Vec prijavljeno' : 'Prijavi se'}
-                    </button>
+{job.description && <p style={{ color: t.textMuted, fontSize: 13, margin: '0 0 12px 0', lineHeight: 1.5 }}>{job.description}</p>}
+  
+  {/* Job photos */}
+  {(() => {
+    if (!jobPhotoMap[job.id]) loadJobPhotos(job.id)
+    return null
+  })()}
+  {(jobPhotoMap[job.id] || []).length > 0 && (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      {jobPhotoMap[job.id].map((url, i) => (
+        <img key={i} src={url} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }}
+          onClick={() => window.open(url, '_blank')} alt="" />
+      ))}
+    </div>
+  )}
+
+  <button
+  onClick={() => {
+  if (!alreadyApplied && confirm('Jeste li sigurni da se želite prijaviti za ovaj posao?')) {
+  applyToJob(job.id, '')
+  }
+  }}
+  disabled={alreadyApplied}
+  style={{
+  ...btnPrimary,
+  width: '100%',
+  opacity: alreadyApplied ? 0.5 : 1,
+  background: alreadyApplied ? t.textDim : t.accent
+  }}
+  >
+  {alreadyApplied ? 'Vec prijavljeno' : 'Prijavi se'}
+  </button>
                   </div>
                 )
               })}
@@ -624,6 +690,47 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                           </a>
                         )}
                       </div>
+                    </div>
+
+                    {/* Job photos display */}
+                    {(() => {
+                      if (!jobPhotoMap[app.job_id]) loadJobPhotos(app.job_id)
+                      return null
+                    })()}
+                    {(jobPhotoMap[app.job_id] || []).length > 0 && (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                        {jobPhotoMap[app.job_id].map((url, i) => (
+                          <img key={i} src={url} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, cursor: 'pointer' }}
+                            onClick={() => window.open(url, '_blank')} alt="" />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload after photo button */}
+                    <div style={{ marginBottom: 8 }}>
+                      <input
+                        ref={afterPhotoRef}
+                        type="file" accept="image/*"
+                        onChange={(e) => handleAfterPhoto(e, app.job_id)}
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        onClick={() => {
+                          setActivePhotoJobId(app.job_id)
+                          afterPhotoRef.current?.click()
+                        }}
+                        disabled={uploadingPhoto === app.job_id}
+                        style={{
+                          width: '100%', padding: '10px 16px',
+                          background: 'rgba(16,185,129,0.08)',
+                          border: '1px solid rgba(16,185,129,0.25)',
+                          borderRadius: 10, color: t.accent,
+                          fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                          opacity: uploadingPhoto === app.job_id ? 0.7 : 1
+                        }}
+                      >
+                        {uploadingPhoto === app.job_id ? 'Uploadam...' : '+ Dodaj fotografiju zavrsenog posla'}
+                      </button>
                     </div>
 
                     {/* Mark as Complete Button */}
@@ -763,14 +870,14 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
             )}
 
             {/* Pending Applications */}
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Prijave na cekanju ({myApplications.filter(a => a.status === 'pending').length})</h3>
-            {myApplications.filter(a => a.status === 'pending').length === 0 ? (
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Prijave na cekanju ({myApplications.filter(a => a.status === 'pending' && a.job_status !== 'cancelled').length})</h3>
+            {myApplications.filter(a => a.status === 'pending' && a.job_status !== 'cancelled').length === 0 ? (
               <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
                 <p style={{ color: t.textMuted, margin: 0 }}>Nemate prijava na cekanju</p>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {myApplications.filter(a => a.status === 'pending').map(app => (
+                {myApplications.filter(a => a.status === 'pending' && a.job_status !== 'cancelled').map(app => (
                   <div key={app.id} style={{ ...cardStyle, padding: 20 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
@@ -795,6 +902,30 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
 
         {tab === 'profile' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
+            {/* Loyalty Badge Display */}
+            {profileData?.badge === 'premium' && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'linear-gradient(135deg, rgba(234,179,8,0.15), rgba(234,179,8,0.05))',
+                border: '1px solid #eab308',
+                borderRadius: 100, padding: '4px 12px', marginTop: 8, width: 'fit-content'
+              }}>
+                <span style={{ fontSize: 14 }}>{'🏆'}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#eab308' }}>Premium cistac</span>
+              </div>
+            )}
+            {profileData?.badge === 'iskusan' && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'rgba(16,185,129,0.08)',
+                border: '1px solid rgba(16,185,129,0.3)',
+                borderRadius: 100, padding: '4px 12px', marginTop: 8, width: 'fit-content'
+              }}>
+                <span style={{ fontSize: 14 }}>{'⭐'}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>Iskusni cistac</span>
+              </div>
+            )}
+            
             {/* Profile Image Upload */}
             <div style={{ ...cardStyle, padding: 24 }}>
               <h4 style={{ color: t.text, fontSize: 16, fontWeight: 700, margin: '0 0 16px 0' }}>
@@ -907,6 +1038,24 @@ export function CleanerDash({ logout, name, uid }: { logout: () => void; name: s
                         </div>
                       ) : (
                         <>
+                          {!profileData?.image_verified && !profileData?.image_pending && !imagePreview && (
+                            <div style={{
+                              display: 'flex', alignItems: 'flex-start', gap: 10,
+                              background: 'rgba(16, 185, 129, 0.08)',
+                              border: '1px solid rgba(16, 185, 129, 0.25)',
+                              borderRadius: 12, padding: '12px 14px', marginBottom: 14,
+                            }}>
+                              <span style={{ fontSize: 18, lineHeight: 1.2 }}>✓</span>
+                              <div>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#10b981' }}>
+                                  Dobijte badge verifikacije
+                                </p>
+                                <p style={{ margin: '4px 0 0 0', fontSize: 12, color: t.textMuted, lineHeight: 1.5 }}>
+                                  Uploadajte profilnu sliku — nakon odobrenja admina dobivate zeleni ✓ badge koji gradi povjerenje.
+                                </p>
+                              </div>
+                            </div>
+                          )}
                           <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={uploadingImage}

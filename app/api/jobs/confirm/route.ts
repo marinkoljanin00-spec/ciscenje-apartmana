@@ -46,6 +46,35 @@ export async function POST(request: Request) {
       UPDATE jobs SET status = 'confirmed' WHERE id = ${jobId}
     `
 
+    // Send push notification to the cleaner
+    try {
+      const { sendPushNotification } = await import('@/lib/push')
+      const jobDetails = await sql`
+        SELECT j.title, j.cleaner_id, u.full_name as client_name
+        FROM jobs j
+        JOIN users u ON u.id = j.client_id
+        WHERE j.id = ${jobId}
+      `
+      if (jobDetails.length > 0) {
+        const cleanerSubs = await sql`
+          SELECT subscription FROM push_subscriptions
+          WHERE user_id = ${jobDetails[0].cleaner_id}
+        `
+        await Promise.all(
+          cleanerSubs.map((row: any) =>
+            sendPushNotification(
+              row.subscription,
+              '✅ Posao potvrđen!',
+              `${jobDetails[0].client_name} je potvrdio završetak posla "${jobDetails[0].title}". Čestitamo!`,
+              '/'
+            )
+          )
+        )
+      }
+    } catch (e) {
+      console.error('Push notification error:', e)
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error"
