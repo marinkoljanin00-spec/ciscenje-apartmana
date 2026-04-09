@@ -758,7 +758,7 @@ const createJob = async (e: React.FormEvent) => {
 
             {/* Jobs List - Active only */}
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni oglasi ({jobs.filter(j => !['reviewed'].includes(j.status)).length})</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: t.text, margin: '0 0 16px 0' }}>Aktivni oglasi ({jobs.filter(j => !['reviewed', 'cancelled'].includes(j.status)).length})</h3>
               
               {/* Unreviewed jobs banner */}
               {(() => {
@@ -783,13 +783,13 @@ const createJob = async (e: React.FormEvent) => {
                 ) : null
               })()}
               
-              {jobs.filter(j => !['reviewed'].includes(j.status)).length === 0 ? (
+              {jobs.filter(j => !['reviewed', 'cancelled'].includes(j.status)).length === 0 ? (
                 <div style={{ ...cardStyle, padding: 40, textAlign: 'center' }}>
                   <p style={{ color: t.textMuted, margin: 0 }}>Nemate aktivnih oglasa</p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {jobs.filter(j => !['reviewed'].includes(j.status)).map(job => {
+                  {jobs.filter(j => !['reviewed', 'cancelled'].includes(j.status)).map(job => {
                     // Load photos on first render
                     if (!jobPhotoMap[job.id]) loadJobPhotos(job.id)
                     return (
